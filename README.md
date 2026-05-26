@@ -30,7 +30,7 @@ Requires [bun](https://bun.sh/).
 ### Recommended — one-liner via bunx
 
 ```bash
-bunx tz-skills
+bunx @teszerrakt/skills
 ```
 
 Clones the repo to `~/.local/share/tz-skills` (override with `$TZ_SKILLS_DIR`)
@@ -40,7 +40,7 @@ re-running pulls the latest from `main` and refreshes symlinks.
 To remove our symlinks (clone stays put):
 
 ```bash
-bunx tz-skills --uninstall
+bunx @teszerrakt/skills --uninstall
 ```
 
 ### Alternative — clone + run setup
