@@ -27,21 +27,33 @@ All three learning skills maintain a per-topic `Glossary.md` with backlinks.
 
 Requires [bun](https://bun.sh/).
 
+### Recommended — one-liner via bunx
+
+```bash
+bunx tz-skills
+```
+
+Clones the repo to `~/.local/share/tz-skills` (override with `$TZ_SKILLS_DIR`)
+and symlinks every skill subdirectory into `~/.claude/skills/`. Idempotent —
+re-running pulls the latest from `main` and refreshes symlinks.
+
+To remove our symlinks (clone stays put):
+
+```bash
+bunx tz-skills --uninstall
+```
+
+### Alternative — clone + run setup
+
+Useful if you want the repo somewhere you'll edit frequently (e.g. `~/Codes/`).
+
 ```bash
 git clone https://github.com/teszerrakt/tz-skills ~/Codes/tz-skills
 cd ~/Codes/tz-skills
 bun run setup
 ```
 
-`setup.ts` symlinks each skill subdirectory into `~/.claude/skills/`.
-Re-run after pulling updates — symlinks already pointing at the repo will be
-left alone.
-
-To remove:
-
-```bash
-bun run uninstall
-```
+`bun run uninstall` removes the symlinks.
 
 ## Config
 

@@ -1,10 +1,38 @@
 {
   "name": "tz-skills",
   "version": "0.1.0",
-  "private": true,
+  "description": "Personal Claude Code skills — learning-mode (learn-from-doc, learn-from-zero, learn-by-case) + PR review (address-review). Installs via bunx.",
   "type": "module",
+  "bin": {
+    "tz-skills": "./bin/install.ts"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
   "scripts": {
     "setup": "bun run setup.ts",
     "uninstall": "bun run setup.ts --uninstall"
-  }
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/teszerrakt/tz-skills.git"
+  },
+  "homepage": "https://github.com/teszerrakt/tz-skills#readme",
+  "bugs": {
+    "url": "https://github.com/teszerrakt/tz-skills/issues"
+  },
+  "keywords": [
+    "claude-code",
+    "skills",
+    "claude",
+    "learning",
+    "obsidian",
+    "pr-review"
+  ],
+  "author": "teszerrakt",
+  "license": "MIT"
 }
