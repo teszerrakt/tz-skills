@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Symlink each `learn-*` skill in this repo into `~/.claude/skills/`.
+ * Symlink each skill in this repo into `~/.claude/skills/`.
  * Idempotent: skips skills already linked to this repo, warns on conflicts.
  *
  * Usage:

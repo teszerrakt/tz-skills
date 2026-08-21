@@ -1,7 +1,7 @@
 {
   "name": "@teszerrakt/skills",
   "version": "0.1.0",
-  "description": "Personal Claude Code skills — learning-mode (learn-from-doc, learn-from-zero, learn-by-case) + PR review (address-review). Installs via bunx.",
+  "description": "Personal Claude Code skills — frontend design-doc pipeline (fe-design-map, ask-stakeholders, fe-design-cleanup), PR review (address-review), standup drafting. Installs via bunx.",
   "type": "module",
   "bin": {
     "tz-skills": "./bin/install.ts"
@@ -29,8 +29,9 @@
     "claude-code",
     "skills",
     "claude",
-    "learning",
-    "obsidian",
+    "design-docs",
+    "figma",
+    "standup",
     "pr-review"
   ],
   "author": "teszerrakt",
