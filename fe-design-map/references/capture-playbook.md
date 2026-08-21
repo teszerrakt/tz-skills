@@ -4,8 +4,9 @@ Rules for capturing real request/response samples for the doc's Data Source sect
 
 ## Token
 
-- Always ask the user to paste a fresh access token (staging JWTs expire; there is no automated source).
-- Keep it in a shell env var for the session only: `read`-style paste or export in the same Bash call that uses it.
+- **Read the token source from the project config first.** When it names a command — a make target, a script — run that. It needs nothing from the user.
+- Ask the user to paste a fresh token only when the config names no command, or the command fails. Staging JWTs expire, so a stored one is worthless.
+- Keep it in a shell env var for the session only: capture or paste it in the same Bash call that uses it. Capture it without printing it — a command that echoes the token to stdout puts it in the transcript.
 - NEVER: echo it, log it, write it to any file, put it in the doc, or include it in a code sample. Redact `Authorization` headers everywhere.
 
 ## Capture plan (one approval)
