@@ -1,27 +1,45 @@
 # tz-skills
 
-Personal Claude Code skills. Two families:
+Personal Claude Code skills. Three families:
 
-- **`learn-*`** — learning-mode sessions that save to an Obsidian vault.
-- **`address-review`** — PR review handling (no vault output).
+- **`fe-design-*`, `ask-stakeholders`, `estimate-effort`** — the frontend design-doc pipeline: chart it, ask the open questions, size the build tickets, clean up after.
+- **`address-review`** — PR review handling.
+- **`standup`** — daily standup drafting.
 
 ## Skills
 
-### Learning
+### Design docs
 
-| Skill              | Trigger                                             | Output                                          |
-| ------------------ | --------------------------------------------------- | ----------------------------------------------- |
-| `learn-from-doc`   | "digest this doc", "summarize this URL"             | `<vault>/Learning/<Topic>/NN - Doc - <slug>.md` |
-| `learn-from-zero`  | "teach me X from scratch", "onboard me on X"        | `<vault>/Learning/<Topic>/NN - <topic>.md`      |
-| `learn-by-case`    | "study case on X", "quiz me on X", "give me a case" | `<vault>/Learning/<Topic>/NN - Case - <slug>.md`|
+`/fe-design-map` charts a frontend design doc as a **closed** seven-ticket map on the issue tracker, then works the tickets across sessions. The three harvest tickets run unattended and prove their output against a gate ledger, so a lazy harvest fails a check instead of passing quietly.
 
-All three learning skills maintain a per-topic `Glossary.md` with backlinks.
+| Skill | Invocation | What it does |
+| ----- | ---------- | ------------ |
+| `fe-design-map` | you type it | Charts the map, then works its tickets |
+| `ask-stakeholders` | model or you | Posts a batch of open questions as one public Slack thread, tailored per persona |
+| `fe-design-cleanup` | model or you | Lists the fact bases on this machine and suggests which are safe to delete |
+| `estimate-effort` | model or you | Sizes a ticket in man-days, calibrated on the repo's own estimated-versus-actual history |
+
+`fe-design-map` runs `estimate-effort` **before** it publishes the build tickets, so the estimates decide where the slices merge rather than describe a split that already happened.
+
+The pipeline also calls the grilling and domain-modeling skills from the [mattpocock skills](https://github.com/mattpocock/skills) plugin. A plugin skill's id is plugin-qualified — `mattpocock-skills:grilling`, not `grilling` — so `fe-design-map` checks the available-skills list for the real id before it invokes one, and degrades to interviewing you directly when the plugin is absent.
 
 ### Engineering
 
-| Skill            | Trigger                                              |
-| ---------------- | ---------------------------------------------------- |
+| Skill | Trigger |
+| ----- | ------- |
 | `address-review` | "address review", "respond to CodeRabbit", PR triage |
+
+### Productivity
+
+| Skill | Trigger |
+| ----- | ------- |
+| `standup` | "standup", "what did I do yesterday", "standup summary" |
+
+### Learning — moved out
+
+`learn-from-doc`, `learn-from-zero`, and `learn-by-case` are gone. Use `teach` from the [mattpocock skills](https://github.com/mattpocock/skills) plugin instead: it keeps a stateful teaching workspace with a mission, learning records, reference docs, and lessons, rather than one Obsidian note per session. The shared `save-to-vault` procedure went with them, so nothing here writes to a vault any more.
+
+Type it with the plugin prefix — `/mattpocock-skills:teach`. It is user-invoked, so no other skill can reach it and a bare `/teach` does not resolve.
 
 ## Install
 
@@ -55,29 +73,22 @@ bun run setup
 
 `bun run uninstall` removes the symlinks.
 
-## Config
+Both installers discover skills by scanning for a directory holding a `SKILL.md`, so a new skill needs no registration.
 
-First skill invocation prompts for the Obsidian vault path. Result cached at
-`~/.claude/tz-skills/config.json`. Edit that file directly to change the vault
-later.
+## Per-repo config
 
-```json
-{
-  "vault": "/Users/<you>/Documents/<vault-name>"
-}
-```
+Four skills read config from the repository you invoke them in. Every file is per-developer and stays untracked, so no workspace identifier and no delivery data lives in this repo.
 
-## File conventions
+| File | Read by | Holds |
+| ---- | ------- | ----- |
+| `.claude/fe-design-doc.md` | `fe-design-map` | docs platform and home doc, API base URL, permissions source, Figma workspace, PRD home, tracker teams, doc authoring preferences |
+| `.claude/stakeholders.md` | `ask-stakeholders` | per colleague: handle, public channel, role, what they answer, and the register to write in |
+| `.claude/standup.md` | `standup` | standup channel id, my Slack user id, GitHub login, and which ticket system to link |
+| `.claude/estimate-calibration.md` | `estimate-effort` | the repo's estimated-versus-actual table, its floor and step size, and the diagnosed cause per miss |
 
-Inside `<vault>/Learning/<Topic>/`:
+A skill whose config file is missing asks for the values, then offers to write the file so the next run skips the questions. `estimate-effort` also labels its output **uncalibrated** until the file exists — an estimate calibrated on another codebase is a guess wearing a number.
 
-- `NN - <topic>.md` — concept summary
-- `NN - Doc - <slug>.md` — digest of an external doc
-- `NN - Case - <slug>.md` — interactive Q&A case study
-- `Glossary.md` — alphabetized terms with `[[NN - ...]]` backlinks
-
-`NN` (session number) is computed by counting existing `NN - ` prefixed files
-in the topic folder and incrementing.
+`fe-design-map` writes its harvested facts to `~/.claude/fe-design-map/<repo>/<slug>/`. That directory is throwaway and is never pushed to a remote. `fe-design-cleanup` deletes it once the build tickets close.
 
 ## Updating skills
 
