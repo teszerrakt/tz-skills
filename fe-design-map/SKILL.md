@@ -24,7 +24,9 @@ The tracker teams for each are domain config, not skill content. Read them from 
 
 ## Config
 
-Read `.claude/fe-design-doc.md` in the repo root. It holds the docs platform and home doc, the API base URL, the permissions source, the Figma workspace file, the PRD home, the tracker teams, and the doc authoring preferences. If a section is missing, ask, then offer to write it back.
+Read `.claude/fe-design-map.md` in the repo root. It holds the docs platform and home doc, the API base URL, the permissions source, the Figma workspace file, the PRD home, the tracker teams, and the doc authoring preferences. If a section is missing, ask, then offer to write it back — or run `/setup-tz-skills`, which writes the whole file.
+
+An older install wrote this config as `.claude/fe-design-doc.md`. If that name exists and `fe-design-map.md` does not, read it and offer to rename it.
 
 ## External skills
 
