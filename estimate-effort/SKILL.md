@@ -1,6 +1,6 @@
 ---
 name: estimate-effort
-description: Estimate AI-assisted implementation effort in MD (man-days) for frontend tickets, calibrated against this repo's own delivery history (per-ticket estimated vs actual, PR diffs, diagnosed bloat causes). Use when sizing tickets or tasks, during the estimates pass of /fe-design-map or /to-tickets, or when the user asks how long a ticket or feature will take.
+description: Estimate AI-assisted implementation effort in MD (man-days) for frontend tickets, calibrated against this repo's own delivery history (per-ticket estimated vs actual, PR diffs, diagnosed bloat causes). Use when sizing tickets or tasks, during the estimates pass of a design-doc or ticket-breakdown skill, or when the user asks how long a ticket or feature will take.
 ---
 
 # Estimate Effort

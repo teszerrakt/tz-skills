@@ -21,7 +21,7 @@ Personal Claude Code skills. Three families:
 
 `fe-design-map` runs `estimate-effort` **before** it publishes the build tickets, so the estimates decide where the slices merge rather than describe a split that already happened.
 
-The pipeline also calls `/grilling` and `/domain-modeling` from the [mattpocock skills](https://github.com/mattpocock/skills) plugin.
+The pipeline also calls the grilling and domain-modeling skills from the [mattpocock skills](https://github.com/mattpocock/skills) plugin. A plugin skill's id is plugin-qualified — `mattpocock-skills:grilling`, not `grilling` — so `fe-design-map` checks the available-skills list for the real id before it invokes one, and degrades to interviewing you directly when the plugin is absent.
 
 ### Engineering
 
@@ -37,7 +37,9 @@ The pipeline also calls `/grilling` and `/domain-modeling` from the [mattpocock 
 
 ### Learning — moved out
 
-`learn-from-doc`, `learn-from-zero`, and `learn-by-case` are gone. Use `/teach` from the [mattpocock skills](https://github.com/mattpocock/skills) plugin instead: it keeps a stateful teaching workspace with a mission, learning records, and lessons, rather than one Obsidian note per session. The shared `save-to-vault` procedure went with them, so nothing here writes to a vault any more.
+`learn-from-doc`, `learn-from-zero`, and `learn-by-case` are gone. Use `teach` from the [mattpocock skills](https://github.com/mattpocock/skills) plugin instead: it keeps a stateful teaching workspace with a mission, learning records, reference docs, and lessons, rather than one Obsidian note per session. The shared `save-to-vault` procedure went with them, so nothing here writes to a vault any more.
+
+Type it with the plugin prefix — `/mattpocock-skills:teach`. It is user-invoked, so no other skill can reach it and a bare `/teach` does not resolve.
 
 ## Install
 

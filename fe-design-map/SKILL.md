@@ -26,6 +26,17 @@ The tracker teams for each are domain config, not skill content. Read them from 
 
 Read `.claude/fe-design-doc.md` in the repo root. It holds the docs platform and home doc, the API base URL, the permissions source, the Figma workspace file, the PRD home, the tracker teams, and the doc authoring preferences. If a section is missing, ask, then offer to write it back.
 
+## External skills
+
+Two skills this one runs come from the [mattpocock skills](https://github.com/mattpocock/skills) plugin. A plugin skill's id is **plugin-qualified**, so a bare name never resolves:
+
+- `mattpocock-skills:grilling`
+- `mattpocock-skills:domain-modeling`
+
+**Check the available-skills list for the exact id before you invoke one.** The plugin name is part of the id and can differ per install, so match what the list shows rather than the ids written above.
+
+If neither is listed, the plugin is not installed. Say so once, point the user at https://github.com/mattpocock/skills, and carry on without it — interview the user directly instead of stopping. A missing plugin degrades this skill; it does not block it.
+
 ## Fact base
 
 ```
@@ -65,7 +76,7 @@ A new question found while a ticket runs becomes `OQ-n` in the doc. It never bec
 
 The user gives a feature and a Figma summary page URL.
 
-1. **Name the destination.** One or two lines: which page or feature this doc specs. Run `/grilling` only if the scope is unclear.
+1. **Name the destination.** One or two lines: which page or feature this doc specs. Run the grilling skill only if the scope is unclear.
 2. **Confirm the frames.** `get_metadata` on the Figma page, list the top-level frames, then `AskUserQuestion` (multiSelect) to confirm which belong to this feature. This step must happen here, with the user present — the confirmed **count** is what makes the harvest gates countable.
 3. **Ask for the optional inputs**: PRD doc link, Postman collection, target doc URL, parent build ticket.
 4. **Create the fact base** and write `meta.json`.
@@ -89,7 +100,7 @@ The user gives a map, and optionally a ticket.
 
 **Tickets 1 to 3 — harvest (AFK).** Read [references/gates.md](references/gates.md). Write facts to the fact base, run the ledger, and paste it into the resolution comment with the command output as evidence.
 
-**Ticket 4 — synthesis grilling.** Run `/grilling` and `/domain-modeling`, seeded with the harvested facts. Classify every answer: a resolved decision goes into the doc as behavior, an unknown becomes `OQ-n` with an owner, a missing endpoint becomes `G-n`. Then present the open-question table — one row per `OQ`, marked `decide`, `ask open`, or `ask with default`. `ask open` is the default mark. Rows marked to ask go to `/ask-stakeholders` as one batch.
+**Ticket 4 — synthesis grilling.** Run the grilling and domain-modeling skills (see [External skills](#external-skills)), seeded with the harvested facts. Classify every answer: a resolved decision goes into the doc as behavior, an unknown becomes `OQ-n` with an owner, a missing endpoint becomes `G-n`. Then present the open-question table — one row per `OQ`, marked `decide`, `ask open`, or `ask with default`. `ask open` is the default mark. Rows marked to ask go to `/ask-stakeholders` as one batch.
 
 **Ticket 5 — live capture.** Read [references/capture-playbook.md](references/capture-playbook.md).
 
