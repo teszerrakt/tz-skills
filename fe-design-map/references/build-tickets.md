@@ -25,9 +25,7 @@ Never merge two slices that each already carry a driver.
 
 The second limit is the one that keeps this honest. Merging two unrelated slices saves one cold start but loads two context sets into one session, and a session's accuracy falls with the share of its context that is irrelevant to the work in front of it. Shared context saves the warm-up **and** keeps the session dense. Unshared context buys the first and pays for it with the second.
 
-**There is no token cap, and no context-window budget.** Two numbers get proposed here and neither survives contact with a source. Anthropic's pricing docs state that Claude 4.6 and later bill the full 1M window at one rate — "a 900k-token request is billed at the same per-token rate as a 9k-token request" — so no price boundary sits at 200K. And no primary source names a 120K quality threshold; the widely-quoted figure comes from a blog post that labels its own numbers as tunable heuristics. What the measurements do show (NoLiMa, ICML 2025; Chroma's context-rot study) is a slope that starts far lower than either number, and that relevance density predicts accuracy better than length. So the rule is *shared context*, not *fewer tokens*.
-
-If you want a number, measure this repo's own build sessions rather than borrow one.
+**Set no token cap and no context-window budget.** Pricing is flat across the full 1M window, and the measured effect tracks relevance density rather than length. Merge on shared context, not on token count.
 
 ## Wide refactors
 

@@ -2,7 +2,7 @@
 
 Personal Claude Code skills. Three families:
 
-- **`fe-design-*` + `ask-stakeholders`** — the frontend design-doc pipeline: chart it, ask the open questions, clean up after.
+- **`fe-design-*`, `ask-stakeholders`, `estimate-effort`** — the frontend design-doc pipeline: chart it, ask the open questions, size the build tickets, clean up after.
 - **`address-review`** — PR review handling.
 - **`standup`** — daily standup drafting.
 
@@ -17,8 +17,11 @@ Personal Claude Code skills. Three families:
 | `fe-design-map` | you type it | Charts the map, then works its tickets |
 | `ask-stakeholders` | model or you | Posts a batch of open questions as one public Slack thread, tailored per persona |
 | `fe-design-cleanup` | model or you | Lists the fact bases on this machine and suggests which are safe to delete |
+| `estimate-effort` | model or you | Sizes a ticket in man-days, calibrated on the repo's own estimated-versus-actual history |
 
-The pipeline calls two skills that live elsewhere: `/grilling` and `/domain-modeling` from the [mattpocock skills](https://github.com/mattpocock/skills) plugin, and `estimate-effort`, which is not in this repo.
+`fe-design-map` runs `estimate-effort` **before** it publishes the build tickets, so the estimates decide where the slices merge rather than describe a split that already happened.
+
+The pipeline also calls `/grilling` and `/domain-modeling` from the [mattpocock skills](https://github.com/mattpocock/skills) plugin.
 
 ### Engineering
 
@@ -72,12 +75,16 @@ Both installers discover skills by scanning for a directory holding a `SKILL.md`
 
 ## Per-repo config
 
-Two skills read config from the repository you invoke them in. Both files are per-developer and stay untracked.
+Four skills read config from the repository you invoke them in. Every file is per-developer and stays untracked, so no workspace identifier and no delivery data lives in this repo.
 
 | File | Read by | Holds |
 | ---- | ------- | ----- |
 | `.claude/fe-design-doc.md` | `fe-design-map` | docs platform and home doc, API base URL, permissions source, Figma workspace, PRD home, tracker teams, doc authoring preferences |
 | `.claude/stakeholders.md` | `ask-stakeholders` | per colleague: handle, public channel, role, what they answer, and the register to write in |
+| `.claude/standup.md` | `standup` | standup channel id, my Slack user id, GitHub login, and which ticket system to link |
+| `.claude/estimate-calibration.md` | `estimate-effort` | the repo's estimated-versus-actual table, its floor and step size, and the diagnosed cause per miss |
+
+A skill whose config file is missing asks for the values, then offers to write the file so the next run skips the questions. `estimate-effort` also labels its output **uncalibrated** until the file exists — an estimate calibrated on another codebase is a guess wearing a number.
 
 `fe-design-map` writes its harvested facts to `~/.claude/fe-design-map/<repo>/<slug>/`. That directory is throwaway and is never pushed to a remote. `fe-design-cleanup` deletes it once the build tickets close.
 
