@@ -6,7 +6,7 @@ description: Address CodeRabbit and human reviewer comments on a GitHub PR. Veri
 # address-review
 
 End-to-end PR review handling. Two phases because replies need to reference
-the commit SHA, which only exists after the user pushes.
+the commit SHA, which only exists after the fix is committed and pushed.
 
 ## Inputs
 
@@ -14,12 +14,22 @@ the commit SHA, which only exists after the user pushes.
 - No arg: detect via `gh pr view --json number,headRefOid`. If detached HEAD
   or no PR, ask for the number.
 
+## Setup (both phases)
+
+1. **`gh auth status` precheck.** If unauthenticated, stop and tell the user.
+2. Resolve PR number, then `owner`/`repo` (`gh repo view --json owner,name`).
+3. Compute the draft path — keyed by PR so concurrent reviews don't collide:
+
+   ```bash
+   DRAFTS="${TMPDIR:-/tmp}/address-review-drafts-<owner>-<repo>-<pr>.json"
+   ```
+
 ## Which phase
 
-Look for `.git/skill-address-review-drafts.json`:
+Check whether `$DRAFTS` exists:
 
 - Missing → **Phase 1**.
-- Present + new commits since the draft → **Phase 2**.
+- Present + new commits since the draft's head SHA → **Phase 2**.
 - Present + no new commits → ask whether to resume, discard, or post anyway.
 
 ---
@@ -67,7 +77,7 @@ classify:
 
 Print one row per thread:
 
-```
+```text
 | # | File:Line | Reviewer | Summary (≤80c) | Bucket | Proposed action |
 ```
 
@@ -103,18 +113,32 @@ obvious follow-up (missing import, typo). Still failing → surface and stop.
 For every approved row, draft a reply (terse, soft framing for pushback).
 FIX/ADJUST replies include a `{sha}` placeholder; Phase 2 fills it.
 
-Persist to `.git/skill-address-review-drafts.json` with enough state to
-resume: PR number, owner/repo, head SHA at draft time, drafted-at timestamp,
-and per-draft: comment ID, thread ID, path, line, bucket, reply template,
-files touched, and whether to auto-resolve (FIX/OUTDATED = true; ADJUST/REPLY
-= false).
+Persist to `$DRAFTS` with enough state to resume: PR number, owner/repo, head
+SHA at draft time, drafted-at timestamp, and per-draft: comment ID, thread ID,
+path, line, bucket, reply template, files touched, and whether to auto-resolve
+(FIX/OUTDATED = true; ADJUST/REPLY = false).
 
 ### 8. Hand off
 
-> Triage + fixes done. <N> threads will get replies after you push. Diff is
-> unstaged — review, commit, push, then re-invoke me to post replies.
+> Triage + fixes done. <N> threads will get replies after the fix lands in a
+> commit. Diff is unstaged.
 
-Do not stage, commit, or push. User owns commit messages.
+### 9. Offer to commit / push
+
+Then ask via `AskUserQuestion`:
+
+> Commit and push these fixes now, or handle it yourself?
+
+Options:
+
+- **Commit & push (Recommended)** — commit on the current PR branch, push,
+  then continue straight into Phase 2 in this session (the SHA now exists).
+- **Commit only** — commit, don't push. Stop after; Phase 2 runs once pushed.
+- **Leave it to me** — do nothing. User commits/pushes, re-invokes for Phase 2.
+
+If committing: show the proposed message first, commit on the **current PR
+branch** (already checked out — do not branch), follow the repo's commit
+conventions and any harness-injected trailers. Never commit silently.
 
 ---
 
@@ -129,12 +153,12 @@ git log --oneline <head_sha_at_draft>..HEAD -- <files_touched>
 ```
 
 Use the latest commit that touched any of those files. Substitute into
-`{sha}`. If no matching commit (user didn't push that fix), ask whether to
-skip or post with HEAD anyway.
+`{sha}`. If no matching commit (the fix wasn't pushed), ask whether to skip or
+post with HEAD anyway.
 
 ### 2. Preview
 
-```
+```text
 Will post + auto-resolve:
   - <file:line>: <reply preview>
 Will post (leave open):
@@ -162,15 +186,16 @@ Leave ADJUST and REPLY threads open — the reviewer may want to re-check.
 
 ### 5. Clean up
 
-Delete `.git/skill-address-review-drafts.json`. Report counts: replies
-posted, threads resolved, threads left open.
+Delete `$DRAFTS`. Report counts: replies posted, threads resolved, threads
+left open.
 
 ---
 
 ## Hard rules
 
 - **Minimum change.** No scope creep.
-- **Never auto-commit or push.** User owns that.
+- **Never commit or push without explicit opt-in.** Step 9 always asks first;
+  show the message before committing. User owns the message.
 - **Don't invent comment/thread IDs.** Always sourced from the current
   GraphQL/REST response.
 - **Filter resolved threads at fetch.** Don't reply to closed conversations.
