@@ -1,6 +1,7 @@
 ---
 name: fe-design-cleanup
 description: List the design-map fact bases on this machine and suggest which are safe to delete, by build-ticket state and by age. Use when the user asks to clean up design scratch, free space from harvested Figma or API facts, or check which design efforts are finished.
+disable-model-invocation: true
 ---
 
 # FE Design Cleanup

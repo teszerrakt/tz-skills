@@ -1,6 +1,6 @@
 ---
 name: ask-stakeholders
-description: Ask a batch of open questions to named stakeholders in a public Slack thread, tailored per persona and capped for brevity. Use when a spec, design doc, or decision has questions only a colleague can answer, or when the user wants to ask design or backend something.
+description: Ask a batch of open questions to named stakeholders in a public Slack thread, tailored per persona and capped for brevity. Use when a spec, design doc, or decision has questions only a colleague can answer, or when the user wants to ask design or backend something, or to DM one person in the register the user already uses with them.
 ---
 
 # Ask Stakeholders
@@ -15,7 +15,10 @@ Read `.claude/stakeholders.md` in the repo root. Per person: name, Slack handle,
 
 If the file does not exist, ask who owns each question and offer to write the file back.
 
-Never send a DM. A public channel thread is where the answer stays findable.
+**A public channel thread is the default**, because that is where the answer stays findable. Do not
+choose a DM on your own. When the user explicitly asks for one, follow **DM mode** below, and say in
+one line that a thread keeps the answer findable so the trade-off is on the record. Then send the DM:
+it is their call and their relationship.
 
 ## Situation, not justification
 
@@ -28,6 +31,7 @@ The parent carries the situation once. Every question inherits it, so the questi
 | What cannot happen as a result | Prior decisions recounted to the people who made them |
 | The doc and Figma links | Citations that pre-litigate a disagreement nobody voiced |
 | | Speculative knock-ons |
+| | Effort estimates. MD figures are internal planning, not the reader's input: say what is blocked, never what it costs |
 
 Both columns are context. Only the left one helps the reader answer. Strip the right column and a 547-word message becomes 50 words; strip the left one too and the questions arrive with nothing to hold on to.
 
@@ -62,12 +66,47 @@ Write the open question. Add a trailing default clause only when there is a stro
 
 That clause converts a written reply into a 👍, and it gives silence a defined meaning. It costs the reader a decision they did not ask for, so it earns its place only on a question where the recommendation is genuinely strong.
 
+## DM mode
+
+Only when the user explicitly asks to DM someone. One person, one message.
+
+**Read their DM history first.** `slack_read_channel` with the person's `user_id` as `channel_id`,
+~60 messages. You are learning four things: the language, what the user calls them, what they call
+themselves, and the message length. Never guess a register you have not read.
+
+**Record what you learn** in `.claude/stakeholders.md` under that person, so the next DM does not
+re-derive it. A register learned and not written down is a register learned twice.
+
+**The shape changes.** A DM is a conversation, not a channel post, so the parent-plus-threaded-reply
+split does not apply and neither do its word caps. Send one message. Everything else holds: the
+situation once, bare questions, no justification, an example only where it grounds something, and
+one question per topic so each stays answerable on its own.
+
+**What survives from thread mode**
+- Bare questions. Ask only what that person can actually answer, per their persona.
+- A trailing default clause where the recommendation is genuinely strong.
+- No headings, no closing summary, no estimates.
+
+**What changes**
+- No `<@U...>` mention: it is a DM, they are the only reader.
+- Address them the way the user does, and refer to the user the way the user does.
+- Match the user's own language, not the skill's. If their DMs are not in English, the DM is not in
+  English either.
+- Keep technical vocabulary in the original language of the codebase, **nouns and verbs both**. A
+  mixed-language register borrows technical terms wholesale rather than translating them; translating
+  a technical verb is the tell that a machine wrote it.
+- Drop anything the reader cannot act on. If the user is informing rather than asking, one short
+  visibility line at the end covers the rest, and no question is manufactured for it.
+
+**Still show the whole message and wait for confirmation before sending.** The register is the part
+most likely to be wrong, and only the user can tell you.
+
 ## Flow
 
 1. **Group** the questions by owner, using the personas.
 2. **Draft** the parent and every threaded reply. Tailor each question to its owner's register. The parent stays in the plainest register both audiences read — the situation is one fact, and two descriptions of one fact drift apart.
 3. **Show the user the whole batch** as it will appear, with a word count per message. Nothing is sent before they confirm.
-4. **Post** the parent, then each reply against its `thread_ts`.
+4. **Post** the parent, then each reply against its `thread_ts`. In DM mode, send the single message to the person's `user_id`.
 5. **Return the permalinks**, one per question, so the caller can record each one beside its question in the source doc.
 
 More than five questions in one batch means the source is not ready. Say so instead of posting.
