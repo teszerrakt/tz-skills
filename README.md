@@ -1,9 +1,10 @@
 # tz-skills
 
-Personal Claude Code skills. Three families:
+Personal Claude Code skills:
 
 - **`fe-design-*`, `ask-stakeholders`, `estimate-effort`** — the frontend design-doc pipeline: chart it, ask the open questions, size the build tickets, clean up after.
 - **`address-review`, `spec-review`** — PR review handling: address the comments a review left, and check a change against the ticket that asked for it.
+- **`to-pr`** — drive one frontend ticket from tracker to draft PR.
 - **`standup`** — daily standup drafting.
 - **`setup-tz-skills`** — scaffold the per-repo config the skills above read.
 
@@ -30,10 +31,13 @@ The pipeline also calls the grilling and domain-modeling skills from the [mattpo
 | ----- | ------- |
 | `address-review` | "address review", "respond to CodeRabbit", PR triage |
 | `spec-review` | you type it — `/spec-review`, `/spec-review 650`, `/spec-review <branch>` |
+| `to-pr` | you type it — `/to-pr TRA-470` |
 
 `spec-review` judges a diff against one contract and nothing else. Every requirement of the ticket becomes a ledger row, and a row is met only with an anchor into the diff — a `file:line` the diff actually touched. Every change the ticket did not ask for is classed a **stray** (it blocks), **implied** (a named ADR or RFC requires it), or **ambiguous** (the reviewer quotes two readings of one ticket line, so the ticket is the defect, not the diff). The strays go to the PR and the ambiguities go to the ticket, each behind its own confirmation.
 
 It never reviews code quality — `/code-review` owns that axis — and it never fires on its own. See [ADR-0001](./docs/adr/0001-spec-review-owns-the-spec-axis-alone.md).
+
+`to-pr` drives a ticket to a **draft PR** and stops there. It owns the phase sequence, each delegate's brief, the gate between phases, and the aborts — every phase's judgment stays in the skill that already owns it, named by the repo's `## Delivery` config rather than hardcoded, which is what keeps the driver portable. Its one blocking gate sits before implementation: it diffs the ticket against the design and the code, settles what documented precedence settles, and asks only about the residue. Quality review is deliberately absent — CodeRabbit reviews the PR and `/address-review` works its comments; the spec axis is the one a bot cannot cover, because it never sees the ticket. Design and the measurements behind it: [docs/to-pr-design.md](./docs/to-pr-design.md).
 
 ### Productivity
 
