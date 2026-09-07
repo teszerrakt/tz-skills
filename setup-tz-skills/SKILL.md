@@ -17,7 +17,7 @@ This run installs nothing. Symlinking the skills happens first, through `bunx @t
 
 Detect first, ask second. A value a file already states is not a question.
 
-- `~/.claude/skills/` — which of `fe-design-map`, `ask-stakeholders`, `standup`, `estimate-effort` are installed. **Each installed skill adds one section. Each absent skill adds none.**
+- `~/.claude/skills/` — which of `fe-design-map`, `ask-stakeholders`, `standup`, `estimate-effort`, `spec-review` are installed. **Each installed skill adds one section. Each absent skill adds none.**
 - The available-skills list — is `mattpocock-skills:grilling` there, and `mattpocock-skills:domain-modeling`? `fe-design-map` runs both. The plugin name is part of the id, so match what the list shows.
 - `.claude/` — does it exist? Does it hold a `.gitignore`? Which config files exist already, and which sections does each hold?
 - `git remote -v` — the repo owner and the repo name.
@@ -41,6 +41,10 @@ Offer to seed the people from Slack. Given a named channel, list its members and
 **Section C — `standup`.** Read [references/config-standup.md](references/config-standup.md). Writes `.claude/standup.md`.
 
 **Section D — `estimate-effort`.** Create no file. `estimate-effort` decides to label its output **uncalibrated** by testing whether `.claude/estimate-calibration.md` exists. An empty stub makes the file exist, so the skill trusts a floor that no actual supports. Say the skill runs uncalibrated, and offer to derive the file from merged PRs and closed tickets as a separate run.
+
+**Section E — `spec-review`.** Read [references/config-review-exclusions.md](references/config-review-exclusions.md). Appends a `## Review exclusions` section to `.claude/fe-design-map.md`.
+
+This skill writes no file of its own. It reads the tracker, the ticket URL base, and the ADR and RFC paths from Section A. So when Section A is absent, write Section A first: `spec-review` cannot fetch a ticket without it.
 
 ### 3. Confirm
 
