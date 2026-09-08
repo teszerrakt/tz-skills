@@ -1,4 +1,4 @@
-# `/to-pr` — design
+# `/ship` — design
 
 Status: built, unrun. Decided 2026-09-07 in a grilling session against the
 evidence base in `/tmp/tra-470-handoff-implement-skill-design.md` (TRA-470, PR
@@ -7,7 +7,7 @@ frontend ticket by hand.
 
 ## What it is
 
-A **thin orchestrator**. `/to-pr TRA-470` drives a frontend ticket from tracker
+A **thin orchestrator**. `/ship TRA-470` drives a frontend ticket from tracker
 to draft pull request. It owns four things and nothing else:
 
 1. the phase sequence,
@@ -16,10 +16,16 @@ to draft pull request. It owns four things and nothing else:
 4. the abort rules.
 
 Every phase's judgment stays in the skill that already owns it. The orchestrator
-contributes no reviewing, no testing, and no screenshot knowledge of its own.
+contributes no reviewing, no testing, and no screenshot or recording knowledge
+of its own.
 
-The name is the stop rule: it ends at a **draft PR**, not at merge and not at
-deploy.
+It ends at a **draft PR**, not at merge and not at deploy.
+
+**The stop rule is stated, not named.** This was `/to-pr`, where the name itself
+carried the rule. `/ship` reads as merged-and-deployed, so the rule moved into
+the skill's opening line and into the non-goals below. Growing the scope to
+match the new name was the alternative and it contradicts a non-goal already
+here: chaining `/address-review` breaks that skill's own two-phase contract.
 
 ## Non-goals
 
@@ -31,7 +37,7 @@ deploy.
 - **Merging, deploying, or marking a PR ready for review.**
 - **Running the CodeRabbit loop.** `/address-review` owns that, and it is
   deliberately two-phase: it needs a human push between drafting fixes and
-  posting replies. Chaining it inside `/to-pr` would break its own contract.
+  posting replies. Chaining it inside `/ship` would break its own contract.
 - **A token budget.** The phase list fixes the cost; a mid-run budget cannot be
   enforced without the orchestrator polling its own spend.
 
@@ -75,16 +81,22 @@ silently dropped.
 
 | # | Phase | Owner | Blocks on |
 | --- | --- | --- | --- |
-| 0 | Bootstrap worktree | `/to-pr` | `npm ci` failure |
+| 0 | Bootstrap worktree | `/ship` | `npm ci` failure |
 | 1 | Intake | subagent | — |
-| 2 | Reconcile | `/to-pr` (main) | unresolved conflict — see below |
+| 2 | Reconcile | `/ship` (main) | unresolved conflict — see below |
 | 3 | Plan + reuse grep | `Explore` subagent | — |
-| 4 | Implement | `/to-pr` (main) | — |
+| 4 | Implement | `/ship` (main) | — |
 | 5 | Tests at the seam | config-named skill | — |
 | 6 | Spec review | `/spec-review` | verdict `BLOCK` |
 | 7 | Simplify | two agents, below | — |
 | 8 | Shots + assert | config-named skill | assert `FAIL` |
-| 9 | PR | `/to-pr` (main) | prose gate |
+| 8b | Verify live | config-named skill | step `FAIL`, or a claim with no wire line |
+| 9 | PR | `/ship` (main) | prose gate |
+
+Phase 8b is conditional: it runs when a ticket's acceptance turns on what the
+server sends and reports `SKIPPED` otherwise. It is a separate phase rather than
+a mode of 8 because its abort differs — 8 fails on a computed value that does
+not match a token, 8b on a claim the wire log does not support.
 
 Quality review is deliberately absent from this list. CodeRabbit reviews every
 PR for free, and `/address-review` works its comments. The one axis a bot cannot
@@ -311,7 +323,7 @@ in `$ARGUMENTS`; never rely on inheritance.
 ## Open items
 
 - Phase 8 is unproven end to end: `--assert` is verified against the TRA-470
-  totals stories, but no `/to-pr` run has driven it.
+  totals stories, but no `/ship` run has driven it.
 - TRA-470's acceptance criteria still say "No semantic colour in the totals
   block", which the merged code contradicts. Editing the ticket is the user's
   call.
@@ -319,7 +331,7 @@ in `$ARGUMENTS`; never rely on inheritance.
 
 ## Built
 
-- `to-pr/SKILL.md` — the orchestrator.
+- `ship/SKILL.md` — the orchestrator.
 - `agents/tz-simplify-reviewer.md`, `agents/tz-altitude-reviewer.md` — read-only
   reviewers for phase 7.
 - `bin/link.ts` — the symlinking both entry points share, now covering

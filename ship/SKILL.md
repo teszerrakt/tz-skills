@@ -1,22 +1,23 @@
 ---
-name: to-pr
+name: ship
 description: Drive one frontend ticket from tracker to draft PR.
 argument-hint: "TRA-XXX"
 disable-model-invocation: true
 ---
 
-# to-pr
+# ship
 
-Drive one frontend ticket to a **draft PR**. The name is the stop rule: no merge,
-no ready-for-review, no CodeRabbit loop. `/address-review` owns that loop and
-needs a human push mid-flight.
+Drive one frontend ticket to a **draft PR** and stop there. The name does not
+say so — this line does: no merge, no ready-for-review, no CodeRabbit loop.
+`/address-review` owns that loop and needs a human push mid-flight.
 
 This skill owns four things: the phase sequence, each delegate's **brief**, the
 **gate** between phases, and the **aborts**. Every phase's judgment stays in the
 skill that already owns it. Where the config names a skill, invoke it and read
-its report. Contribute no reviewing, no testing, and no screenshot knowledge here.
+its report. Contribute no reviewing, no testing, and no screenshot or recording
+knowledge here.
 
-Design and the measurements behind it: [`docs/to-pr-design.md`](../docs/to-pr-design.md).
+Design and the measurements behind it: [`docs/ship-design.md`](../docs/ship-design.md).
 
 ## Config
 
@@ -35,6 +36,8 @@ Write no new config file. Read, in this order:
 | Typecheck / Tests | the command, and the skill that decides what a test may assert |
 | Screenshots | the skill that owns shot selection |
 | Design assertion | the skill and flag that assert computed style against tokens |
+| Live verification | the skill and flag that record a flow against the real API |
+| Verification bundle | the branch and directory a recording's artifacts are committed to |
 | Token file | where a colour token resolves to its name |
 | PR prose gate | the command that validates the PR body |
 | PR body sections | the allowed headings, in order, and the caps |
@@ -223,16 +226,58 @@ the diff as confidently as a fresh one.
 Done when every state the change built has a shot, and every shot is `PASS`,
 `FAIL`, or `UNASSERTED` with a reason.
 
+### 8b. Verify live — only when the claim is about the wire
+
+**Runs when the ticket's acceptance turns on what the server sends**: a
+data-driven menu, a permission the API decides, an optimistic-lock version, a
+refetch that has to land before a count moves. Every other ticket reports
+`SKIPPED`, and the phase still appears in the report.
+
+Invoke the skill `## Delivery` names for live verification, forked. It drives a
+flow through the running app against the real API and answers with a recording,
+a wire log, and a verdict per step. A clip proves the flow works end to end, so
+take as many as the flow needs — one recording carrying three unrelated claims
+is worse than three recordings.
+
+**A claim in the body needs a line in the wire log.** That is what separates
+this from a demo: a reviewer checks "the app runs no capability check of its
+own" against a log showing the reasons came off the wire, not against footage
+they are asked to trust.
+
+Two rules the report lives by:
+
+- **A step with no expectation reports `UNOBSERVED`** — a third state beside
+  pass and fail, for the same reason an unasserted story is.
+- **The clip owns its path.** A state the recording walks through earns no
+  separate still from step 8; a state the flow never reaches still earns one,
+  and computed style stays step 8's job because no recording can prove it.
+
+The artifacts go to the branch and directory `## Delivery` names, never to the
+PR branch: `/spec-review` greps the diff for an anchor per criterion, and binary
+evidence is noise to that pass. **A run that mutated anything says so** — the
+ids it created, and what was not done to them. Financial data is never deleted,
+only reversed, so every row a recording creates is permanent.
+
+Done when every claim the body will make has a step behind it, and every step is
+`PASS`, `FAIL` or `UNOBSERVED` with a reason.
+
 ### 9. Open the draft PR
 
 Write the body to the sections `## Delivery` allows, in that order, carrying the
-shots from step 8, the step-2 decisions, and any `UNASSERTED` state.
+shots from step 8, any clip from step 8b, the step-2 decisions, and any
+`UNASSERTED` or `UNOBSERVED` state. The markdown for a shot and for a clip is
+printed by the skill that produced it; paste what it gives you.
 
-**Aim for 300 words. The prose gate's cap is not the budget.** That number is
-the p98 of the surface — a backstop for outliers, which the gate's own source
-says. Written to, it produces a body nobody reads, and an unread body fails at
-the only thing it is for. Two measured bodies came in at 1016 and 808 words and
-lost nothing at 335 and 300.
+**Aim for 300 words, or 550 with a live-verification section. The prose gate's
+cap is not the budget.** That number is the p98 of the surface — a backstop for
+outliers, which the gate's own source says. Written to, it produces a body
+nobody reads, and an unread body fails at the only thing it is for. Two measured
+bodies came in at 1016 and 808 words and lost nothing at 335 and 300.
+
+A recorded body runs longer for a reason that is not padding: each clip costs a
+caption, and the section costs a pointer to the wire log. One measured at 551
+with nothing to cut. Trimming a caption to reach 300 makes the clip *less*
+likely to be played, which is the failure the aim exists to prevent.
 
 Plain words, too. The same rule as a question: name what changed and what a
 reader would see, not the reasoning that got there. The reasoning belongs in the
@@ -257,6 +302,7 @@ Each stops the run with a report and **no PR**:
 | 2 | Typecheck or tests still failing after two self-fix attempts |
 | 3 | `/spec-review` returns `BLOCK` |
 | 4 | An assert `FAIL` that survives the expectation re-check |
+| 5 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
 
 Token spend is not an abort condition. The phase list fixes the cost, and a
 running orchestrator cannot measure its own spend.
