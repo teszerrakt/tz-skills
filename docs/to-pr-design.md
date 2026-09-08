@@ -127,6 +127,21 @@ about the residue:
 Write nothing until the residue is answered. If the residue is empty, continue
 unattended.
 
+**The residue is asked as a `❓` table in plain words, at the top of the reply.**
+The earlier design printed it as a JSONC block keyed by field name, which is the
+wrong artefact for the one step in this skill that stops and waits for a person:
+a reader who has to decode `{"field": "IDR decimal_places", "rule": null}` to
+find out they are being asked something usually does not find out at all. The
+measured failure is real — questions asked at the end of a long report were
+scrolled past twice in one session, and the same run had a question re-asked in
+plain words twice before it could be answered.
+
+So the table states what a person would see differently under each answer, and
+nothing else. Field names, file paths and the precedence rule that failed to
+cover the conflict go on a line underneath it, tagged with the row's number. The
+evidence is still required; it is just not what the reader has to parse to
+notice the question.
+
 Record every gate decision in the **commit message and the PR body**. Never edit
 the acceptance criteria. `/spec-review` builds a ledger row per criterion and
 demands an anchor; a skill that rewrites the criteria to match what it built

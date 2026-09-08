@@ -25,7 +25,7 @@ Write no new config file. Read, in this order:
 1. `.claude/fe-design-map.md` — the tracker prefix, the ticket URL base, the ADR
    and RFC paths, the Figma file, `## Sources`, and the `## Delivery` section.
 2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-3. Ask the user for what neither file states.
+3. Ask the user for what neither file states, as a **questions table** (CONTEXT.md).
 
 `## Delivery` names the project's half of every phase:
 
@@ -102,25 +102,26 @@ most conflicts — a rule that says the design file wins over ticket prose resol
 every colour and spacing disagreement without asking anyone. What survives
 precedence is the **residue**.
 
-Put the residue to the user and write nothing until it is answered:
+Put the residue to the user as a `❓` table and write nothing until it is
+answered. One row per question, in plain words, at the top of the reply:
 
-```jsonc
-[
-  { "id": "C1", "field": "IDR decimal_places",
-    "ticket": "0",
-    "code":   "gl/migrations/58_create_currencies.up.sql seeds 2",
-    "rule":   null,                       // no precedence covers this — ask
-    "question": "Which wins?" },
-  { "id": "C2", "field": "totals block colour",
-    "ticket": "no semantic colour",
-    "design": "PPN danger-text, PPh success-text",
-    "rule":   "live-verification.md: the design file wins over ticket prose",
-    "resolved": "design"                  // settled by rule — do not ask
-  }
-]
-```
+| ❓ | Question | What each answer changes |
+|---|---|---|
+| ❓1 | Should an amount in rupiah show decimal places? | **No** — figures read `82.850.000`, which is how the ticket writes them and how rupiah is written in practice. **Yes** — they read `82.850.000,00`, which is what the currency master seeds and what every other screen reading that master will show. |
 
-An empty residue continues the run unattended.
+**No field names, no file paths and no jargon inside the table.** Say what a
+person would see differently under each answer. The evidence — which document
+says what, and where — goes on a line *underneath*, tagged with the row number:
+
+- **❓1** — ticket says `decimal_places = 0`; `gl/migrations/58_create_currencies.up.sql` seeds `2`. No precedence rule covers a ticket-versus-migration conflict.
+
+A conflict a precedence rule already settles is **not** a row. It is resolved
+silently and recorded with its rule, the way "ticket says no semantic colour,
+the design file paints one" is settled by "the design file wins over ticket
+prose". Putting a settled conflict in the table trains the reader to skim it.
+
+An empty residue continues the run unattended, and writes no table — an empty
+`❓` table trains the reader to ignore the marker.
 
 Record every decision, rule-settled and asked alike, in the **commit message and
 the PR body**. Not on the ticket: a tracker comment goes unread, and posting one

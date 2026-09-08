@@ -14,6 +14,10 @@ _Avoid_: cache, scratch dir, workspace
 A file of runnable checks, written before the work starts, that decides whether the work is done. A ticked box with no evidence is unmet.
 _Avoid_: checklist, definition of done
 
+**Questions table**:
+The one shape a skill uses to ask a human anything: a table whose first column is `❓`, one row per question, placed at the top of the reply. Each row says what a person would see differently under each answer, in plain words — no field names, no file paths, no review vocabulary. Evidence goes on a line underneath, tagged with the row's number. A question written as prose, or as a data structure, or placed after the explanation, is a question that goes unread; that is measured, not assumed. Never write an empty one.
+_Avoid_: open questions section, clarifications, blockers list
+
 **Build ticket**:
 A tracker issue that one coding session implements.
 _Avoid_: task, story, work item

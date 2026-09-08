@@ -16,7 +16,7 @@ This skill does not review code quality. `/code-review` (CodeRabbit) owns that a
 
 ## Vocabulary
 
-The terms below are defined in [CONTEXT.md](https://github.com/teszerrakt/tz-skills/blob/main/CONTEXT.md): **contract**, **ledger row**, **prohibition row**, **anchor**, **stray**, **implied**, **ambiguous**, **declared deferral**, **verdict**.
+The terms below are defined in [CONTEXT.md](https://github.com/teszerrakt/tz-skills/blob/main/CONTEXT.md): **contract**, **ledger row**, **prohibition row**, **anchor**, **stray**, **implied**, **ambiguous**, **declared deferral**, **verdict**, **questions table**.
 
 ## Config
 
@@ -24,7 +24,7 @@ Write no new config file. Read, in this order:
 
 1. `.claude/fe-design-map.md` — the tracker, the team prefix, the ticket URL base, the ADR and RFC paths, the docs platform, and the `## Review exclusions` section.
 2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-3. Ask the user for what neither file states.
+3. Ask the user for what neither file states, as a **questions table** (CONTEXT.md).
 
 A missing `## Review exclusions` section is not a blocker. Fall back to the defaults in step 4, name the fallback in the report, and offer `/setup-tz-skills` once.
 
@@ -78,7 +78,7 @@ A ticket in prose is normal. Convert it to rows, and **quote on every row**. A r
 
 A **prohibition row** is a first-class row. A prose ticket states what the diff must not do more often than an AC list does.
 
-Print the rows and wait for the user to correct them. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix.
+Print the rows and wait for the user to correct them, under a `❓` row saying that is what you are waiting for. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix — and a paraphrase printed without a visible question reads as a statement and goes unchecked.
 
 For a PR that declares several tickets, build one ledger per ticket.
 
@@ -181,16 +181,28 @@ Write the report to the scratchpad, never into the repo. It is session output.
 | S-3 | the empty branch returns early | AMBIGUOUS | A: "handle no rows" = render nothing. B: = render the empty state. |
 ```
 
-### 8. Offer the PR post, and raise the rest in conversation
+Those two tables are the record. **They are not how a question reaches the user** — see step 8.
 
-Never post anywhere automatically. The two classes go to different audiences.
+### 8. The questions table first, then offer the PR post
+
+Never post anywhere automatically. The findings split by audience, and one half is a question rather than feedback.
+
+**Lead the reply with a `❓` table.** Every `AMBIGUOUS` row, every `MISSING` row the user must rule on, one row each, at the top — before the ledger, before the prose. A question that arrives after the explanation reads as part of the explanation and gets scrolled past.
+
+| ❓ | Question | What each answer changes |
+|---|---|---|
+| ❓1 | When a list comes back empty, should the page show nothing at all, or a "no results" message? | **Nothing** — the area stays blank, matching what the ticket's wording implies. **A message** — the reader is told the search worked and found none, which is what the design frame draws. |
+
+**Plain words inside that table.** No field names, no file paths, no `AMBIGUOUS`/`STRAY`/`MISSING`. Say what a person would see differently under each answer. The row's file, class and both quoted readings go on a line *underneath* the table, tagged with the row number — a reader who cannot picture the choice cannot make it, and deciding it is the only reason the row exists.
+
+Then, and only then:
 
 - **To the PR** — the `MISSING` rows and the `STRAY` rows. These are feedback on the diff. Offer it and take one confirmation.
   ```bash
   gh pr comment <n> --body-file <report>
   ```
-- **To the user, here** — the `AMBIGUOUS` rows, each with both readings and the question. **Do not post these to the ticket**, and do not offer to: a tracker comment goes unread, and the routing is the user's call — answered in conversation and fixed in the branch, or raised as an open question on a *new* ticket, never on the one about to close.
+- **Never to the ticket**, and do not offer to: a tracker comment goes unread, and the routing is the user's call — answered in conversation and fixed in the branch, or raised as an open question on a *new* ticket, never on the one about to close.
 
 An `AMBIGUOUS` row on the PR blames the author for the ticket's defect. Keep the split.
 
-**State each `AMBIGUOUS` row in plain words before its vocabulary.** Name what a person would see differently under each reading, then the file and the class. A row a reader cannot picture cannot be decided, and deciding it is the only reason the row exists.
+Write no `❓` table when nothing needs deciding. An empty one trains the reader to ignore the marker.
