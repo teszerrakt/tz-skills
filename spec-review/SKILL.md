@@ -187,13 +187,15 @@ Those two tables are the record. **They are not how a question reaches the user*
 
 Never post anywhere automatically. The findings split by audience, and one half is a question rather than feedback.
 
-**Lead the reply with a `❓` table.** Every `AMBIGUOUS` row, every `MISSING` row the user must rule on, one row each, at the top — before the ledger, before the prose. A question that arrives after the explanation reads as part of the explanation and gets scrolled past.
+**Lead the reply with a questions table** (CONTEXT.md). Every `AMBIGUOUS` row, and every `MISSING` row the user must rule on, one row each — before the ledger, before the prose. A question after the explanation reads as part of it and gets scrolled past.
 
-| ❓ | Question | What each answer changes |
-|---|---|---|
-| ❓1 | When a list comes back empty, should the page show nothing at all, or a "no results" message? | **Nothing** — the area stays blank, matching what the ticket's wording implies. **A message** — the reader is told the search worked and found none, which is what the design frame draws. |
+| ❓ | Question | What each answer changes | ➡️ |
+|---|---|---|---|
+| **Q1** | On an empty list, show nothing or "no results"? | **Nothing** — blank area, as the ticket's wording implies. **Message** — says the search found none, as the frame draws. | Message — the frame is the later word |
 
-**Plain words inside that table.** No field names, no file paths, no `AMBIGUOUS`/`STRAY`/`MISSING`. Say what a person would see differently under each answer. The row's file, class and both quoted readings go on a line *underneath* the table, tagged with the row number — a reader who cannot picture the choice cannot make it, and deciding it is the only reason the row exists.
+- **Q1** — `table.tsx:88`. Ticket: "handle no rows". Reading A: render nothing. Reading B: render the empty state.
+
+Plain and short both bind, and the caps are in the term. A reader who cannot picture the choice at a glance cannot make it, and deciding it is the only reason the row exists.
 
 Then, and only then:
 

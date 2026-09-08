@@ -15,7 +15,7 @@ A file of runnable checks, written before the work starts, that decides whether 
 _Avoid_: checklist, definition of done
 
 **Questions table**:
-The one shape a skill uses to ask a human anything: a table whose first column is `❓`, one row per question, placed at the top of the reply. Each row says what a person would see differently under each answer, in plain words — no field names, no file paths, no review vocabulary. Evidence goes on a line underneath, tagged with the row's number. A question written as prose, or as a data structure, or placed after the explanation, is a question that goes unread; that is measured, not assumed. Never write an empty one.
+The one shape a skill uses to ask a human anything: a table whose first column is `❓`, one row per question, at the top of the reply, rows labelled `Q1`, `Q2` — the labels `/grilling` already uses. Each row says what a person would see differently under each answer, in plain words, and ends in a `➡️` column carrying a recommendation. No field names, no file paths, no review vocabulary. **Plain and short both bind**: question under 15 words, each answer under 15 words, at most 4 rows. Evidence goes on a line underneath, tagged with the row's label, holding only what the answer turns on. A question written as prose, as a data structure, or after the explanation goes unread; so does one padded past a glance, and so does one that makes the reader weigh options the asker would not commit to. All three are measured, not assumed. Never write an empty one.
 _Avoid_: open questions section, clarifications, blockers list
 
 **Build ticket**:

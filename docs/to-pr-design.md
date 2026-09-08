@@ -127,20 +127,24 @@ about the residue:
 Write nothing until the residue is answered. If the residue is empty, continue
 unattended.
 
-**The residue is asked as a `❓` table in plain words, at the top of the reply.**
-The earlier design printed it as a JSONC block keyed by field name, which is the
-wrong artefact for the one step in this skill that stops and waits for a person:
-a reader who has to decode `{"field": "IDR decimal_places", "rule": null}` to
-find out they are being asked something usually does not find out at all. The
-measured failure is real — questions asked at the end of a long report were
-scrolled past twice in one session, and the same run had a question re-asked in
-plain words twice before it could be answered.
+**The residue is asked as a questions table**, defined in `CONTEXT.md`. The
+earlier design printed it as a JSONC block keyed by field name — the wrong
+artefact for the one step here that stops and waits for a person. A reader who
+must decode `{"field": "IDR decimal_places", "rule": null}` to learn they are
+being asked something usually does not learn it.
 
-So the table states what a person would see differently under each answer, and
-nothing else. Field names, file paths and the precedence rule that failed to
-cover the conflict go on a line underneath it, tagged with the row's number. The
-evidence is still required; it is just not what the reader has to parse to
-notice the question.
+Two failures were measured on one run, not one. Questions placed after a long
+report were scrolled past twice. Then the same questions, rewritten in plain
+words, were **still** too long to answer at a glance and had to be asked again.
+So the term caps length as well as vocabulary: under 15 words a cell, at most
+four rows, evidence underneath. Plain and short are one requirement, and fixing
+only the first buys nothing.
+
+It also borrows `/grilling`'s shape rather than inventing one — `Q1` labels and
+a `➡️` recommendation per row. Two reasons. The labels read the same wherever a
+question appears, and a recommendation converts the reader's job from weighing
+options they have not seen into a yes or a correction. A skill that asks without
+recommending has offloaded its own judgment.
 
 Record every gate decision in the **commit message and the PR body**. Never edit
 the acceptance criteria. `/spec-review` builds a ledger row per criterion and
