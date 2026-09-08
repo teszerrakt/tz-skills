@@ -226,7 +226,17 @@ Done when every state the change built has a shot, and every shot is `PASS`,
 ### 9. Open the draft PR
 
 Write the body to the sections `## Delivery` allows, in that order, carrying the
-shot table from step 8, the step-2 decisions, and any `UNASSERTED` state.
+shots from step 8, the step-2 decisions, and any `UNASSERTED` state.
+
+**Aim for 300 words. The prose gate's cap is not the budget.** That number is
+the p98 of the surface — a backstop for outliers, which the gate's own source
+says. Written to, it produces a body nobody reads, and an unread body fails at
+the only thing it is for. Two measured bodies came in at 1016 and 808 words and
+lost nothing at 335 and 300.
+
+Plain words, too. The same rule as a question: name what changed and what a
+reader would see, not the reasoning that got there. The reasoning belongs in the
+commit messages, which is where a reviewer goes for it.
 
 Run the prose gate. Then write the body through the config's write path and
 **read the body back to prove it changed** — a write can report success and
