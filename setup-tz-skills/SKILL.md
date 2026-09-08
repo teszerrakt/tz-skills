@@ -17,14 +17,14 @@ This run installs nothing. Symlinking the skills happens first, through `bunx @t
 
 Detect first, ask second. A value a file already states is not a question.
 
-- `~/.claude/skills/` — which of `fe-design-map`, `ask-stakeholders`, `standup`, `estimate-effort`, `spec-review`, `to-pr` are installed. **Each installed skill adds one section. Each absent skill adds none.**
+- `~/.claude/skills/` — which of `fe-design-map`, `ask-stakeholders`, `standup`, `estimate-effort`, `spec-review`, `ship` are installed. **Each installed skill adds one section. Each absent skill adds none.**
 - The available-skills list — is `mattpocock-skills:grilling` there, and `mattpocock-skills:domain-modeling`? `fe-design-map` runs both. The plugin name is part of the id, so match what the list shows.
 - `.claude/` — does it exist? Does it hold a `.gitignore`? Which config files exist already, and which sections does each hold?
 - `git remote -v` — the repo owner and the repo name.
 - A staging-token command — a `Makefile` target or a `package.json` script. Search for `token`.
 - `docs/adr/` and `docs/rfc/` — the design-doc directories.
 - The shared UI package — a `packages/*` directory that holds component primitives.
-- `.claude/skills/` — the repo-scoped skills a driven run delegates to. A screenshot skill and a test-policy skill are the two `to-pr` asks for by name.
+- `.claude/skills/` — the repo-scoped skills a driven run delegates to. A screenshot skill and a test-policy skill are the two `ship` asks for by name.
 - The typecheck command — the task runner's config, then the app's own `package.json`. An app declaring no `typecheck` script typechecks through `build`.
 - Monorepo signals — `pnpm-workspace.yaml`, a `workspaces` field, or a populated `packages/*`.
 
@@ -48,9 +48,9 @@ Offer to seed the people from Slack. Given a named channel, list its members and
 
 This skill writes no file of its own. It reads the tracker, the ticket URL base, and the ADR and RFC paths from Section A. So when Section A is absent, write Section A first: `spec-review` cannot fetch a ticket without it.
 
-**Section F — `to-pr`.** Read [references/config-delivery.md](references/config-delivery.md). Appends a `## Delivery` section to `.claude/fe-design-map.md`.
+**Section F — `ship`.** Read [references/config-delivery.md](references/config-delivery.md). Appends a `## Delivery` section to `.claude/fe-design-map.md`.
 
-Like Section E it writes no file of its own, and it depends on Section A the same way. It also depends on Section E: `to-pr` runs `spec-review` as one of its phases, so a repo with `## Delivery` and no `## Review exclusions` has a driver whose review phase falls back to defaults.
+Like Section E it writes no file of its own, and it depends on Section A the same way. It also depends on Section E: `ship` runs `spec-review` as one of its phases, so a repo with `## Delivery` and no `## Review exclusions` has a driver whose review phase falls back to defaults.
 
 ### 3. Confirm
 
