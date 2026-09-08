@@ -122,13 +122,21 @@ Put the residue to the user and write nothing until it is answered:
 
 An empty residue continues the run unattended.
 
-Record every decision, rule-settled and asked alike, as a **comment on the
-ticket**. The acceptance criteria stay exactly as written: `/spec-review` builds
-one ledger row per criterion and demands an anchor, so criteria edited to match
-what was built make every row pass by construction. A comment is append-only and
-is itself an anchor.
+Record every decision, rule-settled and asked alike, in the **commit message and
+the PR body**. Not on the ticket: a tracker comment goes unread, and posting one
+unprompted is refused by the user's own standing preference.
 
-Done when the residue is empty and the comment is posted.
+The acceptance criteria stay exactly as written, wherever the record lands.
+`/spec-review` builds one ledger row per criterion and demands an anchor, so
+criteria edited to match what was built make every row pass by construction. A
+commit is append-only and is itself an anchor.
+
+**A criterion the build departs from is reported, never quietly reconciled.**
+Say so in the PR body, in its own paragraph, naming the criterion and what
+replaced it — that is the one place a reviewer looks for it.
+
+Done when the residue is empty and every decision has a home in the commits or
+the body.
 
 ### 3. Plan, and grep for reuse before writing
 

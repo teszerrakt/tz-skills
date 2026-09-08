@@ -1,7 +1,6 @@
 ---
 name: spec-review
 description: Adversarially review a branch or PR against its ticket and spec. Every acceptance criterion becomes a ledger row that needs an anchor in the diff, and every unasked change is classed as a stray, an implied change, or the symptom of an ambiguous ticket. Use when the user asks whether a change did what its ticket asked and nothing else, or asks to review a branch or PR for scope creep.
-disable-model-invocation: true
 ---
 
 # spec-review
@@ -182,15 +181,16 @@ Write the report to the scratchpad, never into the repo. It is session output.
 | S-3 | the empty branch returns early | AMBIGUOUS | A: "handle no rows" = render nothing. B: = render the empty state. |
 ```
 
-### 8. Offer the two posts
+### 8. Offer the PR post, and raise the rest in conversation
 
-Never post automatically. The two classes belong in different places, so offer them separately and take one confirmation each.
+Never post anywhere automatically. The two classes go to different audiences.
 
-- **To the PR** — the `MISSING` rows and the `STRAY` rows. These are feedback on the diff.
+- **To the PR** — the `MISSING` rows and the `STRAY` rows. These are feedback on the diff. Offer it and take one confirmation.
   ```bash
   gh pr comment <n> --body-file <report>
   ```
-- **To the ticket** — the `AMBIGUOUS` rows, each with both readings and the question. These are feedback on the ticket.
-  `mcp__claude_ai_Linear__save_comment` with the issue id.
+- **To the user, here** — the `AMBIGUOUS` rows, each with both readings and the question. **Do not post these to the ticket**, and do not offer to: a tracker comment goes unread, and the routing is the user's call — answered in conversation and fixed in the branch, or raised as an open question on a *new* ticket, never on the one about to close.
 
 An `AMBIGUOUS` row on the PR blames the author for the ticket's defect. Keep the split.
+
+**State each `AMBIGUOUS` row in plain words before its vocabulary.** Name what a person would see differently under each reading, then the file and the class. A row a reader cannot picture cannot be decided, and deciding it is the only reason the row exists.

@@ -127,11 +127,28 @@ about the residue:
 Write nothing until the residue is answered. If the residue is empty, continue
 unattended.
 
-Record every gate decision as a **comment on the ticket**. Never edit the
-acceptance criteria. `/spec-review` builds a ledger row per criterion and demands
-an anchor; a skill that rewrites the criteria to match what it built makes every
-row pass by construction and the review worthless. A comment is append-only and
-is itself an anchorable artifact.
+Record every gate decision in the **commit message and the PR body**. Never edit
+the acceptance criteria. `/spec-review` builds a ledger row per criterion and
+demands an anchor; a skill that rewrites the criteria to match what it built
+makes every row pass by construction and the review worthless. A commit is
+append-only and is itself an anchorable artifact.
+
+**Not a comment on the ticket, which was the original design and was wrong on
+two counts.** The first is empirical: the author of these skills does not read
+ticket comments, so a decision recorded there is recorded nowhere a human will
+see it. The second is that it put the routing in the skill's hands. A decision
+that needs a person needs *that person* to choose where it goes — answered in
+conversation and fixed in the branch, or raised as an open question on a **new**
+ticket, since the current one is about to close. A skill cannot make that call,
+so it must not pre-empt it by posting.
+
+The anchor argument survives intact: a commit message is as append-only as a
+comment and sits closer to the diff a reviewer is reading.
+
+**A criterion the build departs from is reported, never quietly reconciled.** It
+gets its own paragraph in the PR body, naming the criterion and what replaced
+it. This is the case the gate exists to surface, and burying it in prose about
+what was built is how it goes unnoticed.
 
 ### Phase 3 — reuse moves to plan time
 
