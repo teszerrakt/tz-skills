@@ -25,7 +25,7 @@ Write no new config file. Read, in this order:
 1. `.claude/fe-design-map.md` — the tracker prefix, the ticket URL base, the ADR
    and RFC paths, the Figma file, `## Sources`, and the `## Delivery` section.
 2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-3. Ask the user for what neither file states, as a **questions table** (CONTEXT.md).
+3. Ask the user for what neither file states, as a **questions section** (CONTEXT.md).
 
 `## Delivery` names the project's half of every phase:
 
@@ -102,20 +102,28 @@ most conflicts — a rule that says the design file wins over ticket prose resol
 every colour and spacing disagreement without asking anyone. What survives
 precedence is the **residue**.
 
-Put the residue to the user as a **questions table** (CONTEXT.md) and write
+Put the residue to the user as a **questions section** (CONTEXT.md) and write
 nothing until it is answered:
 
-| ❓ | Question | What each answer changes | ➡️ |
-|---|---|---|---|
-| **Q1** | Show decimals on a rupiah amount? | **No** — reads `82.850.000`, as the ticket writes it. **Yes** — reads `82.850.000,00`, as the master seeds it. | Yes — the master owns this |
+```markdown
+## ❓ Needs your call
 
-- **Q1** — ticket says `decimal_places = 0`; `migrations/58_create_currencies.up.sql` seeds `2`. No precedence rule covers ticket-versus-migration.
+**Q1 — Show decimals on a rupiah amount?**
 
-Plain and short both bind — the caps are in the term. A conflict a precedence
-rule already settles is **not** a row: resolve it silently and record it with
-its rule. A settled conflict in the table trains the reader to skim it.
+- **No** — reads `82.850.000`, as the ticket writes it
+- **Yes** — reads `82.850.000,00`, as the currency master seeds it
 
-An empty residue continues the run unattended and writes no table.
+✨ **Yes** — the master owns this
+
+Asked because: the ticket says 0 places, the currency migration seeds 2. No precedence rule covers ticket-versus-migration.
+```
+
+The caps are in the term, and so is the reason it is not a table. A conflict a
+precedence rule already settles is **not** a question: resolve it silently and
+record it with its rule. A settled conflict in the section trains the reader to
+skim it.
+
+An empty residue continues the run unattended and writes no section.
 
 Record every decision, rule-settled and asked alike, in the **commit message and
 the PR body**. Not on the ticket: a tracker comment goes unread, and posting one

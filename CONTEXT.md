@@ -14,9 +14,13 @@ _Avoid_: cache, scratch dir, workspace
 A file of runnable checks, written before the work starts, that decides whether the work is done. A ticked box with no evidence is unmet.
 _Avoid_: checklist, definition of done
 
-**Questions table**:
-The one shape a skill uses to ask a human anything: a table whose first column is `❓`, one row per question, at the top of the reply, rows labelled `Q1`, `Q2` — the labels `/grilling` already uses. Each row says what a person would see differently under each answer, in plain words, and ends in a `➡️` column carrying a recommendation. No field names, no file paths, no review vocabulary. **Plain and short both bind**: question under 15 words, each answer under 15 words, at most 4 rows. Evidence goes on a line underneath, tagged with the row's label, holding only what the answer turns on. A question written as prose, as a data structure, or after the explanation goes unread; so does one padded past a glance, and so does one that makes the reader weigh options the asker would not commit to. All three are measured, not assumed. Never write an empty one.
-_Avoid_: open questions section, clarifications, blockers list
+**Questions section**:
+The one shape a skill uses to ask a human anything: its own section at the top of the reply, under a `❓` heading, holding one block per question. A block is the question in under 15 words, then **one option per bullet** — the choice bolded, then what a person would see, under 15 words each — then a `✨` line recommending one, then a single `Asked because:` line carrying only what the answer turns on. Questions are labelled `Q1`, `Q2`, the labels `/grilling` already uses. At most four. No field names, no file paths, no review vocabulary.
+
+**Not a table.** A terminal renders `<br>` literally, so a table cell cannot hold one option per line, and options crammed onto one line are the failure this shape exists to fix.
+
+Four ways a question goes unread, all measured rather than assumed: written as prose, written as a data structure, placed after the explanation, or padded past a glance. A fifth wastes the reader instead: asking without recommending, which offloads the asker's own judgment. Never write an empty one.
+_Avoid_: questions table, open questions section, clarifications, blockers list
 
 **Build ticket**:
 A tracker issue that one coding session implements.

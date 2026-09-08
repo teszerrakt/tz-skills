@@ -127,7 +127,7 @@ about the residue:
 Write nothing until the residue is answered. If the residue is empty, continue
 unattended.
 
-**The residue is asked as a questions table**, defined in `CONTEXT.md`. The
+**The residue is asked as a questions section**, defined in `CONTEXT.md`. The
 earlier design printed it as a JSONC block keyed by field name — the wrong
 artefact for the one step here that stops and waits for a person. A reader who
 must decode `{"field": "IDR decimal_places", "rule": null}` to learn they are
@@ -140,11 +140,17 @@ So the term caps length as well as vocabulary: under 15 words a cell, at most
 four rows, evidence underneath. Plain and short are one requirement, and fixing
 only the first buys nothing.
 
-It also borrows `/grilling`'s shape rather than inventing one — `Q1` labels and
-a `➡️` recommendation per row. Two reasons. The labels read the same wherever a
-question appears, and a recommendation converts the reader's job from weighing
-options they have not seen into a yes or a correction. A skill that asks without
-recommending has offloaded its own judgment.
+A third failure killed the table outright: a terminal renders `<br>` literally,
+so a cell cannot put one option on each line, and options crammed onto one line
+were unreadable in exactly the way the format was meant to fix. Hence a section
+with one bullet per option.
+
+It borrows `/grilling`'s labels rather than inventing any — `Q1`, `Q2`, so a
+question reads the same wherever it appears — and carries a `✨` recommendation
+per question. The recommendation is the part doing real work: it converts the
+reader's job from weighing options they have not seen into a yes or a
+correction. A skill that asks without recommending has offloaded its own
+judgment.
 
 Record every gate decision in the **commit message and the PR body**. Never edit
 the acceptance criteria. `/spec-review` builds a ledger row per criterion and
