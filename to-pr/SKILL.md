@@ -25,7 +25,7 @@ Write no new config file. Read, in this order:
 1. `.claude/fe-design-map.md` — the tracker prefix, the ticket URL base, the ADR
    and RFC paths, the Figma file, `## Sources`, and the `## Delivery` section.
 2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-3. Ask the user for what neither file states.
+3. Ask the user for what neither file states, as a **questions section** (CONTEXT.md).
 
 `## Delivery` names the project's half of every phase:
 
@@ -102,33 +102,44 @@ most conflicts — a rule that says the design file wins over ticket prose resol
 every colour and spacing disagreement without asking anyone. What survives
 precedence is the **residue**.
 
-Put the residue to the user and write nothing until it is answered:
+Put the residue to the user as a **questions section** (CONTEXT.md) and write
+nothing until it is answered:
 
-```jsonc
-[
-  { "id": "C1", "field": "IDR decimal_places",
-    "ticket": "0",
-    "code":   "gl/migrations/58_create_currencies.up.sql seeds 2",
-    "rule":   null,                       // no precedence covers this — ask
-    "question": "Which wins?" },
-  { "id": "C2", "field": "totals block colour",
-    "ticket": "no semantic colour",
-    "design": "PPN danger-text, PPh success-text",
-    "rule":   "live-verification.md: the design file wins over ticket prose",
-    "resolved": "design"                  // settled by rule — do not ask
-  }
-]
+```markdown
+## ❓ Needs your call
+
+**Q1 — Show decimals on a rupiah amount?**
+
+- **No** — reads `82.850.000`, as the ticket writes it
+- **Yes** — reads `82.850.000,00`, as the currency master seeds it
+
+✨ **Yes** — the master owns this
+
+Asked because: the ticket says 0 places, the currency migration seeds 2. No precedence rule covers ticket-versus-migration.
 ```
 
-An empty residue continues the run unattended.
+The caps are in the term, and so is the reason it is not a table. A conflict a
+precedence rule already settles is **not** a question: resolve it silently and
+record it with its rule. A settled conflict in the section trains the reader to
+skim it.
 
-Record every decision, rule-settled and asked alike, as a **comment on the
-ticket**. The acceptance criteria stay exactly as written: `/spec-review` builds
-one ledger row per criterion and demands an anchor, so criteria edited to match
-what was built make every row pass by construction. A comment is append-only and
-is itself an anchor.
+An empty residue continues the run unattended and writes no section.
 
-Done when the residue is empty and the comment is posted.
+Record every decision, rule-settled and asked alike, in the **commit message and
+the PR body**. Not on the ticket: a tracker comment goes unread, and posting one
+unprompted is refused by the user's own standing preference.
+
+The acceptance criteria stay exactly as written, wherever the record lands.
+`/spec-review` builds one ledger row per criterion and demands an anchor, so
+criteria edited to match what was built make every row pass by construction. A
+commit is append-only and is itself an anchor.
+
+**A criterion the build departs from is reported, never quietly reconciled.**
+Say so in the PR body, in its own paragraph, naming the criterion and what
+replaced it — that is the one place a reviewer looks for it.
+
+Done when the residue is empty and every decision has a home in the commits or
+the body.
 
 ### 3. Plan, and grep for reuse before writing
 

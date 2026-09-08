@@ -127,11 +127,53 @@ about the residue:
 Write nothing until the residue is answered. If the residue is empty, continue
 unattended.
 
-Record every gate decision as a **comment on the ticket**. Never edit the
-acceptance criteria. `/spec-review` builds a ledger row per criterion and demands
-an anchor; a skill that rewrites the criteria to match what it built makes every
-row pass by construction and the review worthless. A comment is append-only and
-is itself an anchorable artifact.
+**The residue is asked as a questions section**, defined in `CONTEXT.md`. The
+earlier design printed it as a JSONC block keyed by field name — the wrong
+artefact for the one step here that stops and waits for a person. A reader who
+must decode `{"field": "IDR decimal_places", "rule": null}` to learn they are
+being asked something usually does not learn it.
+
+Two failures were measured on one run, not one. Questions placed after a long
+report were scrolled past twice. Then the same questions, rewritten in plain
+words, were **still** too long to answer at a glance and had to be asked again.
+So the term caps length as well as vocabulary: under 15 words a cell, at most
+four rows, evidence underneath. Plain and short are one requirement, and fixing
+only the first buys nothing.
+
+A third failure killed the table outright: a terminal renders `<br>` literally,
+so a cell cannot put one option on each line, and options crammed onto one line
+were unreadable in exactly the way the format was meant to fix. Hence a section
+with one bullet per option.
+
+It borrows `/grilling`'s labels rather than inventing any — `Q1`, `Q2`, so a
+question reads the same wherever it appears — and carries a `✨` recommendation
+per question. The recommendation is the part doing real work: it converts the
+reader's job from weighing options they have not seen into a yes or a
+correction. A skill that asks without recommending has offloaded its own
+judgment.
+
+Record every gate decision in the **commit message and the PR body**. Never edit
+the acceptance criteria. `/spec-review` builds a ledger row per criterion and
+demands an anchor; a skill that rewrites the criteria to match what it built
+makes every row pass by construction and the review worthless. A commit is
+append-only and is itself an anchorable artifact.
+
+**Not a comment on the ticket, which was the original design and was wrong on
+two counts.** The first is empirical: the author of these skills does not read
+ticket comments, so a decision recorded there is recorded nowhere a human will
+see it. The second is that it put the routing in the skill's hands. A decision
+that needs a person needs *that person* to choose where it goes — answered in
+conversation and fixed in the branch, or raised as an open question on a **new**
+ticket, since the current one is about to close. A skill cannot make that call,
+so it must not pre-empt it by posting.
+
+The anchor argument survives intact: a commit message is as append-only as a
+comment and sits closer to the diff a reviewer is reading.
+
+**A criterion the build departs from is reported, never quietly reconciled.** It
+gets its own paragraph in the PR body, naming the criterion and what replaced
+it. This is the case the gate exists to surface, and burying it in prose about
+what was built is how it goes unnoticed.
 
 ### Phase 3 — reuse moves to plan time
 

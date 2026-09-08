@@ -1,7 +1,6 @@
 ---
 name: spec-review
 description: Adversarially review a branch or PR against its ticket and spec. Every acceptance criterion becomes a ledger row that needs an anchor in the diff, and every unasked change is classed as a stray, an implied change, or the symptom of an ambiguous ticket. Use when the user asks whether a change did what its ticket asked and nothing else, or asks to review a branch or PR for scope creep.
-disable-model-invocation: true
 ---
 
 # spec-review
@@ -17,7 +16,7 @@ This skill does not review code quality. `/code-review` (CodeRabbit) owns that a
 
 ## Vocabulary
 
-The terms below are defined in [CONTEXT.md](https://github.com/teszerrakt/tz-skills/blob/main/CONTEXT.md): **contract**, **ledger row**, **prohibition row**, **anchor**, **stray**, **implied**, **ambiguous**, **declared deferral**, **verdict**.
+The terms below are defined in [CONTEXT.md](https://github.com/teszerrakt/tz-skills/blob/main/CONTEXT.md): **contract**, **ledger row**, **prohibition row**, **anchor**, **stray**, **implied**, **ambiguous**, **declared deferral**, **verdict**, **questions section**.
 
 ## Config
 
@@ -25,7 +24,7 @@ Write no new config file. Read, in this order:
 
 1. `.claude/fe-design-map.md` — the tracker, the team prefix, the ticket URL base, the ADR and RFC paths, the docs platform, and the `## Review exclusions` section.
 2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-3. Ask the user for what neither file states.
+3. Ask the user for what neither file states, as a **questions section** (CONTEXT.md).
 
 A missing `## Review exclusions` section is not a blocker. Fall back to the defaults in step 4, name the fallback in the report, and offer `/setup-tz-skills` once.
 
@@ -79,7 +78,7 @@ A ticket in prose is normal. Convert it to rows, and **quote on every row**. A r
 
 A **prohibition row** is a first-class row. A prose ticket states what the diff must not do more often than an AC list does.
 
-Print the rows and wait for the user to correct them. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix.
+Print the rows and wait for the user to correct them, under a **questions section** (CONTEXT.md) asking exactly that. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix — and a paraphrase printed without a visible question reads as a statement and goes unchecked.
 
 For a PR that declares several tickets, build one ledger per ticket.
 
@@ -182,15 +181,37 @@ Write the report to the scratchpad, never into the repo. It is session output.
 | S-3 | the empty branch returns early | AMBIGUOUS | A: "handle no rows" = render nothing. B: = render the empty state. |
 ```
 
-### 8. Offer the two posts
+Those two tables are the record. **They are not how a question reaches the user** — see step 8.
 
-Never post automatically. The two classes belong in different places, so offer them separately and take one confirmation each.
+### 8. The questions section first, then offer the PR post
 
-- **To the PR** — the `MISSING` rows and the `STRAY` rows. These are feedback on the diff.
+Never post anywhere automatically. The findings split by audience, and one half is a question rather than feedback.
+
+**Lead the reply with a questions section** (CONTEXT.md). Every `AMBIGUOUS` row, and every `MISSING` row the user must rule on, one block each — before the verdict, before the ledger, before the prose. A question after the explanation reads as part of it and gets scrolled past.
+
+```markdown
+## ❓ Needs your call
+
+**Q1 — On an empty list, show nothing or "no results"?**
+
+- **Nothing** — blank area, as the ticket's wording implies
+- **Message** — says the search worked and found none, as the frame draws
+
+✨ **Message** — the frame is the later word
+
+Asked because: the ticket says "handle no rows", which reads both ways.
+```
+
+The row's file, class and both quoted readings stay in the ledger tables below, never in the question. A reader who cannot picture the choice at a glance cannot make it, and deciding it is the only reason the row exists.
+
+Then, and only then:
+
+- **To the PR** — the `MISSING` rows and the `STRAY` rows. These are feedback on the diff. Offer it and take one confirmation.
   ```bash
   gh pr comment <n> --body-file <report>
   ```
-- **To the ticket** — the `AMBIGUOUS` rows, each with both readings and the question. These are feedback on the ticket.
-  `mcp__claude_ai_Linear__save_comment` with the issue id.
+- **Never to the ticket**, and do not offer to: a tracker comment goes unread, and the routing is the user's call — answered in conversation and fixed in the branch, or raised as an open question on a *new* ticket, never on the one about to close.
 
 An `AMBIGUOUS` row on the PR blames the author for the ticket's defect. Keep the split.
+
+Write no `❓` section when nothing needs deciding. An empty one trains the reader to ignore the heading.
