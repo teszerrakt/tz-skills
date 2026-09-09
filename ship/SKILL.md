@@ -335,6 +335,25 @@ out-of-scope findings from step 8, and any `UNASSERTED` or `UNOBSERVED` state.
 The markdown for a shot and for a clip is printed by the skill that produced it;
 paste what it gives you.
 
+**Every artifact offered as proof is uploaded, or it is not proof.** A file on a
+local branch, in a worktree, or at a path in a report is invisible to the person
+being asked to believe it — they cannot open it, so the claim it backs reverts
+to your word. This bites hardest on the artifact that cost the most to make: a
+recorded clip is the strongest evidence a run produces and the easiest to leave
+sitting on disk, because recording it feels like the finish line.
+
+So the producing skill runs with its upload flag, and the returned URL goes in
+the body or a comment. `uploads.github.com/user-attachments/assets` takes an
+mp4 on the same endpoint as a PNG — only the declared content type differs, and
+a video renders as a player. The URLs inherit repo visibility, so a private
+repo's evidence stays private, and it is the only host whose media renders in a
+PR there; a raw or blob URL needs auth the image proxy cannot supply. An
+artifact already recorded can be uploaded on its own rather than re-shot.
+
+Keeping the bundle off the remote is about **branches**, not evidence. Commit
+the flow module, the wire log and the frames wherever the config says, and
+upload the thing a reviewer has to see regardless.
+
 **Aim for 300 words, or 550 with a live-verification section. The prose gate's
 cap is not the budget.** That number is the p98 of the surface — a backstop for
 outliers, which the gate's own source says. Written to, it produces a body
