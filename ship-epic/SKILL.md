@@ -244,5 +244,12 @@ local zone, and the run's wall clock. Token and dollar figures do not — the
 transcripts carry usage, but a subscription is not billed per token, so a
 computed cost is a list-price estimate wearing the clothes of an invoice.
 
+**A path in this report is not evidence.** The report lives outside the repo, so
+every artifact it names — a clip, a wire log, a frame — is unreachable to
+anyone but the machine that wrote it. Name the uploaded URL beside the path, and
+where a session finished without uploading, upload the recorded file yourself
+rather than re-running the phase that made it.
+
 Done when a reader who watched none of the run can say, per ticket, what
-happened and what is theirs to do next.
+happened and what is theirs to do next, and can open every artifact the report
+cites.
