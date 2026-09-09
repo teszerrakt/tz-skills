@@ -1,8 +1,7 @@
 ---
 name: ship
-description: Drive one frontend ticket from tracker to draft PR.
+description: Drive one frontend ticket from tracker to draft PR — intake, the reconcile gate, implement, test, review, shots, then the PR. Use when asked to ship, drive or deliver a ticket end to end, or when another skill needs one ticket taken to a PR.
 argument-hint: "TRA-XXX"
-disable-model-invocation: true
 ---
 
 # ship

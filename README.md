@@ -31,7 +31,7 @@ The pipeline also calls the grilling and domain-modeling skills from the [mattpo
 | ----- | ------- |
 | `address-review` | "address review", "respond to CodeRabbit", PR triage |
 | `spec-review` | you type it — `/spec-review`, `/spec-review 650`, `/spec-review <branch>` |
-| `ship` | you type it — `/ship TRA-470` |
+| `ship` | model or you — `/ship TRA-470` |
 | `ship-epic` | you type it — `/ship-epic TRA-415` |
 
 `spec-review` judges a diff against one contract and nothing else. Every requirement of the ticket becomes a ledger row, and a row is met only with an anchor into the diff — a `file:line` the diff actually touched. Every change the ticket did not ask for is classed a **stray** (it blocks), **implied** (a named ADR or RFC requires it), or **ambiguous** (the reviewer quotes two readings of one ticket line, so the ticket is the defect, not the diff). The strays go to the PR and the ambiguities go to the ticket, each behind its own confirmation.
