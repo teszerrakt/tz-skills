@@ -1,9 +1,9 @@
 # `/ship-epic` — design
 
-Status: designed, not built. Decided 2026-09-09 in a grilling session, against
-capability probes run on the machine rather than documentation. Every claim
-below that a tool can or cannot do something was tested; where it was not, it
-says so.
+Status: built, apart from the reordered `/ship` phase list. Decided 2026-09-09
+in a grilling session, against capability probes run on the machine rather than
+documentation. Every claim below that a tool can or cannot do something was
+tested; where it was not, it says so.
 
 ## What it is
 
@@ -62,7 +62,7 @@ So `/ship-epic` spawns sessions, and the orchestrator is itself a
 `claude --bg -n orchestrator` session. Three consequences follow, and they are
 why the rest of this design is simple:
 
-1. A session can ask the user, so `/ship`'s phase-2 gate needs no headless
+1. A session can ask the user, so `/ship`'s reconcile gate needs no headless
    variant.
 2. Sessions are separate processes, so one parked ticket does not hold up the
    others.
@@ -242,6 +242,22 @@ session is killed, the ticket parked, and the exact denied command written to th
 report. No alarm. Both first probe sessions sat in this state for three minutes
 producing nothing, which is the failure mode this exists to catch.
 
+**Under the `auto` permission mode there is no stall to detect.** The classifier
+denies an unlisted command outright and the session either works around it or
+stops and explains, so `waitingFor` never reaches `permission prompt` and abort 6
+would never fire. Auto is also the only mode a run can use: the user's allowlist
+is empty, so a child in `default` mode prompts on its first command. And an
+auto-mode parent cannot spawn a child in another mode — both
+`--permission-mode default` and an equivalent `--settings` file were refused by
+the classifier when tried.
+
+So the abort signal is **a session that reached the end with no PR on its
+branch**, with the stall watch kept for a repo whose own settings prompt. The
+same probe run confirmed the two `waitingFor` values separate cleanly: an
+`AskUserQuestion` stall reports `input needed`, a permission prompt reports
+`permission prompt`, and `~/.claude/sessions/<pid>.json` holds both alongside
+`kind`, which is `interactive` or `bg`.
+
 Run completion notifies quietly, not with the chime.
 
 Report at `~/.claude/orchestrate/<repo>/<epic>/<timestamp>.md`. Never inside the
@@ -301,7 +317,7 @@ top-level, so each fires its own `Stop` gate — a full `encore test ./...`,
 `golangci-lint`, `go vet` and `turbo lint/test/typecheck` per session. It is all
 inert today because `bin/klay-harness` is not built, but `hooks/lib/build-if-stale.sh`
 builds it on SessionStart when source is newer. The orchestrator asserts the
-harness is inert at startup rather than discovering it at phase 8.
+harness is inert at startup rather than discovering it mid-run.
 
 ## Prerequisites
 
@@ -323,13 +339,22 @@ production is a separate tenant (`docs/auth0-setup.md:143`), and because embedde
 login already forgoes Auth0's hosted bot detection per ADR-001's RFC-007
 amendment. Brute-force Protection and Breached Password Detection stay on.
 
+## Resolved since
+
+**The alarm needs no `Notification` hook.** `claude agents --json` already
+carries `kind` (`interactive` or `bg`), `status` and `waitingFor` per session, so
+the orchestrator polls the sessions it named and decides for itself. That is the
+shape the alarm rule wanted anyway — it fires on a property of the whole run, not
+of one notification — and a hook that fires per event could never compute it. The
+payload question is therefore moot rather than answered.
+
+**`waitingFor` separates the two dispositions.** Measured on this machine:
+`input needed` for a session parked on `AskUserQuestion`, `permission prompt` for
+one held at a permission prompt. See the auto-mode caveat under *Human contact*,
+which is the case that changes abort 6.
+
 ## Open items
 
-- Whether the `Notification` hook payload distinguishes a background session
-  from an interactive one. The alarm must not fire on permission prompts during
-  interactive work.
-- Whether `waitingFor` reliably separates a spec question from a permission
-  prompt. The two dispositions differ completely.
 - Injecting the `@auth0/auth0-spa-js` cache entry to start a browser signed in,
   which would delete the login lock. Deliberately deferred: it is an SDK-internal
   storage format nothing in the repo touches, and it fails looking like "not
@@ -341,4 +366,11 @@ amendment. Brute-force Protection and Breached Password Detection stay on.
 
 ## Built
 
-Nothing yet.
+- `ship-epic/SKILL.md` — the epic driver.
+- `CONTEXT.md` — `takeable`, `wave` and `park` added to the delivery glossary.
+- `setup-tz-skills/references/config-delivery.md` — a `### Parallel runs`
+  subsection holding the five keys this skill reads and `/ship` does not.
+
+Not built: the reordered `/ship` phase list. It is a change to `/ship`, and
+`/ship-epic` delegates whatever order `/ship` holds, so the two land
+independently.

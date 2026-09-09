@@ -13,9 +13,9 @@ say so — this line does: no merge, no ready-for-review, no CodeRabbit loop.
 
 This skill owns four things: the phase sequence, each delegate's **brief**, the
 **gate** between phases, and the **aborts**. Every phase's judgment stays in the
-skill that already owns it. Where the config names a skill, invoke it and read
-its report. Contribute no reviewing, no testing, and no screenshot or recording
-knowledge here.
+skill or the reviewer that already owns it. Where the config names a skill,
+invoke it and read its report. Contribute no testing and no screenshot or
+recording knowledge here, and no review verdict of your own.
 
 Design and the measurements behind it: [`docs/ship-design.md`](../docs/ship-design.md).
 
@@ -32,8 +32,12 @@ Write no new config file. Read, in this order:
 
 | Key | Holds |
 |---|---|
-| Worktree root | where phase 0 puts the tree |
-| Typecheck / Tests | the command, and the skill that decides what a test may assert |
+| Worktree root | where step 0 puts the tree |
+| Per-worktree opt-outs | the hooks or plugins step 0 disables in the worktree |
+| Typecheck / Lint / Tests | the two commands, and the skill that decides what a test may assert |
+| Visual verification | the skill that diffs the running app against the design, and edits code |
+| Smoke | the skill that boots the app and reads the console on the changed route |
+| Adversarial review | the reviewer step 8 drives |
 | Screenshots | the skill that owns shot selection |
 | Design assertion | the skill and flag that assert computed style against tokens |
 | Live verification | the skill and flag that record a flow against the real API |
@@ -53,7 +57,7 @@ ask for the values the phases you are about to run need.
 ## Scope
 
 Frontend tickets. When the ticket's files land under a backend path, say so and
-stop before phase 0 — the proof this skill sequences (stories, computed style,
+stop before step 0 — the proof this skill sequences (stories, computed style,
 Figma tokens) is not the proof a backend change needs.
 
 ## Briefs
@@ -65,6 +69,10 @@ Name it.
 
 ## Process
 
+**Every code-mutating phase finishes before anything verifies.** Steps 0–8
+change code; steps 9–11 judge it and report. A verification run before the last
+edit judges a diff that no longer exists.
+
 ### 0. Bootstrap the worktree
 
 A fresh worktree runs nothing past `implement` until it has its dependencies and
@@ -74,31 +82,36 @@ every gitignored config the later phases read.
 exists in the main checkout and is missing in the worktree. A hardcoded list goes
 stale the first time a skill gains a config.
 
+Name the branch by the repo's own convention. A tracker's suggested name embeds
+the username, which the convention does not.
+
+Write the worktree's own `settings.local.json` holding the per-worktree opt-outs
+`## Delivery` names. A repo-wide hook fires once per top-level session, so a stop
+gate that runs a whole test suite runs it again for every run in flight.
+
 Then install dependencies. Stop the run on a failed install: every later phase
 rests on it.
 
-Done when the install exits clean and every gitignored config named by
-`.gitignore` sits in the worktree.
+Done when the install exits clean, every gitignored config named by `.gitignore`
+sits in the worktree, and the named opt-outs are in place.
 
-### 1. Intake
-
-Delegate. The brief: fetch the ticket, **check each blocker's real status in the
-tracker rather than trusting the ticket's own list**, and collect the Figma node
-ids and design-doc references the ticket names.
-
-It returns a brief, not file dumps.
-
-Done when the ticket text, each blocker's live status, and every design
-reference resolve to something you can open.
-
-### 2. Reconcile — the gate
+### 1. Intake and reconcile — the gate
 
 This phase pays for the skill. A ticket-versus-design conflict found here costs
 one question; found at PR time it costs a re-implementation, a re-shoot, and a
 body rewrite.
 
-Diff the ticket's acceptance criteria against the design frames and against the
-code and migrations the ticket touches.
+Delegate the intake half: fetch the ticket, **check each blocker's real status in
+the tracker rather than trusting the ticket's own list**, and collect the design
+frames and design-doc references the ticket names.
+
+**It hands back paths, not prose.** The reconcile has to *diff* acceptance
+criteria against those frames and against the code and migrations, and a summary
+cannot be diffed. That is why intake and reconcile are one phase and not two: a
+delegate that reports what it found instead of where it is makes the next half
+impossible.
+
+Then diff the criteria against the frames, the code and the migrations.
 
 **Apply documented precedence first.** The config and the repo's own docs settle
 most conflicts — a rule that says the design file wins over ticket prose resolves
@@ -144,7 +157,7 @@ replaced it — that is the one place a reviewer looks for it.
 Done when the residue is empty and every decision has a home in the commits or
 the body.
 
-### 3. Plan, and grep for reuse before writing
+### 2. Plan, and grep for reuse before writing
 
 A reuse verdict at review time arrives after the duplicate is written. Grep
 first, in the order `## Sources` documents — the shared UI package, then
@@ -156,28 +169,48 @@ intends to build and asks one question per component: does this already exist?
 Done when every component the plan names is either matched to an existing one or
 proven absent.
 
-### 4. Implement
+### 3. Implement
 
-The only phase that holds full context. Work the plan from step 3, under the
-decisions from step 2.
+The only phase that holds full context. Work the plan from step 2, under the
+decisions from step 1.
 
 Typecheck as you go, using the command from `## Delivery`.
 
-### 5. Test at the seam
+### 4. Test, typecheck and lint
 
 Invoke the skill `## Delivery` names for tests. It decides which seam a test
 belongs to and what it may assert; take its judgment over your own.
 
-### 6. Spec review
+Then run the repo's typecheck **and lint** commands. CI runs the full gate, so a
+lint slip caught here costs seconds while the same slip caught by CI costs a
+nine-to-ten-minute round trip — one per slip, and with auto-fix on the fixer
+spends that round trip guessing.
 
-Run `/spec-review` against the diff.
+Two self-fix attempts, then abort.
 
-Quality review is deliberately absent from this sequence. CodeRabbit reviews the
-PR for free and `/address-review` works its comments. The spec axis is the one a
-bot cannot cover, because it never sees the ticket.
+Done when tests, typecheck and lint all pass locally.
 
-A `BLOCK` verdict aborts the run. Opening a PR that carries a known `MISSING` row
-is the failure the gate in step 2 exists to prevent, arriving one phase later.
+### 5. Verify the visuals, while the code can still change
+
+Invoke the skill `## Delivery` names for visual verification, forked. It drives
+the change in the running app, diffs it against the design, and exercises the
+interactions.
+
+**It edits code**, which is why it sits here and not beside the shots. Run after
+the review and its edits go unaudited.
+
+Done when every discrepancy is fixed, or refused with a stated reason.
+
+### 6. Smoke the changed route
+
+Invoke the skill `## Delivery` names for the smoke run: boot the app, load the
+route the change touched, read the console.
+
+A component that renders in a story and throws in the app is what this catches,
+and nothing else in the sequence opens the real route until step 10b, which most
+tickets skip.
+
+Done when the changed route loads and the console is clean.
 
 ### 7. Simplify
 
@@ -193,13 +226,46 @@ Both briefs carry the diff range, the standards doc paths from
 state a constraint the code cannot show; flag every comment that restates its
 next line.
 
-Run this **before** the PR opens. After CodeRabbit, its comments land on verbose
-code that simplify then deletes, and `/address-review` works lines that no longer
-exist.
-
 Done when every finding is applied or refused with a stated reason.
 
-### 8. Shoot and assert
+### 8. Adversarial review
+
+The one local quality pass, and the last phase that may change code. Invocation,
+output schema, review prompt and the fallback rule:
+[`references/adversarial-review.md`](references/adversarial-review.md).
+
+**Gate on the parsed findings, never on the exit code.** A blocked review has
+exited 0 with nothing reviewed.
+
+**A fix is applied only inside files the diff already touches** — the schema's
+`in_scope` field says which. Everything else becomes a line in the PR body's
+`Follow-ups`. `/spec-review` returns `BLOCK` on any stray, and a correctness fix
+outside the ticket's scope is a stray, so an unscoped reviewer would make the run
+strangle itself on its own best findings.
+
+Two rounds. Findings still open after the second aborts the run.
+
+Done when every finding is fixed in scope, recorded as a follow-up, or refused
+with a stated reason.
+
+### 9. Spec review — last, so it audits everything above
+
+Run `/spec-review` against the diff.
+
+It runs **after** every code-mutating phase. Run before simplify, it computed its
+verdict against a diff that no longer existed: the anchors it cited could be
+deleted by the time the PR opened, and simplify's own edits were never audited by
+anything.
+
+The two local reviews are the two a bot cannot do. The spec axis, because
+CodeRabbit never sees the ticket; and step 8, because the CodeRabbit seat that
+reviews the PR for free allows three CLI reviews an hour. Everything else waits
+for the push, where `/address-review` works its comments.
+
+A `BLOCK` verdict aborts the run. Opening a PR that carries a known `MISSING` row
+is the failure the gate in step 1 exists to prevent, arriving eight phases later.
+
+### 10. Shoot and assert
 
 Invoke the skill `## Delivery` names for screenshots, forked, so the images stay
 out of this context. The same run asserts computed geometry and style against the
@@ -220,13 +286,14 @@ Three rules keep the assertion honest:
 assertion measured against a padded cell or a bordered harness fails while the
 code is right.
 
-Re-shoot whenever the code changes after this phase. A stale image misrepresents
-the diff as confidently as a fresh one.
+Nothing after this step changes code, so these shots stand. Re-shoot if an
+earlier step is revisited: a stale image misrepresents the diff as confidently as
+a fresh one.
 
 Done when every state the change built has a shot, and every shot is `PASS`,
 `FAIL`, or `UNASSERTED` with a reason.
 
-### 8b. Verify live — only when the claim is about the wire
+### 10b. Verify live — only when the claim is about the wire
 
 **Runs when the ticket's acceptance turns on what the server sends**: a
 data-driven menu, a permission the API decides, an optimistic-lock version, a
@@ -249,8 +316,8 @@ Two rules the report lives by:
 - **A step with no expectation reports `UNOBSERVED`** — a third state beside
   pass and fail, for the same reason an unasserted story is.
 - **The clip owns its path.** A state the recording walks through earns no
-  separate still from step 8; a state the flow never reaches still earns one,
-  and computed style stays step 8's job because no recording can prove it.
+  separate still from step 10; a state the flow never reaches still earns one,
+  and computed style stays step 10's job because no recording can prove it.
 
 The artifacts go to the branch and directory `## Delivery` names, never to the
 PR branch: `/spec-review` greps the diff for an anchor per criterion, and binary
@@ -261,12 +328,13 @@ only reversed, so every row a recording creates is permanent.
 Done when every claim the body will make has a step behind it, and every step is
 `PASS`, `FAIL` or `UNOBSERVED` with a reason.
 
-### 9. Open the draft PR
+### 11. Open the draft PR
 
 Write the body to the sections `## Delivery` allows, in that order, carrying the
-shots from step 8, any clip from step 8b, the step-2 decisions, and any
-`UNASSERTED` or `UNOBSERVED` state. The markdown for a shot and for a clip is
-printed by the skill that produced it; paste what it gives you.
+shots from step 10, any clip from step 10b, the step-1 decisions, the
+out-of-scope findings from step 8, and any `UNASSERTED` or `UNOBSERVED` state.
+The markdown for a shot and for a clip is printed by the skill that produced it;
+paste what it gives you.
 
 **Aim for 300 words, or 550 with a live-verification section. The prose gate's
 cap is not the budget.** That number is the p98 of the surface — a backstop for
@@ -298,11 +366,12 @@ Each stops the run with a report and **no PR**:
 
 | # | Condition |
 |---|---|
-| 1 | Residue from step 2 unanswered — park the run |
-| 2 | Typecheck or tests still failing after two self-fix attempts |
-| 3 | `/spec-review` returns `BLOCK` |
-| 4 | An assert `FAIL` that survives the expectation re-check |
-| 5 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
+| 1 | Residue from step 1 unanswered — park the run |
+| 2 | Typecheck, lint or tests still failing after two self-fix attempts |
+| 3 | Two adversarial rounds with findings still open |
+| 4 | `/spec-review` returns `BLOCK` |
+| 5 | An assert `FAIL` that survives the expectation re-check |
+| 6 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
 
 Token spend is not an abort condition. The phase list fixes the cost, and a
 running orchestrator cannot measure its own spend.
