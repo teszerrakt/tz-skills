@@ -28,7 +28,11 @@ tickets.
   user's own standing preference.
 - **Editing `/ship`.** The reordered phase list below is a change to `/ship`,
   made in `/ship`, not a wrapper around it.
-- **Merging.** Every terminus is a draft PR.
+- **Merging.** No run merges anything.
+
+`/ship` lists "marking a PR ready for review" among its own non-goals, and that
+still holds for `/ship` alone. `/ship-epic` promotes the draft it produced, for
+the reason in *After the PR opens*.
 
 ## Sessions, not subagents
 
@@ -176,6 +180,19 @@ every PR after push at no cost and no limit.
 
 ## After the PR opens
 
+**CodeRabbit does not review a draft PR.** Observed on klaylab/klay#727:
+`Review skipped: draft pull request`. Since `/ship` terminates at a draft, the
+post-PR review net does not exist unless something promotes it. So a ticket that
+reaches the end with no abort is **marked ready**, and only then does the
+CodeRabbit pass run. An aborted ticket's PR stays a draft — there is no reason to
+ping review on a run that stopped.
+
+Setting `auto_review.drafts: true` in `.coderabbit.yaml` would have worked too.
+Promoting was chosen because a finished ticket genuinely is ready for a reviewer,
+and because the repo's CodeRabbit config is deliberately narrow (ADR-030
+decision 10) — widening what it reviews is a change to a decision that was made
+on measurements.
+
 CI is a consistent 9–10 minutes; CodeRabbit adds roughly 5. The orchestrator
 waits, which is nearly free because it overlaps the next ticket, and fixes both.
 
@@ -237,6 +254,9 @@ Each parks one ticket and leaves a **draft PR carrying the reason**. `/ship`
 opens drafts anyway, so this costs nothing, and it is the only artifact that
 appears where the user already looks — a branch with no PR is invisible among 25
 live worktrees.
+
+Draft is therefore the abort signal. A ready PR passed every phase; a draft one
+did not, and its body says which.
 
 | # | Condition |
 |---|---|
