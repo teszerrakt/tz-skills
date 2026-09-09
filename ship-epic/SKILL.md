@@ -222,5 +222,27 @@ Then the follow-ups the sessions' PR bodies listed, gathered for the user to
 pass to `/to-tickets`. Writing them to the tracker here is refused by the user's
 own standing preference.
 
+**Carry every field, not the one-line summary.** `/ship` step 11b fixes the
+shape — surface, severity, why it exists, what breaks if it never ships, effort
+with its reason, and a `file:line` anchor. The PR body holds the short form
+because a reviewer scans; this report is the long form, and it is what
+`/to-tickets` reads. A report that copies the PR's one-liners throws away the
+half that makes a follow-up rulable.
+
+**Re-check the anchors before writing them down.** A session's own summary of
+its follow-ups is the least verified prose it produced — it is written last,
+after the gates, and nothing audits it. Counts and file references stated there
+have been wrong in a measured run. Grep each one.
+
+**Merge across tickets, not just within one.** A session sees only its own
+diff, so it cannot notice that two tickets raised the same follow-up, or that
+one ticket's refactor dissolves another's bug. That judgment exists only here,
+and it is most of this section's value on a multi-ticket run.
+
+Duration goes in the report too: per session, start and end in the user's
+local zone, and the run's wall clock. Token and dollar figures do not — the
+transcripts carry usage, but a subscription is not billed per token, so a
+computed cost is a list-price estimate wearing the clothes of an invoice.
+
 Done when a reader who watched none of the run can say, per ticket, what
 happened and what is theirs to do next.
