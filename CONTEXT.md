@@ -48,6 +48,18 @@ _Avoid_: open questions, blockers, ambiguities
 The point before implementation where a run stops until the residue is answered. Distinct from a gate ledger, which decides whether finished work is done.
 _Avoid_: checkpoint, approval, sign-off
 
+**Takeable**:
+A ticket a run may start now: unstarted, every blocker complete, no open PR naming it, and carrying the agent label. The label is a veto, never a trigger — it does not discriminate between a ticket that is ready and one already finished.
+_Avoid_: ready, eligible, unblocked, actionable
+
+**Wave**:
+A set of tickets an epic body declares can run together. The **backbone** wave invents the shared files and runs serial; a **consumer** wave adds inside its own folders and runs in parallel. An epic that declares no waves runs serial.
+_Avoid_: batch, group, tranche, layer
+
+**Park**:
+To stop one ticket on a question or a broken allowlist and let the rest of the run continue. A parked session resumes with its context intact, so it costs one round trip rather than a re-run.
+_Avoid_: pause, block, defer, hold
+
 **Unasserted**:
 A state that was screenshotted with no assertion spec. A third outcome beside pass and fail, never reported as either.
 _Avoid_: untested, skipped, n/a

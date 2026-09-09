@@ -48,7 +48,7 @@ Offer to seed the people from Slack. Given a named channel, list its members and
 
 This skill writes no file of its own. It reads the tracker, the ticket URL base, and the ADR and RFC paths from Section A. So when Section A is absent, write Section A first: `spec-review` cannot fetch a ticket without it.
 
-**Section F — `ship`.** Read [references/config-delivery.md](references/config-delivery.md). Appends a `## Delivery` section to `.claude/fe-design-map.md`.
+**Section F — `ship`, `ship-epic`.** Read [references/config-delivery.md](references/config-delivery.md). Appends a `## Delivery` section to `.claude/fe-design-map.md`. Its `### Parallel runs` subsection is `ship-epic`'s alone; write it only for a repo whose app can run several dev servers at once.
 
 Like Section E it writes no file of its own, and it depends on Section A the same way. It also depends on Section E: `ship` runs `spec-review` as one of its phases, so a repo with `## Delivery` and no `## Review exclusions` has a driver whose review phase falls back to defaults.
 

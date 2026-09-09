@@ -1,6 +1,6 @@
 # Template: the `## Delivery` section
 
-Read by `ship`. It appends to `.claude/fe-design-map.md` rather than to a file of its own, because the facts it sits beside — the tracker, the ADR and RFC paths, the shared UI package under `## Sources` — are the same facts a driven run needs.
+Read by `ship`, and by `ship-epic` for the parallel-run keys at the end. It appends to `.claude/fe-design-map.md` rather than to a file of its own, because the facts it sits beside — the tracker, the ADR and RFC paths, the shared UI package under `## Sources` — are the same facts a driven run needs.
 
 ## Detect
 
@@ -62,4 +62,21 @@ whose key is absent reports `SKIPPED`.
 Tell each delegate the ones its phase can hit.
 
 - {{trap}}
+
+### Parallel runs
+
+Read by `/ship-epic` only. A key with no value makes the run serial rather than
+guessing.
+
+- **Dev server ports:** {{env var}}, {{range}} — one port per session. A dev
+  server that does not fail on a taken port silently takes the next one, and the
+  new origin is rejected by whatever allowlists name the old one.
+- **Serialized steps:** {{step}}, lock at {{path}}. Only this step holds the
+  lock; everything around it runs parallel.
+- **Per-worktree opt-outs:** {{what a worktree's settings disable}}, proven inert
+  by {{check}}. Every background session is top-level, so a repo-wide stop hook
+  fires once per session.
+- **Concurrency pin:** {{flag}} — the task runner's default stacks test workers
+  until timing-sensitive tests fail on load alone.
+- **Alarm:** {{command}}. Run only when no session can progress.
 ```
