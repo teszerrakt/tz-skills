@@ -1,6 +1,8 @@
 # `/ship` — design
 
-Status: built, unrun. Decided 2026-09-07 in a grilling session against the
+Status: built, and run three times — TRA-422 (PR klaylab/klay#667), TRA-509
+(#725) and TRA-423 (#724). Each carries a `verify/<ticket>-live-proof` branch,
+so phase 8b ran too. Decided 2026-09-07 in a grilling session against the
 evidence base in `/tmp/tra-470-handoff-implement-skill-design.md` (TRA-470, PR
 klaylab/klay#711), which recorded the measured cost and rework of driving one
 frontend ticket by hand.
@@ -33,7 +35,8 @@ here: chaining `/address-review` breaks that skill's own two-phase contract.
   message. Every phase asset here is frontend-shaped, and the backend equivalents
   (Encore integration tests, `entity_id` scoping, `verify-backend`) are a
   different pipeline with zero measurements behind them. Revisit after the
-  frontend path has run three tickets.
+  frontend path has run three tickets — met as of TRA-423, so this is open to
+  take up rather than blocked.
 - **Merging, deploying, or marking a PR ready for review.**
 - **Running the CodeRabbit loop.** `/address-review` owns that, and it is
   deliberately two-phase: it needs a human push between drafting fixes and
@@ -322,12 +325,10 @@ in `$ARGUMENTS`; never rely on inheritance.
 
 ## Open items
 
-- Phase 8 is unproven end to end: `--assert` is verified against the TRA-470
-  totals stories, but no `/ship` run has driven it.
 - TRA-470's acceptance criteria still say "No semantic colour in the totals
   block", which the merged code contradicts. Editing the ticket is the user's
   call.
-- Backend coverage, after three frontend runs.
+- Backend coverage. The three-run gate is met; nothing is built.
 
 ## Built
 
