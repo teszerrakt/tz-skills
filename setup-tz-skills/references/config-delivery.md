@@ -12,7 +12,7 @@ git ls-files | grep -iE 'tailwind.*\.css$|tokens?\.css$|theme\.css$'
 ls .claude/skills/
 ```
 
-The first finds the PR prose gate. The second finds the token file a colour assertion resolves against. The third finds the repo-scoped skills the phases delegate to — a screenshot skill and a test-policy skill are the two that matter.
+The first finds the PR prose gate. The second finds the token file a colour assertion resolves against. The third finds the repo-scoped skills the phases delegate to: a screenshot skill and a test-policy skill matter most, and a visual-verification skill and an app-launch skill fill the two phases that run the real app.
 
 For the typecheck command, read the monorepo task runner's config and then the app's own `package.json`. **An app that declares no `typecheck` script usually typechecks through `build`** — a `tsc -b && <bundler> build` is the same compile, and naming the absent task instead produces a phase that silently passes.
 
@@ -36,11 +36,21 @@ This subsection is the one place a machine-specific gotcha belongs: the driver s
 Consumed by `/ship`. Each key names the project's half of one phase; a phase
 whose key is absent reports `SKIPPED`.
 
-- **Worktree root:** {{path}}. Phase 0 copies every file `.claude/.gitignore`
+- **Worktree root:** {{path}}. Step 0 copies every file `.claude/.gitignore`
   lists that exists in the main checkout, then installs dependencies.
+- **Per-worktree opt-outs:** {{hooks or plugins}}, disabled in the worktree's own
+  `settings.local.json`. A repo-wide hook fires once per top-level session.
 - **Typecheck:** {{command}}, run from {{dir}}.
+- **Lint:** {{command}}. Run locally, because CI runs it and a slip found there
+  costs a full CI round trip.
 - **Tests:** {{skill}}. It owns which seam a test belongs to and what it may
   assert; take its judgment over the driver's.
+- **Visual verification:** {{skill}}. Diffs the running app against the design
+  and exercises its interactions. It edits code, so it runs before any review.
+- **Smoke:** {{skill}}. Boots the app, loads the changed route, reads the
+  console.
+- **Adversarial review:** {{reviewer}}. Gate on its parsed findings, never on its
+  exit code.
 - **Screenshots:** {{skill}}.
 - **Design assertion:** {{skill and mode}}.
 - **Live verification:** {{skill and mode}}. Runs only when a ticket's
@@ -73,9 +83,8 @@ guessing.
   new origin is rejected by whatever allowlists name the old one.
 - **Serialized steps:** {{step}}, lock at {{path}}. Only this step holds the
   lock; everything around it runs parallel.
-- **Per-worktree opt-outs:** {{what a worktree's settings disable}}, proven inert
-  by {{check}}. Every background session is top-level, so a repo-wide stop hook
-  fires once per session.
+- **Opt-out check:** {{command}} that proves the per-worktree opt-outs above are
+  inert before the first session is spawned.
 - **Concurrency pin:** {{flag}} — the task runner's default stacks test workers
   until timing-sensitive tests fail on load alone.
 - **Alarm:** {{command}}. Run only when no session can progress.

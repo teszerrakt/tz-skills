@@ -2,7 +2,7 @@
 
 Status: built, and run three times — TRA-422 (PR klaylab/klay#667), TRA-509
 (#725) and TRA-423 (#724). Each carries a `verify/<ticket>-live-proof` branch,
-so phase 8b ran too. Decided 2026-09-07 in a grilling session against the
+so the live-verification phase ran too. Decided 2026-09-07 in a grilling session against the
 evidence base in `/tmp/tra-470-handoff-implement-skill-design.md` (TRA-470, PR
 klaylab/klay#711), which recorded the measured cost and rework of driving one
 frontend ticket by hand.
@@ -17,9 +17,10 @@ to draft pull request. It owns four things and nothing else:
 3. the gate conditions between phases,
 4. the abort rules.
 
-Every phase's judgment stays in the skill that already owns it. The orchestrator
-contributes no reviewing, no testing, and no screenshot or recording knowledge
-of its own.
+Every phase's judgment stays in the skill or the reviewer that already owns it.
+The orchestrator contributes no testing and no screenshot or recording knowledge
+of its own, and no review verdict: it passes a brief, then reads a report or a
+schema-validated finding list.
 
 It ends at a **draft PR**, not at merge and not at deploy.
 
@@ -62,7 +63,11 @@ The section names **skills, not commands**, wherever a phase carries judgment:
 
 - Worktree root: `.claude/worktrees/`
 - Typecheck: `npx turbo typecheck --filter=@klay/dashboard` (run from `frontend/`)
+- Lint: `npx turbo lint --filter=@klay/dashboard` (run from `frontend/`)
 - Tests: `/fe-test`
+- Visual verification: `/verify-frontend`
+- Smoke: `/run`
+- Adversarial review: `codex exec` — see `ship/references/adversarial-review.md`
 - Screenshots: `/ui-shots`
 - Design assertion: `/ui-shots` (assert mode)
 - PR prose gate: `scripts/check-prose.py --surface pr <file>`
@@ -82,33 +87,55 @@ silently dropped.
 
 ## Phases
 
+**Reordered 2026-09-09**, in the `/ship-epic` grilling session. Every
+code-mutating phase now finishes before anything verifies, and the intake and
+reconcile halves merged. The reasoning is in
+[`ship-epic-design.md`](./ship-epic-design.md) under *The reordered flow*; the
+table below is the order that shipped.
+
 | # | Phase | Owner | Blocks on |
 | --- | --- | --- | --- |
-| 0 | Bootstrap worktree | `/ship` | `npm ci` failure |
-| 1 | Intake | subagent | — |
-| 2 | Reconcile | `/ship` (main) | unresolved conflict — see below |
-| 3 | Plan + reuse grep | `Explore` subagent | — |
-| 4 | Implement | `/ship` (main) | — |
-| 5 | Tests at the seam | config-named skill | — |
-| 6 | Spec review | `/spec-review` | verdict `BLOCK` |
+| 0 | Bootstrap worktree | `/ship` | install failure |
+| 1 | Intake + reconcile — the gate | subagent, then `/ship` (main) | unresolved residue |
+| 2 | Plan + reuse grep | `Explore` subagent | — |
+| 3 | Implement | `/ship` (main) | — |
+| 4 | Tests, typecheck + lint | config-named skill, plus two commands | two self-fix attempts |
+| 5 | Visual verification | config-named skill | — |
+| 6 | Smoke the changed route | config-named skill | a dirty console |
 | 7 | Simplify | two agents, below | — |
-| 8 | Shots + assert | config-named skill | assert `FAIL` |
-| 8b | Verify live | config-named skill | step `FAIL`, or a claim with no wire line |
-| 9 | PR | `/ship` (main) | prose gate |
+| 8 | Adversarial review | `codex exec` | two rounds with findings open |
+| 9 | Spec review | `/spec-review` | verdict `BLOCK` |
+| 10 | Shots + assert | config-named skill | assert `FAIL` |
+| 10b | Verify live | config-named skill | step `FAIL`, or a claim with no wire line |
+| 11 | PR | `/ship` (main) | prose gate |
 
-Phase 8b is conditional: it runs when a ticket's acceptance turns on what the
+Steps 0–8 change code and 9–11 judge it. That split is the point of the order:
+`/spec-review` ran at 6 and computed its verdict against a diff simplify then
+edited, so its anchors could be deleted by the time the PR opened and simplify's
+own edits were audited by nothing.
+
+Step 10b is conditional: it runs when a ticket's acceptance turns on what the
 server sends and reports `SKIPPED` otherwise. It is a separate phase rather than
-a mode of 8 because its abort differs — 8 fails on a computed value that does
-not match a token, 8b on a claim the wire log does not support.
+a mode of 10 because its abort differs — 10 fails on a computed value that does
+not match a token, 10b on a claim the wire log does not support.
 
-Quality review is deliberately absent from this list. CodeRabbit reviews every
-PR for free, and `/address-review` works its comments. The one axis a bot cannot
-cover is the spec axis, because CodeRabbit never sees the ticket — so
-`/spec-review` is the only review that runs locally. This drops roughly 107k
-tokens per ticket relative to running a local standards agent, and stops three
-different reviewers rendering verdicts on the same diff.
+Steps 5 and 6 are new, and both run the real app. Step 5 edits code, which is
+why it sits among the mutating phases rather than beside the shots.
 
-### Phase 0 — bootstrap
+Quality review was deliberately absent from this list, on the grounds that
+CodeRabbit reviews every PR for free and `/address-review` works its comments.
+That dropped roughly 107k tokens per ticket against a local standards agent and
+stopped three reviewers rendering verdicts on one diff, and the spec axis stayed
+local because CodeRabbit never sees the ticket.
+
+The reorder adds one back, at step 8, for a reason the original argument missed:
+the free CodeRabbit seat allows three CLI reviews an hour, and the muzzle
+`.coderabbit.yaml` puts on its knowledge base is deliberate (ADR-030 decision
+10), so the PR-time net is thin by design. Two local reviews now run — the spec
+axis, and one adversarial pass whose findings are schema-validated so the run
+can branch on severity and scope. Everything else still waits for the push.
+
+### Step 0 — bootstrap
 
 A fresh worktree cannot run any phase past "implement". It needs `npm ci` plus
 every gitignored config the later phases read.
@@ -121,7 +148,7 @@ written.
 
 Fail loudly on `npm ci` failure. Every later phase depends on it.
 
-### Phase 2 — the reconcile gate
+### Step 1 — the reconcile gate
 
 This is the phase that pays for the skill. In the measured session, a
 ticket-versus-design conflict surfaced at PR time and cost a re-implementation,
@@ -190,7 +217,7 @@ gets its own paragraph in the PR body, naming the criterion and what replaced
 it. This is the case the gate exists to surface, and burying it in prose about
 what was built is how it goes unnoticed.
 
-### Phase 3 — reuse moves to plan time
+### Step 2 — reuse moves to plan time
 
 A reuse verdict at review time arrives after the duplicate is written. The
 measured reuse agent spent ~99k tokens across 34 mostly-grep tool calls to say
@@ -198,7 +225,7 @@ so. Instead, grep before implementing, in the order `fe-design-map.md` already
 documents under `## Sources`: the shared UI package first, then app-local
 components. Use the built-in `Explore` agent; do not author one.
 
-### Phase 7 — our own simplify
+### Step 7 — our own simplify
 
 The built-in `/simplify` is not used. It runs four agents (~365k measured) and
 cannot be tuned, and its agents did not install here.
@@ -223,14 +250,20 @@ Run this **before** opening the PR. Running it after CodeRabbit means CodeRabbit
 comments on verbose code that simplify then deletes, and `/address-review`
 does work on lines that no longer exist.
 
-### Phase 8 — assertion, honestly
+### Step 10 — assertion, honestly
 
-`/verify-frontend` is too expensive to run per ticket: it boots the dev server,
-signs in through Auth0, drives puppeteer and pulls Figma screenshots, all in a
-forked run. But the PR needs storybook shots anyway, and `ui-shot.mjs` already
-holds a live browser on the component at `storyRenders: finished`. The numeric
-assertion the handoff called worth institutionalising needs nothing more than
-that page.
+`/verify-frontend` is too expensive to run *for the assertion*: it boots the dev
+server, signs in through Auth0, drives puppeteer and pulls Figma screenshots, all
+in a forked run. But the PR needs storybook shots anyway, and `ui-shot.mjs`
+already holds a live browser on the component at `storyRenders: finished`. The
+numeric assertion the handoff called worth institutionalising needs nothing more
+than that page.
+
+The reorder does give `/verify-frontend` its own phase at step 5, and the two do
+not collide: step 5 diffs the running app against the design and drives its
+interactions, while step 10 asserts token identity on a story. Step 5 also edits
+code, so it must precede every review — which is the whole reason it could not
+simply be folded into step 10.
 
 So the assertion **rides the boot the shots already pay for**. This requires an
 `--assert` flag added to `ui-shot.mjs` — a real cost, stated rather than hidden.
@@ -285,11 +318,13 @@ call.
 These stop the run with **no PR opened**, and a report:
 
 1. Reconcile-gate residue unanswered — park, never guess.
-2. Typecheck or tests still failing after two self-fix attempts.
-3. `/spec-review` returns `BLOCK` — a `MISSING` row, or an undefended stray.
+2. Typecheck, lint or tests still failing after two self-fix attempts.
+3. Two adversarial rounds with findings still open.
+4. `/spec-review` returns `BLOCK` — a `MISSING` row, or an undefended stray.
    Opening a PR carrying a known `MISSING` row is the exact failure the reconcile
-   gate exists to prevent, arriving one phase later.
-4. An assert `FAIL` that survives an expectation re-check.
+   gate exists to prevent, arriving eight phases later.
+5. An assert `FAIL` that survives an expectation re-check.
+6. A live-verification step `FAIL`, or a body claim with no wire line.
 
 ## Environment constraints
 
@@ -332,9 +367,11 @@ in `$ARGUMENTS`; never rely on inheritance.
 
 ## Built
 
-- `ship/SKILL.md` — the orchestrator.
+- `ship/SKILL.md` — the orchestrator, on the reordered phase list above.
+- `ship/references/adversarial-review.md` + `adversarial-findings.schema.json` —
+  step 8's invocation, findings schema, review prompt and quota-only fallback.
 - `agents/tz-simplify-reviewer.md`, `agents/tz-altitude-reviewer.md` — read-only
-  reviewers for phase 7.
+  reviewers for step 7.
 - `bin/link.ts` — the symlinking both entry points share, now covering
   `agents/*.md` into `~/.claude/agents/`. `bin/install.ts` and `setup.ts` were
   duplicating this logic; adding the agents pass twice is what forced the

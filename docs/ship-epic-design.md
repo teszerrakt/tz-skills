@@ -62,7 +62,7 @@ So `/ship-epic` spawns sessions, and the orchestrator is itself a
 `claude --bg -n orchestrator` session. Three consequences follow, and they are
 why the rest of this design is simple:
 
-1. A session can ask the user, so `/ship`'s phase-2 gate needs no headless
+1. A session can ask the user, so `/ship`'s reconcile gate needs no headless
    variant.
 2. Sessions are separate processes, so one parked ticket does not hold up the
    others.
@@ -317,7 +317,7 @@ top-level, so each fires its own `Stop` gate — a full `encore test ./...`,
 `golangci-lint`, `go vet` and `turbo lint/test/typecheck` per session. It is all
 inert today because `bin/klay-harness` is not built, but `hooks/lib/build-if-stale.sh`
 builds it on SessionStart when source is newer. The orchestrator asserts the
-harness is inert at startup rather than discovering it at phase 8.
+harness is inert at startup rather than discovering it mid-run.
 
 ## Prerequisites
 

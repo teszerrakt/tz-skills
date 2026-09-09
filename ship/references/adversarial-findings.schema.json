@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "description": "One entry per defect. Empty when the diff is clean.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "file", "line", "claim", "failure", "in_scope"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["blocker", "major", "minor"],
+            "description": "blocker: the diff is wrong and a user would hit it. major: wrong under a reachable input. minor: everything else."
+          },
+          "file": { "type": "string", "description": "Repo-relative path." },
+          "line": { "type": "integer", "description": "1-indexed line in that file." },
+          "claim": { "type": "string", "description": "One sentence naming the defect." },
+          "failure": { "type": "string", "description": "Concrete inputs or state, then the wrong output. A finding with no failure path is not a finding." },
+          "in_scope": {
+            "type": "boolean",
+            "description": "True when the fix lands inside a file this diff already touches. False routes the finding to the PR body's Follow-ups instead of being fixed."
+          }
+        }
+      }
+    }
+  }
+}

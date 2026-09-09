@@ -49,7 +49,7 @@ Five keys are this skill's alone, under `### Parallel runs`:
 |---|---|---|
 | Dev server ports | the env var and the range, one port per session | run serial |
 | Serialized steps | the step only one session may run at a time, and the lock | run serial |
-| Per-worktree opt-outs | the hooks or plugins a parallel run disables, and how to prove them inert | assert nothing, and say so in the report |
+| Opt-out check | the command that proves the worktree opt-outs inert | assert nothing, and say so in the report |
 | Concurrency pin | the flag that caps one session's task runner | run serial |
 | Alarm | the command run when no session can progress | report quietly |
 
@@ -70,7 +70,7 @@ measured epic all thirteen children carried it, including the nine already Done.
 Removing it parks a ticket, and it does nothing else.
 
 **A backend ticket is skipped and named in the report.** `/ship` stops before
-phase 0 on a backend path, and nothing else drives a backend ticket to a PR, so
+step 0 on a backend path, and nothing else drives a backend ticket to a PR, so
 a run that took one would produce a session that stops on its first phase.
 
 **Six tickets per run.** The binding constraint is how many PRs the user will
@@ -102,7 +102,7 @@ fixer tries to fix it.
 
 Assert before the first spawn, not at the phase that trips over it:
 
-- the per-worktree opt-outs are in place and **provably inert**,
+- the per-worktree opt-outs `/ship` step 0 writes are **provably inert**,
 - each planned session has a port of its own,
 - the report directory exists **outside the repo**.
 
@@ -118,7 +118,7 @@ Everything a session cannot negotiate later goes in its prompt, after the
 - its dev-server port,
 - the concurrency pin,
 - which step takes the serialization lock, and where the lock lives,
-- the per-worktree opt-outs it leaves in place.
+- the per-worktree opt-outs it leaves alone.
 
 Done when every prompt names its own paths, its own port and its own lock rule.
 A session that has to ask a sibling for one of them has already collided.
