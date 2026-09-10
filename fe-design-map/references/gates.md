@@ -42,6 +42,24 @@ FB="$HOME/.claude/fe-design-map/<repo>/<slug>" \
 
 It ticks the boxes, writes the first three lines of output into each `EVIDENCE`, prints a per-gate verdict, and exits non-zero while any gate is unmet. Paste the whole ledger into the ticket's resolution comment.
 
+## Prove the gate can fail, before the work starts
+
+A gate that cannot fail proves nothing, and it reads exactly like one that passed. So at chart time, with the fact base still empty, dry-run every ledger you just wrote:
+
+```bash
+FB="$HOME/.claude/fe-design-map/<repo>/<slug>" \
+  node ~/.claude/skills/fe-design-map/scripts/gate-check.mjs --dry "$FB/gates/01-figma-harvest.md"
+```
+
+`--dry` inverts the verdict: it exits zero only when **every** gate fails. It names any gate that passes before the work exists, then resets the boxes and evidence so the dry run leaves no trace.
+
+Two authoring habits are what it catches:
+
+- **Guard every count against zero.** `[ "$a" -le "$b" ]` is satisfied by `0 ≤ 0`, so the gate certifies an empty directory. Write `[ "$a" -le "$b" ] && [ "$b" -gt 0 ]`.
+- **Never let one echo token contain another.** `EXPECT: MATCH` against a CHECK that echoes `MISMATCH` on failure passes either way, because the runner falls back to a substring match. Use tokens that share no substring — `MATCH` and `DIFFER`. The runner now requires a word boundary, which kills this specific pair, but a token that is a whole word inside the other still slips through.
+
+Some gates are knowingly vacuous — "no file is a stub" is trivially true of no files. Say so in the ledger rather than leaving the dry run to report it every time.
+
 ## Abandon
 
 A gate you cannot meet has one honest exit. Add an `ABANDON:` line to it, with the reason:

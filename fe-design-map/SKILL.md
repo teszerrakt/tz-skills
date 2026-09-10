@@ -82,9 +82,13 @@ The user gives a feature and a Figma summary page URL.
 2. **Confirm the frames.** `get_metadata` on the Figma page, list the top-level frames, then `AskUserQuestion` (multiSelect) to confirm which belong to this feature. This step must happen here, with the user present — the confirmed **count** is what makes the harvest gates countable.
 3. **Ask for the optional inputs**: PRD doc link, Postman collection, target doc URL, parent build ticket.
 4. **Create the fact base** and write `meta.json`.
-5. **Write the gate ledgers** for tickets 1, 2, 3, and 6, before any harvest runs. Read [references/gates.md](references/gates.md).
+5. **Write the gate ledgers** for tickets 1, 2, 3, and 6, before any harvest runs, then **dry-run every one** (`gate-check.mjs --dry`) and confirm each gate fails on the empty fact base. A gate that already passes proves nothing later. Read [references/gates.md](references/gates.md).
 6. **Create the map** and its tickets on the tracker, then wire the blocking edges in a second pass.
-7. **Fire the harvests.** Dispatch one subagent per created harvest ticket, in parallel. Each subagent gets the ticket body, the fact base path, and its ledger path — nothing else.
+7. **Fire the harvests.** Dispatch **one subagent per created harvest ticket**, in parallel. Each subagent gets the ticket body, the fact base path, and its ledger path — nothing else.
+
+   Splitting a harvest finer than its ticket — one agent per frame, per endpoint — buys speed and costs consistency, and the trade is worse than it looks. Independent writers contradict each other reliably: they hand each other wrong facts, and repairing a file leaves every sibling still citing the disproved claim, so one round of fixes produces about as many contradictions as it closes. The gates do not catch this, because each file passes on its own.
+
+   If you split anyway, the split is not finished until a **single writer** has reconciled it: one agent, resolving every disputed claim to one verdict re-derived from source, writing that to `_canon.md`, and only then a pass that makes each file agree. Budget for that pass up front — it is not optional cleanup.
 8. **Stop.** Charting resolves no decision.
 
 ## Mode: work

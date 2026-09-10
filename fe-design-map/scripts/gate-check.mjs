@@ -6,9 +6,15 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 
-const file = process.argv[2];
+// --dry inverts the exit code: it passes only when every gate FAILS. Run it at
+// chart time, before any harvest. A gate that already passes on an empty fact
+// base proves nothing later, and that is how both of this script's own bugs
+// survived a full run (2026-09-10).
+const args = process.argv.slice(2);
+const dry = args.includes("--dry");
+const file = args.find((a) => !a.startsWith("--"));
 if (!file) {
-  console.error("usage: gate-check.mjs <ledger.md>");
+  console.error("usage: gate-check.mjs [--dry] <ledger.md>");
   process.exit(2);
 }
 
@@ -34,16 +40,26 @@ lines.forEach((line, i) => {
 });
 
 // EXPECT is a /regex/ when it is slash-delimited, otherwise an exact trimmed
-// match first and a substring match second.
+// match first and a substring match second. Two rules the obvious version gets
+// wrong, both found by gates that could not fail (2026-09-10):
+//   - Match against trimmed output. A CHECK is a shell command, and `wc` /
+//     `grep -c` always end theirs with a newline that JS `$` will not match past
+//     without the `m` flag, so every /^...$/ EXPECT was unpassable.
+//   - The substring fallback must land on a word boundary, or EXPECT `MATCH` is
+//     satisfied by output reading `MISMATCH` and the gate tests nothing.
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const matches = (expect, out) => {
+  const trimmed = out.trim();
   const re = expect.match(/^\/(.*)\/([gimsuy]*)$/);
-  if (re) return new RegExp(re[1], re[2]).test(out);
-  return out.trim() === expect.trim() || out.includes(expect);
+  if (re) return new RegExp(re[1], re[2]).test(trimmed);
+  if (trimmed === expect.trim()) return true;
+  return new RegExp(`(^|\\W)${escapeRe(expect.trim())}($|\\W)`).test(out);
 };
 
 const abandoned = () => gates.filter((g) => g.abandon).length;
 
 let unmet = 0;
+const vacuous = [];
 for (const gate of gates) {
   if (gate.abandon) {
     console.log(`ABANDONED ${gate.id} ${gate.title} — ${gate.abandon}`);
@@ -71,9 +87,31 @@ for (const gate of gates) {
   }
   console.log(`${pass ? "PASS" : "FAIL"} ${gate.id} ${gate.title} -> ${digest}`);
   if (!pass) unmet++;
+  if (dry && pass) vacuous.push(`${gate.id} ${gate.title} -> ${digest}`);
+}
+
+const total = gates.length - abandoned();
+
+if (dry) {
+  // A dry run must not leave ticks or evidence behind: nothing has been
+  // harvested, so every box goes back to unticked and pending.
+  for (const gate of gates) {
+    lines[gate.head] = lines[gate.head].replace(/^- \[[ xX]\]/, "- [ ]");
+    if (gate.evidence !== null) {
+      const indent = lines[gate.evidence].match(/^\s*/)[0];
+      lines[gate.evidence] = `${indent}EVIDENCE: pending`;
+    }
+  }
+  writeFileSync(file, lines.join("\n"));
+  console.log(`\ndry run: ${total - vacuous.length}/${total} gates correctly fail on an empty fact base`);
+  if (vacuous.length) {
+    console.log("\nThese gates pass before any work exists, so they can never prove it:");
+    for (const v of vacuous) console.log(`  VACUOUS ${v}`);
+    console.log("\nTighten each one, or state in the ledger why it is knowingly vacuous.");
+  }
+  process.exit(vacuous.length === 0 ? 0 : 1);
 }
 
 writeFileSync(file, lines.join("\n"));
-const total = gates.length - abandoned();
 console.log(`\n${total - unmet}/${total} gates met, ${abandoned()} abandoned`);
 process.exit(unmet === 0 ? 0 : 1);
