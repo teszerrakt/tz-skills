@@ -55,6 +55,13 @@ repeating. Start with the two that apply to every repo, then add the user's own:
 - Bullets over packed prose: any multi-clause rule becomes a bullet list, one fact per bullet.
 - Never reference a local path (`.scratch/`, `~/.claude/fe-design-map/`, a machine dir) in the
   published doc. Link the repo file on {{remote}} and inline the relevant differences instead.
+- **Length is a budget, decided before drafting: 5,000-8,000 words for a phase doc.** Over that,
+  the doc is doing the fact base's job a second time and worse. Cut in this order — token dumps
+  (hex, padding, type ramps: they live in `figma-styles.md`, the doc names only the deltas), gaps
+  written as paragraphs (one bullet each: the pain, then the ask), the same fact restated in a
+  third section, the case for a decision already settled in `decisions.md`, and any narration of
+  how the harvest ran. Never cut verbatim copy strings, Figma node links, the gate rule as code,
+  the endpoint samples or the role tables — a build cannot reconstruct those.
 
 ## PRD
 
@@ -76,6 +83,16 @@ Names the tracker conventions for the map. `fe-design-map` reads this to create 
 - **Fact base**: `~/.claude/fe-design-map/{{repo}}/<slug>/` — never pushed to a remote, deleted by
   `/fe-design-cleanup` once the build tickets close
 - Refer to a map or a ticket by its title, never by its id
+- **One Decisions-so-far entry per session, under 250 words.** The map body is usually the only
+  tracker surface the author reads, so it earns brevity rather than being exempt from it. A
+  decision gets its id, its answer and the single fact that forced it — not the deliberation.
+  Evidence longer than three lines goes to the fact base and is cited by filename.
+- **A correction REPLACES the sentence it corrects.** Never append the new fact and leave the old
+  one standing; patch the sentence in place. An appended contradiction leaves the map asserting
+  both, and a later reader cannot tell which half is current.
+- **A map ticket body states the work, the ledger and the done condition.** It is a brief, not a
+  tutorial: rules the agent must follow belong in this config file, where every ticket inherits
+  them, rather than pasted into each ticket.
 ```
 
 ## Fallback name
