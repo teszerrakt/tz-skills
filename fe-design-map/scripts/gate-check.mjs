@@ -20,6 +20,17 @@ if (!file) {
 
 const lines = readFileSync(file, "utf8").split("\n");
 
+// $FB comes from the ledger's own `FB:` header, not the caller's environment. An
+// unexported FB used to run every CHECK against `/`, which overwrote each
+// EVIDENCE line with a path error and unticked a met gate.
+const fbHeader = lines.find((l) => /^FB:\s*\S/.test(l));
+const env = { ...process.env };
+if (fbHeader) env.FB = fbHeader.replace(/^FB:\s*/, "").trim();
+if (!env.FB) {
+  console.error(`${file}: no \`FB:\` header and no FB in the environment`);
+  process.exit(2);
+}
+
 const gates = [];
 let current = null;
 lines.forEach((line, i) => {
@@ -73,7 +84,7 @@ for (const gate of gates) {
   let out = "";
   let threw = false;
   try {
-    out = execSync(gate.check, { shell: "/bin/bash", encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    out = execSync(gate.check, { shell: "/bin/bash", encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env });
   } catch (err) {
     out = `${err.stdout ?? ""}${err.stderr ?? ""}`.trim() || String(err.message);
     threw = true;
