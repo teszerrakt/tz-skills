@@ -112,4 +112,6 @@ The user gives a map, and optionally a ticket.
 
 **Ticket 6 — draft and publish.** Read [references/template.md](references/template.md). Iterate in the fact base until the user approves. Run the ledger before you publish. Publish only after approval. More than three blocking `OQ`s means the doc is not ready — say so and stop.
 
+Two rules the template carries and this step keeps getting wrong. **The doc has a word budget** — 5,000-8,000 — and a first draft over it is the fact base restated, not a longer spec. And **attaching the frame renders takes four calls, three of which succeed on their own**, so a `200` on the upload proves nothing and neither does the block count: attach one image, have the author confirm it renders, then do the rest.
+
 **Ticket 7 — build-ticket breakdown.** Read [references/build-tickets.md](references/build-tickets.md).
