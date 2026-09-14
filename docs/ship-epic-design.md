@@ -8,7 +8,7 @@ tested; where it was not, it says so.
 ## What it is
 
 `/ship-epic TRA-415` takes an epic, picks the tickets that can start now, and
-drives each one through `/ship` to a draft PR. It owns four things: which
+drives each one through `/ship` to a PR ready for review. It owns four things: which
 tickets to take, how many run at once, what happens when one blocks, and what
 the human reads afterwards. Every phase's judgment stays in `/ship`, which is
 already the single-ticket orchestrator.
@@ -30,9 +30,9 @@ tickets.
   made in `/ship`, not a wrapper around it.
 - **Merging.** No run merges anything.
 
-`/ship` lists "marking a PR ready for review" among its own non-goals, and that
-still holds for `/ship` alone. `/ship-epic` promotes the draft it produced, for
-the reason in *After the PR opens*.
+`/ship` promoted nothing when this was written, so `/ship-epic` did it. Since
+2026-09-14 `/ship` step 12 promotes its own PR and works the review; see *After
+the PR opens*.
 
 ## Sessions, not subagents
 
@@ -127,7 +127,7 @@ Every code-mutating phase now finishes before anything verifies:
 5b  verify-frontend           pixel diff + interaction; EDITS code
 5c  /run smoke                boot, load the changed route, console clean
 7   simplify                  last code-mutating phase
-8   codex adversarial         fixes scoped; see below
+8   Opus adversarial          fixes scoped; see below
 6   SPEC REVIEW               moved last, audits everything above
 9   shoot + assert            /ui-shots
 9b  verify live               conditional, serialized
@@ -143,6 +143,11 @@ lint nor the full gate, so a lint slip surfaced 9–10 minutes after the PR
 opened. With auto-fix on, that is a full CI round trip per slip.
 
 ## The adversarial review
+
+**Replaced 2026-09-14.** Step 8 now spawns a fresh read-only Opus subagent with
+the same prompt and findings schema; `ship/references/adversarial-review.md`
+holds the invocation. The parse gate and the scope rule below carried over. The
+codex design is kept as the record of what it replaced.
 
 `codex exec` with `--output-schema`, `gpt-6-astra`, `model_reasoning_effort`
 `xhigh`, read-only sandbox, approvals never, `--ephemeral`.
@@ -180,6 +185,12 @@ every PR after push at no cost and no limit.
 
 ## After the PR opens
 
+**Moved into `/ship` step 12 on 2026-09-14.** The reasoning below still holds;
+only the owner changed, so a lone `/ship` run no longer leaves a PR no bot
+looked at. One fact added since: the `CodeRabbit` check reads `pass` for a
+rate-limited review too — klaylab/klay#789 and #794 show `Review rate limited`
+with no review posted — so the wait reads the description, not the state.
+
 **CodeRabbit does not review a draft PR.** Observed on klaylab/klay#727:
 `Review skipped: draft pull request`. Since `/ship` terminates at a draft, the
 post-PR review net does not exist unless something promotes it. So a ticket that
@@ -211,7 +222,7 @@ knowledge base at `.claude/skills/fe-test/RULES.md`, which permits exactly two
 findings, both meaning *delete this test file*, and ends with an explicit gag
 list. Per ADR-030 decision 10 that muzzle is deliberate. It still leaves 1–3
 inline threads per PR on non-test code, with a parseable severity line, but it
-is a thin net by design — which is why the codex pass exists before the PR
+is a thin net by design — which is why the adversarial pass exists before the PR
 rather than after it.
 
 ## Human contact
@@ -280,7 +291,7 @@ did not, and its body says which.
 | 2 | Typecheck, lint or tests still failing after two self-fix attempts |
 | 3 | `/spec-review` returns `BLOCK` |
 | 4 | An assert `FAIL` that survives the expectation re-check |
-| 5 | Two codex rounds with findings still open |
+| 5 | Two adversarial-review rounds with findings still open |
 | 6 | A permission stall — killed, denied command reported |
 
 ## Environment constraints

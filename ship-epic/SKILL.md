@@ -168,25 +168,16 @@ Run completion notifies quietly.
 
 ## After the PR opens
 
-**CodeRabbit does not review a draft PR** — observed as `Review skipped: draft
-pull request`. `/ship` terminates at a draft, so the post-PR review net does not
-exist until something promotes it.
+`/ship` step 12 marks its own PR ready and works CodeRabbit's comments, so
+nothing here promotes or fixes. Read the outcome instead: a ready PR passed
+every phase, and a draft one did not.
 
-So a ticket that reached the end with no abort is **marked ready**, and only then
-does the CodeRabbit pass run. An aborted ticket's PR stays a draft: there is no
-reason to ping a reviewer at a run that stopped.
-
-Work the comments in **one pass**. `/address-review` splits into two phases only
-because it needs a real SHA before it can reply and that SHA requires a human
-push; you push your own fix commit, so you already have it. Override its
-auto-resolve to never — CodeRabbit closes its own threads on re-review, and a
-thread resolved before the user reads it hides what was flagged.
+**Name every `RATE_LIMITED` review in the report.** Every session pushes as the
+same user, so they share the bot's rate limit — a multi-ticket run is where it
+bites, and the user needs to know which PRs no bot looked at.
 
 Waiting for CI and the review is nearly free, because it overlaps the next
 ticket.
-
-**Flake guard:** the same test failing twice with different error text stops the
-loop instead of being fixed a third time.
 
 Done when every finished ticket's PR is ready with its review threads answered,
 and every aborted one is a draft whose body says why.
