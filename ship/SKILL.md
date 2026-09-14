@@ -1,14 +1,15 @@
 ---
 name: ship
-description: Drive one frontend ticket from tracker to draft PR — intake, the reconcile gate, implement, test, review, shots, then the PR. Use when asked to ship, drive or deliver a ticket end to end, or when another skill needs one ticket taken to a PR.
+description: Drive one frontend ticket from tracker to a PR ready for review — intake, the reconcile gate, implement, test, review, shots, the PR, then CodeRabbit's comments worked. Use when asked to ship, drive or deliver a ticket end to end, or when another skill needs one ticket taken to a PR.
 argument-hint: "TRA-XXX"
 ---
 
 # ship
 
-Drive one frontend ticket to a **draft PR** and stop there. The name does not
-say so — this line does: no merge, no ready-for-review, no CodeRabbit loop.
-`/address-review` owns that loop and needs a human push mid-flight.
+Drive one frontend ticket to a PR **marked ready for review, with CodeRabbit's
+comments worked**, and stop there. No merge. The PR opens as a draft and is
+promoted only after every phase passes: CodeRabbit skips a draft, so the
+promotion is what starts its review.
 
 This skill owns four things: the phase sequence, each delegate's **brief**, the
 **gate** between phases, and the **aborts**. Every phase's judgment stays in the
@@ -70,7 +71,9 @@ Name it.
 
 **Every code-mutating phase finishes before anything verifies.** Steps 0–8
 change code; steps 9–11 judge it and report. A verification run before the last
-edit judges a diff that no longer exists.
+edit judges a diff that no longer exists. Step 12 is the one exception: a bot
+comments only on a pushed PR, so its fixes land after verification — minimal,
+in scope, and re-checked before each push.
 
 ### 0. Bootstrap the worktree
 
@@ -259,7 +262,7 @@ anything.
 The two local reviews are the two a bot cannot do. The spec axis, because
 CodeRabbit never sees the ticket; and step 8, because the CodeRabbit seat that
 reviews the PR for free allows three CLI reviews an hour. Everything else waits
-for the push, where `/address-review` works its comments.
+for the push, where step 12 works CodeRabbit's comments.
 
 A `BLOCK` verdict aborts the run. Opening a PR that carries a known `MISSING` row
 is the failure the gate in step 1 exists to prevent, arriving eight phases later.
@@ -327,7 +330,7 @@ only reversed, so every row a recording creates is permanent.
 Done when every claim the body will make has a step behind it, and every step is
 `PASS`, `FAIL` or `UNOBSERVED` with a reason.
 
-### 11. Open the draft PR
+### 11. Open the PR as a draft
 
 Write the body to the sections `## Delivery` allows, in that order, carrying the
 shots from step 10, any clip from step 10b, the step-1 decisions, the
@@ -373,8 +376,8 @@ Run the prose gate. Then write the body through the config's write path and
 **read the body back to prove it changed** — a write can report success and
 silently leave the body untouched.
 
-Draft, not ready-for-review: the gate decisions and the `UNASSERTED` states are
-yours to read before a human reviewer is pinged.
+Open it as a draft. Step 12 promotes it once 11b has written the follow-ups, so
+the body is final before anything reviews it.
 
 Done when the prose gate passes and the re-read body matches what you wrote.
 
@@ -418,9 +421,46 @@ there unprompted is refused by the user's own standing preference.
 Done when every follow-up names its surface, its severity, its consequence, its
 cost and its anchor, and the merges are stated.
 
+### 12. Mark ready, then work the review
+
+Runs only when no abort fired. `gh pr ready <n>`.
+
+**Wait on the `CodeRabbit` check's description, never its state.** The check
+reads `pass` for `Review completed` and for `Review rate limited` alike, and a
+rate-limited review posts no threads — read as clean, it passes a PR nothing
+looked at. Watch CI in the same wait (`gh pr checks <n> --watch`): CI takes
+about ten minutes, CodeRabbit about five.
+
+- `Review completed` — work the threads.
+- `Review rate limited` — wait the time the bot's own comment names, then post
+  `@coderabbitai review` once. Still limited: report `RATE_LIMITED`, a third
+  state beside reviewed and clean.
+
+Work the threads through `/address-review --driven <n>`: one pass, no question
+per thread, the fix committed and pushed by you, replies carrying the real SHA,
+nothing resolved. The brief carries the diff range and step 8's scope rule — a
+fix lands only in files the diff already touches, and anything else becomes a
+reply plus a `Follow-ups` line in 11b's shape.
+
+Re-run step 4's commands before each push. A fix that changes a shot's state
+re-runs step 10 for that state: a stale image misrepresents the diff.
+
+CI red gets two self-fix attempts, as in step 4. **Flake guard:** the same test
+failing twice with different error text is load, not a bug — stop rather than
+fix it a third time.
+
+Two review rounds; CodeRabbit re-reviews each push. Threads still open after
+the second keep their reply and wait for the human.
+
+Done when CI is green, the `CodeRabbit` check reads `Review completed` or the
+run reports `RATE_LIMITED`, and every CodeRabbit thread has a reply.
+
 ## Aborts
 
-Each stops the run with a report and **no PR**:
+Each stops the run with a report. Aborts 1–6 fire before step 11 and leave **no
+PR**. Abort 7 fires after it: the PR goes back to draft (`gh pr ready <n>
+--undo`) with one line in the body saying why, so a ready PR always means every
+phase passed.
 
 | # | Condition |
 |---|---|
@@ -430,6 +470,7 @@ Each stops the run with a report and **no PR**:
 | 4 | `/spec-review` returns `BLOCK` |
 | 5 | An assert `FAIL` that survives the expectation re-check |
 | 6 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
+| 7 | CI still red after two self-fix attempts in step 12 |
 
 Token spend is not an abort condition. The phase list fixes the cost, and a
 running orchestrator cannot measure its own spend.

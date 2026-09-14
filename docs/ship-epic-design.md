@@ -8,7 +8,7 @@ tested; where it was not, it says so.
 ## What it is
 
 `/ship-epic TRA-415` takes an epic, picks the tickets that can start now, and
-drives each one through `/ship` to a draft PR. It owns four things: which
+drives each one through `/ship` to a PR ready for review. It owns four things: which
 tickets to take, how many run at once, what happens when one blocks, and what
 the human reads afterwards. Every phase's judgment stays in `/ship`, which is
 already the single-ticket orchestrator.
@@ -30,9 +30,9 @@ tickets.
   made in `/ship`, not a wrapper around it.
 - **Merging.** No run merges anything.
 
-`/ship` lists "marking a PR ready for review" among its own non-goals, and that
-still holds for `/ship` alone. `/ship-epic` promotes the draft it produced, for
-the reason in *After the PR opens*.
+`/ship` promoted nothing when this was written, so `/ship-epic` did it. Since
+2026-09-14 `/ship` step 12 promotes its own PR and works the review; see *After
+the PR opens*.
 
 ## Sessions, not subagents
 
@@ -179,6 +179,12 @@ each is 6 calls. It also buys a duplicate, because GitHub CodeRabbit reviews
 every PR after push at no cost and no limit.
 
 ## After the PR opens
+
+**Moved into `/ship` step 12 on 2026-09-14.** The reasoning below still holds;
+only the owner changed, so a lone `/ship` run no longer leaves a PR no bot
+looked at. One fact added since: the `CodeRabbit` check reads `pass` for a
+rate-limited review too — klaylab/klay#789 and #794 show `Review rate limited`
+with no review posted — so the wait reads the description, not the state.
 
 **CodeRabbit does not review a draft PR.** Observed on klaylab/klay#727:
 `Review skipped: draft pull request`. Since `/ship` terminates at a draft, the

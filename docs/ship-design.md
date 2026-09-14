@@ -10,7 +10,7 @@ frontend ticket by hand.
 ## What it is
 
 A **thin orchestrator**. `/ship TRA-470` drives a frontend ticket from tracker
-to draft pull request. It owns four things and nothing else:
+to a pull request ready for review, with CodeRabbit's comments worked. It owns four things and nothing else:
 
 1. the phase sequence,
 2. the brief handed to each delegate,
@@ -22,13 +22,19 @@ The orchestrator contributes no testing and no screenshot or recording knowledge
 of its own, and no review verdict: it passes a brief, then reads a report or a
 schema-validated finding list.
 
-It ends at a **draft PR**, not at merge and not at deploy.
+It ends at a **PR ready for review**, not at merge and not at deploy.
 
 **The stop rule is stated, not named.** This was `/to-pr`, where the name itself
 carried the rule. `/ship` reads as merged-and-deployed, so the rule moved into
-the skill's opening line and into the non-goals below. Growing the scope to
-match the new name was the alternative and it contradicts a non-goal already
-here: chaining `/address-review` breaks that skill's own two-phase contract.
+the skill's opening line and into the non-goals below.
+
+**Revised 2026-09-14: it no longer stops at a draft.** Promotion and the
+CodeRabbit pass lived in `/ship-epic`, so a lone `/ship` run left a PR no bot
+reviewed — CodeRabbit skips drafts. Both moved here as step 12. The old
+objection, that chaining `/address-review` breaks its two-phase contract, does
+not hold for a driver: the split exists only to wait for a pushed SHA, and a
+driver that pushes its own fix has one. `/address-review --driven` states that
+rather than relying on a brief to override its hard rules.
 
 ## Non-goals
 
@@ -38,10 +44,7 @@ here: chaining `/address-review` breaks that skill's own two-phase contract.
   different pipeline with zero measurements behind them. Revisit after the
   frontend path has run three tickets — met as of TRA-423, so this is open to
   take up rather than blocked.
-- **Merging, deploying, or marking a PR ready for review.**
-- **Running the CodeRabbit loop.** `/address-review` owns that, and it is
-  deliberately two-phase: it needs a human push between drafting fixes and
-  posting replies. Chaining it inside `/ship` would break its own contract.
+- **Merging or deploying.**
 - **A token budget.** The phase list fixes the cost; a mid-run budget cannot be
   enforced without the orchestrator polling its own spend.
 
@@ -107,12 +110,18 @@ table below is the order that shipped.
 | 9 | Spec review | `/spec-review` | verdict `BLOCK` |
 | 10 | Shots + assert | config-named skill | assert `FAIL` |
 | 10b | Verify live | config-named skill | step `FAIL`, or a claim with no wire line |
-| 11 | PR | `/ship` (main) | prose gate |
+| 11 | Draft PR | `/ship` (main) | prose gate |
+| 12 | Ready + CodeRabbit | `/ship` (main), then `/address-review --driven` | CI red after two self-fix attempts |
 
 Steps 0–8 change code and 9–11 judge it. That split is the point of the order:
 `/spec-review` ran at 6 and computed its verdict against a diff simplify then
 edited, so its anchors could be deleted by the time the PR opened and simplify's
 own edits were audited by nothing.
+
+Step 12 is the forced exception: a bot comments only on a pushed PR. Its fixes
+stay minimal and in scope, and re-run step 4 before each push. It waits on the
+`CodeRabbit` check's description rather than its state, because the check reads
+`pass` for a rate-limited review that posted nothing (klaylab/klay#789, #794).
 
 Step 10b is conditional: it runs when a ticket's acceptance turns on what the
 server sends and reports `SKIPPED` otherwise. It is a separate phase rather than
