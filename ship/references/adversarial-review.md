@@ -4,49 +4,20 @@ Reference for `/ship` step 8, the one local quality pass. Read when running it.
 
 ## The invocation
 
-Plain `codex exec`, never `codex exec review`. The `review` subcommand has a
-purpose-built review prompt but **silently ignores `--output-schema`**
-([openai/codex#15451](https://github.com/openai/codex/issues/15451)) and answers
-in prose. Structured findings are the whole point — they are what lets the run
-branch on severity and on scope — so the plain form wins and the review prompt
-lives here instead.
+Spawn a fresh Opus subagent, restricted to reading, with the ticket id, the
+diff range, and the prompt below. It answers with JSON matching
+`adversarial-findings.schema.json` in this directory — findings, or an
+explicit empty array.
 
-```bash
-codex exec \
-  --model gpt-6-astra \
-  -c model_reasoning_effort=xhigh \
-  --sandbox read-only \
-  --ephemeral \
-  --output-schema <this dir>/adversarial-findings.schema.json \
-  -o <run dir>/findings.json \
-  "$(cat prompt.txt)"
-```
+Structured findings are the whole point — they are what lets the run branch
+on severity and on scope — so the schema is passed to the subagent as part of
+its brief, not inferred from prose.
 
-Read the findings from the `-o` file, not from stdout: stdout carries the
-session's own chatter around the final message.
+## Never trust unparsed output
 
-`codex exec` takes no approval flag at all — non-interactive runs never ask — so
-`--sandbox read-only` is what keeps the reviewer from editing the diff it is
-judging. Name the model and the effort explicitly even when
-`~/.codex/config.toml` already sets them; that file is the user's and moves
-underneath a run. `xhigh` is a choice, not a lookup: OpenAI publishes no
-code-review effort guidance, and `xhigh` is the value `gpt-6-astra` itself uses
-for `multi_agent_reasoning_effort`, one rung below `max`/`ultra` where cost
-climbs with no published justification. Recalibrate it against real findings.
-
-## Never gate on the exit code
-
-`codex exec review --base <bad-ref>` printed *"Review blocked… No diff was
-reviewed"* and **exited 0**. Gate on parsed, schema-validated output: findings
-present, or an explicit empty array. Anything that does not parse is a failed
-review, whatever the exit code said.
-
-## The fallback fires on quota alone
-
-An Opus reviewer agent with this same prompt and schema, and **only** on a
-matched quota message in stderr. `codex` exits 1 for every runtime error, so
-triggering the fallback on any non-zero exit would let one config typo silently
-downgrade every review from here on, invisibly.
+Gate on parsed, schema-validated output: findings present, or an explicit
+empty array. A response that does not parse against the schema is a failed
+review, whatever the subagent's own summary claimed.
 
 ## The prompt
 

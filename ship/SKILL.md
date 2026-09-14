@@ -233,7 +233,7 @@ Done when every finding is applied or refused with a stated reason.
 ### 8. Adversarial review
 
 The one local quality pass, and the last phase that may change code. Invocation,
-output schema, review prompt and the fallback rule:
+output schema, review prompt and the parse rule:
 [`references/adversarial-review.md`](references/adversarial-review.md).
 
 **Gate on the parsed findings, never on the exit code.** A blocked review has
