@@ -127,7 +127,7 @@ Every code-mutating phase now finishes before anything verifies:
 5b  verify-frontend           pixel diff + interaction; EDITS code
 5c  /run smoke                boot, load the changed route, console clean
 7   simplify                  last code-mutating phase
-8   codex adversarial         fixes scoped; see below
+8   Opus adversarial          fixes scoped; see below
 6   SPEC REVIEW               moved last, audits everything above
 9   shoot + assert            /ui-shots
 9b  verify live               conditional, serialized
@@ -143,6 +143,11 @@ lint nor the full gate, so a lint slip surfaced 9–10 minutes after the PR
 opened. With auto-fix on, that is a full CI round trip per slip.
 
 ## The adversarial review
+
+**Replaced 2026-09-14.** Step 8 now spawns a fresh read-only Opus subagent with
+the same prompt and findings schema; `ship/references/adversarial-review.md`
+holds the invocation. The parse gate and the scope rule below carried over. The
+codex design is kept as the record of what it replaced.
 
 `codex exec` with `--output-schema`, `gpt-6-astra`, `model_reasoning_effort`
 `xhigh`, read-only sandbox, approvals never, `--ephemeral`.
@@ -217,7 +222,7 @@ knowledge base at `.claude/skills/fe-test/RULES.md`, which permits exactly two
 findings, both meaning *delete this test file*, and ends with an explicit gag
 list. Per ADR-030 decision 10 that muzzle is deliberate. It still leaves 1–3
 inline threads per PR on non-test code, with a parseable severity line, but it
-is a thin net by design — which is why the codex pass exists before the PR
+is a thin net by design — which is why the adversarial pass exists before the PR
 rather than after it.
 
 ## Human contact
@@ -286,7 +291,7 @@ did not, and its body says which.
 | 2 | Typecheck, lint or tests still failing after two self-fix attempts |
 | 3 | `/spec-review` returns `BLOCK` |
 | 4 | An assert `FAIL` that survives the expectation re-check |
-| 5 | Two codex rounds with findings still open |
+| 5 | Two adversarial-review rounds with findings still open |
 | 6 | A permission stall — killed, denied command reported |
 
 ## Environment constraints

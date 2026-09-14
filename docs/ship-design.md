@@ -70,7 +70,7 @@ The section names **skills, not commands**, wherever a phase carries judgment:
 - Tests: `/fe-test`
 - Visual verification: `/verify-frontend`
 - Smoke: `/run`
-- Adversarial review: `codex exec` — see `ship/references/adversarial-review.md`
+- Adversarial review: an Opus subagent — see `ship/references/adversarial-review.md`
 - Screenshots: `/ui-shots`
 - Design assertion: `/ui-shots` (assert mode)
 - PR prose gate: `scripts/check-prose.py --surface pr <file>`
@@ -106,7 +106,7 @@ table below is the order that shipped.
 | 5 | Visual verification | config-named skill | — |
 | 6 | Smoke the changed route | config-named skill | a dirty console |
 | 7 | Simplify | two agents, below | — |
-| 8 | Adversarial review | `codex exec` | two rounds with findings open |
+| 8 | Adversarial review | Opus subagent, read-only | two rounds with findings open |
 | 9 | Spec review | `/spec-review` | verdict `BLOCK` |
 | 10 | Shots + assert | config-named skill | assert `FAIL` |
 | 10b | Verify live | config-named skill | step `FAIL`, or a claim with no wire line |
@@ -378,7 +378,7 @@ in `$ARGUMENTS`; never rely on inheritance.
 
 - `ship/SKILL.md` — the orchestrator, on the reordered phase list above.
 - `ship/references/adversarial-review.md` + `adversarial-findings.schema.json` —
-  step 8's invocation, findings schema, review prompt and quota-only fallback.
+  step 8's invocation, findings schema, review prompt and parse rule.
 - `agents/tz-simplify-reviewer.md`, `agents/tz-altitude-reviewer.md` — read-only
   reviewers for step 7.
 - `bin/link.ts` — the symlinking both entry points share, now covering
