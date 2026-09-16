@@ -62,8 +62,9 @@ whose key is absent reports `SKIPPED`.
 - **Token file:** {{path}}. A browser reports colour as `oklch(…)`, so assert
   token identity against this file rather than the hex a design names.
 - **PR prose gate:** {{command}}.
-- **PR body sections:** {{headings, in order}} — at most {{n}} sections,
-  at most {{n}} table, {{other caps}}.
+- **PR body sections:** {{headings, in order}} — {{required ones}} required,
+  at most {{n}} sections, at most {{n}} tables, {{other caps}}. `/ship` step 11
+  writes them in CodeRabbit's shape: `Summary`, `Changes`, `Merge risk`.
 - **PR body write path:** {{command}}, then read the body back and confirm it
   changed.
 

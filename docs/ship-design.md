@@ -74,8 +74,9 @@ The section names **skills, not commands**, wherever a phase carries judgment:
 - Screenshots: `/ui-shots`
 - Design assertion: `/ui-shots` (assert mode)
 - PR prose gate: `scripts/check-prose.py --surface pr <file>`
-- PR body sections: Summary, Test plan, Out of scope, Follow-ups — that order,
-  max 4 sections, max 1 table, no `###`, no nested list, under 1000 words
+- PR body sections: Summary, Changes, Merge risk, Test plan, Live verification,
+  Out of scope, Follow-ups — that order; Summary, Merge risk and Test plan
+  required; max 7 sections, max 3 tables, no `###`, no nested list, under 1000 words
 - PR body write path: `gh api -X PATCH repos/<slug>/pulls/<n> --input payload.json`,
   then re-read the body to confirm it changed
 ```
