@@ -7,12 +7,11 @@ Read by `ship`, and by `ship-epic` for the parallel-run keys at the end. It appe
 Ask for nothing the repo states.
 
 ```bash
-git ls-files | grep -iE 'check-prose|prose|pr-lint'
 git ls-files | grep -iE 'tailwind.*\.css$|tokens?\.css$|theme\.css$'
 ls .claude/skills/
 ```
 
-The first finds the PR prose gate. The second finds the token file a colour assertion resolves against. The third finds the repo-scoped skills the phases delegate to: a screenshot skill and a test-policy skill matter most, and a visual-verification skill and an app-launch skill fill the two phases that run the real app.
+The first finds the token file a colour assertion resolves against. The second finds the repo-scoped skills the phases delegate to: a screenshot skill and a test-policy skill matter most, and a visual-verification skill and an app-launch skill fill the two phases that run the real app.
 
 For the typecheck command, read the monorepo task runner's config and then the app's own `package.json`. **An app that declares no `typecheck` script usually typechecks through `build`** — a `tsc -b && <bundler> build` is the same compile, and naming the absent task instead produces a phase that silently passes.
 
@@ -61,7 +60,6 @@ whose key is absent reports `SKIPPED`.
   branch.
 - **Token file:** {{path}}. A browser reports colour as `oklch(…)`, so assert
   token identity against this file rather than the hex a design names.
-- **PR prose gate:** {{command}}.
 - **PR body sections:** {{headings, in order}} — {{required ones}} required,
   at most {{n}} sections, at most {{n}} tables, {{other caps}}. `/ship` step 11
   writes them in CodeRabbit's shape: `Summary`, `Changes`, `Merge risk`.

@@ -73,7 +73,6 @@ The section names **skills, not commands**, wherever a phase carries judgment:
 - Adversarial review: an Opus subagent — see `ship/references/adversarial-review.md`
 - Screenshots: `/ui-shots`
 - Design assertion: `/ui-shots` (assert mode)
-- PR prose gate: `scripts/check-prose.py --surface pr <file>`
 - PR body sections: Summary, Changes, Merge risk, Test plan, Live verification,
   Out of scope, Follow-ups — that order; Summary, Merge risk and Test plan
   required; max 7 sections, max 3 tables, no `###`, no nested list, under 1000 words
@@ -111,7 +110,7 @@ table below is the order that shipped.
 | 9 | Spec review | `/spec-review` | verdict `BLOCK` |
 | 10 | Shots + assert | config-named skill | assert `FAIL` |
 | 10b | Verify live | config-named skill | step `FAIL`, or a claim with no wire line |
-| 11 | Draft PR | `/ship` (main) | prose gate |
+| 11 | Draft PR | `/ship` (main) | — |
 | 12 | Ready + CodeRabbit | `/ship` (main), then `/address-review --driven` | CI red after two self-fix attempts |
 
 Steps 0–8 change code and 9–11 judge it. That split is the point of the order:
