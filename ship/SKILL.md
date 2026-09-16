@@ -372,6 +372,40 @@ Plain words, too. The same rule as a question: name what changed and what a
 reader would see, not the reasoning that got there. The reasoning belongs in the
 commit messages, which is where a reviewer goes for it.
 
+**Write it in CodeRabbit's shape.** Its summary is the one reviewers read to
+the end, because every line is a claim and none is an argument:
+
+```markdown
+## Summary
+
+- **Fix:** bill exception amounts show the bill's currency, e.g. `IDR 14.500.000,00`
+- **Change:** the exception count is gone from the panel header
+
+## Changes
+
+| Area | Files | What changed |
+|---|---|---|
+| **Exception copy** | `utils/bill-exception-copy.ts` | Returns text and money parts |
+| **Panel** | `components/bill-exceptions-panel.tsx` | Takes a currency code; restyled to Figma |
+
+## Merge risk
+
+⚪ Minimal: styling and one new prop, both hosts pass it.
+
+## Test plan
+
+- [x] Bills suite green, typecheck and lint clean
+```
+
+- `Summary`: one line per bullet, labelled `**Fix:**`, `**Feature:**` or
+  `**Change:**`, saying what a user sees. No file names, token names or pixel
+  values — those are the diff's job.
+- `Changes`: one row per area, one sentence per row. Skip it when one file moved.
+- `Merge risk`: one of `⚪ Minimal`, `🔵 Low`, `🟡 Moderate`, `🔴 High`, and one
+  sentence naming what could break. Rate by what a user loses if it is wrong.
+
+The sections `## Delivery` names win over this example where the two differ.
+
 Run the prose gate. Then write the body through the config's write path and
 **read the body back to prove it changed** — a write can report success and
 silently leave the body untouched.
