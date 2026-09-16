@@ -43,7 +43,6 @@ Write no new config file. Read, in this order:
 | Live verification | the skill and flag that record a flow against the real API |
 | Verification bundle | the branch and directory a recording's artifacts are committed to |
 | Token file | where a colour token resolves to its name |
-| PR prose gate | the command that validates the PR body |
 | PR body sections | the allowed headings, in order, and the caps |
 | PR body write path | how to write a body, and how to prove it landed |
 | Environment traps | the machine-specific gotchas a delegate must be told |
@@ -357,11 +356,9 @@ Keeping the bundle off the remote is about **branches**, not evidence. Commit
 the flow module, the wire log and the frames wherever the config says, and
 upload the thing a reviewer has to see regardless.
 
-**Aim for 300 words, or 550 with a live-verification section. The prose gate's
-cap is not the budget.** That number is the p98 of the surface — a backstop for
-outliers, which the gate's own source says. Written to, it produces a body
-nobody reads, and an unread body fails at the only thing it is for. Two measured
-bodies came in at 1016 and 808 words and lost nothing at 335 and 300.
+**Aim for 300 words, or 550 with a live-verification section.** A longer body is
+one nobody reads, and an unread body fails at the only thing it is for. Two
+measured bodies came in at 1016 and 808 words and lost nothing at 335 and 300.
 
 A recorded body runs longer for a reason that is not padding: each clip costs a
 caption, and the section costs a pointer to the wire log. One measured at 551
@@ -406,14 +403,14 @@ the end, because every line is a claim and none is an argument:
 
 The sections `## Delivery` names win over this example where the two differ.
 
-Run the prose gate. Then write the body through the config's write path and
+Write the body through the config's write path and
 **read the body back to prove it changed** — a write can report success and
 silently leave the body untouched.
 
 Open it as a draft. Step 12 promotes it once 11b has written the follow-ups, so
 the body is final before anything reviews it.
 
-Done when the prose gate passes and the re-read body matches what you wrote.
+Done when the re-read body matches what you wrote.
 
 ### 11b. The follow-ups, in a shape someone can rule on
 
