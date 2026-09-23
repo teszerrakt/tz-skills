@@ -2,7 +2,7 @@
 
 Section order is fixed so reviewers keep one mental map across docs. Sections marked *(skip if empty)* are dropped, not left as stubs. Guidance notes are in blockquotes; delete them in the real doc.
 
-**Length is a budget, decided before drafting: 5,000-8,000 words.** Past that the doc is doing the fact base's job a second time and worse. Cut in this order — token dumps (hex, padding, type ramps, spacing: those live in `figma-styles.md`, and §5 names only the deltas), gaps written as paragraphs (§10 is one bullet each: the pain, then the ask), the same fact restated in a third section, the case for a decision already settled in `decisions.md`, and any narration of how the harvest ran. Never cut verbatim copy strings, Figma node links, the gate rule as code, the endpoint samples or the role tables — a build cannot reconstruct those from anywhere else.
+**Length is a budget, decided before drafting: 5,000-8,000 words.** Past that the doc is doing the fact base's job a second time and worse. Cut in this order — token dumps (hex, padding, type ramps, spacing: those live in `figma-styles.md`, and §5 names only the deltas), gaps written as paragraphs (§10 is one checklist line each, grouped by code area), the same fact restated in a third section, the case for a decision already settled in `decisions.md`, and any narration of how the harvest ran. Never cut verbatim copy strings, Figma node links, the gate rule as code, the endpoint samples or the capability table — a build cannot reconstruct those from anywhere else.
 
 ---
 
@@ -36,7 +36,7 @@ Figma:
 
 ## 4. Data Source
 
-Base: `{base-url-prefix}`. Auth: {token type}. Roles per section {Roles section number}.
+Base: `{base-url-prefix}`. Auth: {token type}. Capabilities per section {Capabilities section number}.
 
 > One `###` per endpoint. Prose covers: what it drives in the UI, notable fields, error mapping to UI copy, gap refs (G-n). Each sample sits under its own `####` so it collapses natively in Coda.
 
@@ -79,13 +79,26 @@ Base: `{base-url-prefix}`. Auth: {token type}. Roles per section {Roles section 
 
 > One section per cross-component flow (delete, bulk action): trigger, confirmation copy, API call, toasts, edge cases.
 
-## 9. Roles & Permissions
+## 9. Capabilities & Permissions
 
-> Reads vs writes matrix sourced from the project's permissions file (link it). Note which UI affordances hide per role and who the page's main operator is.
+> Sourced from the project's permissions file (link it). One table: capability → what it gates on this page. Name capabilities, never roles: a role is only a default bundle of capabilities, so a role name misleads the moment an entity regrants one. The same goes for live-capture provenance — name each account by the capabilities it held. Note who the page's main operator is, by capability.
+
+| Capability | Gates on this page |
+|---|---|
 
 ## 10. BE Gaps *(skip if empty)*
 
-> One bullet per gap: **G-n {short title}.** Current pain, then the concrete ask.
+> Group the gaps by where the backend fixes them — one `###` per code area, each group becomes one backend ticket at the breakdown. Inside a group, one checklist item per gap, marked 🔴 (blocks an FE part until it ships) or 🟡 (FE ships now on the current behaviour), with the bold id and title alone on the line. Under it, always the same three sub-bullets: **Now**, **Ask**, **Why** — `Why` carries the source (Figma, the sheet), what it blocks, and the RFC clause it overrides. Open the section with the two-line legend.
+
+- 🔴 blocks an FE part until it ships
+- 🟡 FE ships now and shows the server's current behaviour until it lands
+
+### {Code area} — `{file or package}`
+
+- [ ] 🔴 **G-n {Short title}**
+    - **Now:** {what the server does today}
+    - **Ask:** {the change, concrete}
+    - **Why:** {source}. Blocks {the FE part}. Overrides RFC-x §y ({clause id})
 
 ## 11. Related Tickets *(skip until tickets exist)*
 
@@ -96,9 +109,19 @@ Published {date} under parent [{ticket}]({url}). Estimates are AI-assisted imple
 
 ## 12. TODOs & Open Questions
 
+> Three short lists, each item with an owner. Write `— none.` beside a heading with nothing under it, and one line naming what was settled instead.
+
 **Open questions**
 
 > **OQ-n ({owner: BE | design | BE + design}).** The contradiction or unknown, the interim assumption the FE builds on, and what changes if the answer flips.
+
+**TODOs**
+
+- [ ] {Work someone outside FE owes this build, e.g. a Figma rename} — owner: {design | backend | author}
+
+**Accepted risks**
+
+- {The cost the author accepted, and the rule it breaks.}
 
 **Images to add** *(skip if screenshots were auto-embedded)*
 
