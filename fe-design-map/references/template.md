@@ -85,15 +85,17 @@ Base: `{base-url-prefix}`. Auth: {token type}. Roles per section {Roles section 
 
 ## 10. BE Gaps *(skip if empty)*
 
-> Group the gaps by where the backend fixes them — one `###` per code area, each group becomes one backend ticket at the breakdown. Inside a group, one checklist item per gap, marked 🔴 (blocks an FE part until it ships) or 🟡 (FE ships now on the current behaviour): bold id and title, the ask, then what it blocks or which RFC clause it overrides. Open the section with the two-line legend.
+> Group the gaps by where the backend fixes them — one `###` per code area, each group becomes one backend ticket at the breakdown. Inside a group, one checklist item per gap, marked 🔴 (blocks an FE part until it ships) or 🟡 (FE ships now on the current behaviour), with the bold id and title alone on the line. Under it, always the same three sub-bullets: **Now**, **Ask**, **Why** — `Why` carries the source (Figma, the sheet), what it blocks, and the RFC clause it overrides. Open the section with the two-line legend.
 
 - 🔴 blocks an FE part until it ships
 - 🟡 FE ships now and shows the server's current behaviour until it lands
 
 ### {Code area} — `{file or package}`
 
-- [ ] 🔴 **G-n {Short title}.** {The ask, concrete.} Blocks: {the FE part}.
-- [ ] 🟡 **G-n {Short title}.** {The ask.} Overrides RFC-x §y ({clause id}).
+- [ ] 🔴 **G-n {Short title}**
+    - **Now:** {what the server does today}
+    - **Ask:** {the change, concrete}
+    - **Why:** {source}. Blocks {the FE part}. Overrides RFC-x §y ({clause id})
 
 ## 11. Related Tickets *(skip until tickets exist)*
 
