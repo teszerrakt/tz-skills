@@ -110,8 +110,19 @@ The user gives a map, and optionally a ticket.
 
 **Ticket 5 — live capture.** Read [references/capture-playbook.md](references/capture-playbook.md).
 
-**Ticket 6 — draft and publish.** Read [references/template.md](references/template.md). Iterate in the fact base until the user approves. Run the ledger before you publish. Publish only after approval. More than three blocking `OQ`s means the doc is not ready — say so and stop.
+**Ticket 6 — draft and publish.** Read [references/template.md](references/template.md). Draft in the fact base; the author reads it in the [review artifact](#review-artifact), frame renders included, and iterates there until they approve. Run the ledger before you publish. Publish only after approval. More than three blocking `OQ`s means the doc is not ready — say so and stop.
 
 Two rules the template carries and this step keeps getting wrong. **The doc has a word budget** — 5,000-8,000 — and a first draft over it is the fact base restated, not a longer spec. And **attaching the frame renders takes four calls, three of which succeed on their own**, so a `200` on the upload proves nothing and neither does the block count: attach one image, have the author confirm it renders, then do the rest.
 
-**Ticket 7 — build-ticket breakdown.** Read [references/build-tickets.md](references/build-tickets.md).
+**Ticket 7 — build-ticket breakdown.** Read [references/build-tickets.md](references/build-tickets.md). Put the draft breakdown — every ticket's title, body, blockers and estimate — in a [review artifact](#review-artifact) and get the author's approval there before anything reaches the tracker.
+
+## Review artifact
+
+A draft the author must approve — the doc at ticket 6, the breakdown at ticket 7 — is shown as an artifact, not pasted into the terminal.
+
+1. `Artifact` with `action: "quickstart"`, `intent: "document"`. It names the Docs type.
+2. Create from that type (`type_url`, a `title`, no files), then fill it through the Claude Docs connector the create result names. The fact-base draft stays the source; the artifact is its view.
+3. Embed each frame render from `img/` under the section it illustrates: upload it to the doc's link (`Artifact`, `asset: true`), record it as a blob in the doc, then cite `![alt](blob/<id>)` in that section's markdown. The connector's `topic.uploads` guide has the calls. The author confirming one render shows is the only proof the upload worked.
+4. Apply the author's edits to the fact-base draft first, then mirror them into the artifact.
+
+The artifact is private review space. The published doc still goes to the docs platform in the config, and the tickets to the tracker, only after approval. When no Docs type or connector is available, fall back to an HTML artifact built from the same draft.
