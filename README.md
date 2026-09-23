@@ -4,7 +4,8 @@ Personal Claude Code skills:
 
 - **`fe-design-*`, `ask-stakeholders`, `estimate-effort`** — the frontend design-doc pipeline: chart it, ask the open questions, size the build tickets, clean up after.
 - **`address-review`, `spec-review`** — PR review handling: address the comments a review left, and check a change against the ticket that asked for it.
-- **`ship`**, **`ship-epic`** — drive one frontend ticket from tracker to a PR ready for review, CodeRabbit's comments worked, or a whole epic's worth of them at once.
+- **`ship`**, **`ship-epic`** — drive one ticket, frontend or backend, from tracker to a PR ready for review, CodeRabbit's comments worked, or a whole epic's worth of them at once.
+- **`verify-backend`** — drive a backend change's real endpoints and assert the persisted state; `ship`'s backend proof.
 - **`standup`** — daily standup drafting.
 - **`setup-tz-skills`** — scaffold the per-repo config the skills above read.
 
@@ -33,12 +34,13 @@ The pipeline also calls the grilling and domain-modeling skills from the [mattpo
 | `spec-review` | you type it — `/spec-review`, `/spec-review 650`, `/spec-review <branch>` |
 | `ship` | model or you — `/ship TRA-470` |
 | `ship-epic` | you type it — `/ship-epic TRA-415` |
+| `verify-backend` | model or you — after server work, or from `ship` |
 
 `spec-review` judges a diff against one contract and nothing else. Every requirement of the ticket becomes a ledger row, and a row is met only with an anchor into the diff — a `file:line` the diff actually touched. Every change the ticket did not ask for is classed a **stray** (it blocks), **implied** (a named ADR or RFC requires it), or **ambiguous** (the reviewer quotes two readings of one ticket line, so the ticket is the defect, not the diff). The strays go to the PR and the ambiguities go to the ticket, each behind its own confirmation.
 
 It never reviews code quality — `/code-review` owns that axis — and it never fires on its own. See [ADR-0001](./docs/adr/0001-spec-review-owns-the-spec-axis-alone.md).
 
-`ship` drives a ticket to a **PR marked ready for review**, works CodeRabbit's first comments, and stops there — it never merges. It owns the phase sequence, each delegate's brief, the gate between phases, and the aborts — every phase's judgment stays in the skill that already owns it, named by the repo's `## Delivery` config rather than hardcoded, which is what keeps the driver portable. Its one blocking gate sits before implementation: it diffs the ticket against the design and the code, settles what documented precedence settles, and asks only about the residue. Two reviews run locally and everything else waits for the push: the spec axis, which a bot cannot cover because it never sees the ticket, and one adversarial pass whose findings come back schema-validated so the run can branch on severity and on whether a fix would land outside the ticket's scope. Its phases are ordered so every code-mutating one finishes before anything verifies — a spec review run before simplify judged a diff that simplify then edited. Design and the measurements behind it: [docs/ship-design.md](./docs/ship-design.md).
+`ship` drives a ticket to a **PR marked ready for review**, works CodeRabbit's first comments, and stops there — it never merges. It owns the phase sequence, each delegate's brief, the gate between phases, and the aborts — every phase's judgment stays in the skill that already owns it, named by the repo's `## Delivery` config rather than hardcoded, which is what keeps the driver portable. Its one blocking gate sits before implementation: it diffs the ticket against the design and the code, settles what documented precedence settles, and asks only about the residue. Two reviews run locally and everything else waits for the push: the spec axis, which a bot cannot cover because it never sees the ticket, and one adversarial pass whose findings come back schema-validated so the run can branch on severity and on whether a fix would land outside the ticket's scope. Its phases are ordered so every code-mutating one finishes before anything verifies — a spec review run before simplify judged a diff that simplify then edited. A ticket runs on the frontend track, the backend track, or both; only the proof differs, and the backend's is a live run against the PR's preview or a local namespace, recorded as a wire log. Design and the measurements behind it: [docs/ship-design.md](./docs/ship-design.md).
 
 `ship-epic` drives every **takeable** ticket in one epic, each in its own background session running `/ship`. It owns which tickets it takes, how many run at once, what happens when one blocks, and the report you read afterwards — no phase judgment of its own. Sessions rather than subagents, because a subagent's grant carries no `ListAgents`, `SendMessage` or `AskUserQuestion`, and `/ship`'s gate exists to ask. Coordination is assigned in the spawn prompt rather than negotiated, since nothing reaches a session while it is working: each consumer session is told the paths it owns and the shared modules it imports rather than creates. A ticket whose gate finds residue **parks** while the others carry on, and the alarm fires only when no session can progress. A finished ticket's PR comes back from `/ship` ready and reviewed; an aborted one stays a draft whose body says why. Design and the probe evidence behind it: [docs/ship-epic-design.md](./docs/ship-epic-design.md).
 
@@ -92,11 +94,12 @@ Then run `/setup-tz-skills` once per repo to write the per-repo config below.
 
 ## Per-repo config
 
-Four skills read config from the repository you invoke them in. Every file is per-developer and stays untracked, so no workspace identifier and no delivery data lives in this repo.
+Several skills read config from the repository you invoke them in. Every file is per-developer and stays untracked, so no workspace identifier and no delivery data lives in this repo.
 
 | File | Read by | Holds |
 | ---- | ------- | ----- |
 | `.claude/fe-design-map.md` | `fe-design-map` | docs platform and home doc, API base URL, permissions source, Figma workspace, PRD home, tracker teams, doc authoring preferences |
+| `.claude/delivery.md` | `ship`, `ship-epic` | the project's half of every phase, per track: commands, delegate skills, live target, migrations, parallel-run limits |
 | `.claude/stakeholders.md` | `ask-stakeholders` | per colleague: handle, public channel, role, what they answer, and the register to write in |
 | `.claude/standup.md` | `standup` | standup channel id, my Slack user id, GitHub login, and which ticket system to link |
 | `.claude/estimate-calibration.md` | `estimate-effort` | the repo's estimated-versus-actual table, its floor and step size, and the diagnosed cause per miss |

@@ -38,26 +38,65 @@ rather than relying on a brief to override its hard rules.
 
 ## Non-goals
 
-- **Backend tickets.** A ticket touching `backend/**` stops the run with a plain
-  message. Every phase asset here is frontend-shaped, and the backend equivalents
-  (Encore integration tests, `entity_id` scoping, `verify-backend`) are a
-  different pipeline with zero measurements behind them. Revisit after the
-  frontend path has run three tickets — met as of TRA-423, so this is open to
-  take up rather than blocked.
 - **Merging or deploying.**
 - **A token budget.** The phase list fixes the cost; a mid-run budget cannot be
   enforced without the orchestrator polling its own spend.
+
+## The backend track
+
+Added 2026-09-23 in a grilling session. `/ship` had stopped on any backend
+path since it was built; the three-run gate for revisiting that was met at
+TRA-423.
+
+**One skill, two tracks.** About two thirds of the phases — the gate, reuse,
+simplify, the adversarial pass, spec review, the PR and CodeRabbit — hold no
+frontend knowledge. Only the proof differs: steps 4, 5, 6, 10 and 10b. A
+second skill would have copied the shared phases and let them drift. A mixed
+ticket is one PR, as TRA-620 shipped (`feat(gl,bills)`), with the backend
+proven first.
+
+**The draft opens at step 4b, not step 11.** Encore builds a preview per PR,
+so the backend's live proof needs the PR to exist before step 5. CodeRabbit
+skips drafts, so opening early costs no premature review. The move is for
+every track, so there is one rule rather than two.
+
+**Live verification runs only when an endpoint changes.** It is the slowest
+backend phase, and a refactor has no wire to prove. Step 5 fixes; step 10b
+re-runs the same flow on the final head for the body, because steps 7 and 8
+may edit after step 5.
+
+**The live target is a setting, `preview` or `local`, with no fallback
+between them.** Previews give a staging copy per PR and cost no local memory,
+but need Encore Pro, the preview secrets set, and the dashboard seed — none of
+which were in place (no `pr:*` environment ever deployed; 26 secrets unset for
+the Preview type). `local` runs `encore run -n <ns>` per ticket: a shared
+namespace is shared data, and the daemon log shows `no migration found for
+version 42` from exactly that. A body cannot say which target ran if a failure
+could silently swap them.
+
+**Migration numbers are checked before every push.** They are plain sequences
+per service; klay #803 and #804 both took gl 172 and broke every build until
+#807 renumbered. On a preview the collision is silent: the copied database is
+already at that version, so Encore skips the branch's file.
+
+**Lint runs locally on new code only.** klay's CI runs `encore check` and
+`encore test` and no linter, though a `golangci-lint` config exists. The only
+thing that ran it was the klay-claude plugin's stop gate, which step 0 turns
+off per worktree.
+
+**Tests follow a plain rule, not a skill.** No backend test policy exists (ADR-030
+is frontend-only); about 187 of 274 test files hit the real test database. A
+`/be-test` skill is a follow-up.
 
 ## Portability
 
 The skill ships from tz-skills and must carry no project specifics. Project
 knowledge arrives two ways:
 
-**Config.** Extend `.claude/fe-design-map.md` with a `## Delivery` section. Write
-no new config file — `/spec-review` already establishes that rule, and
-`setup-tz-skills` already scaffolds this file, so this is one edit to an existing
-scaffolder rather than a new one. `.claude/live-verification.md` is left alone;
-it belongs to the `verify-*` family, which is not part of tz-skills.
+**Config.** A `## Delivery` section, in `.claude/delivery.md`. It began inside
+`.claude/fe-design-map.md`; it moved to its own file with the backend track,
+because a backend-only repo has no frontend design map. `.claude/live-verification.md`
+stays with the `verify-*` skills that read it.
 
 The section names **skills, not commands**, wherever a phase carries judgment:
 
@@ -372,7 +411,10 @@ in `$ARGUMENTS`; never rely on inheritance.
 - TRA-470's acceptance criteria still say "No semantic colour in the totals
   block", which the merged code contradicts. Editing the ticket is the user's
   call.
-- Backend coverage. The three-run gate is met; nothing is built.
+- Encore preview environments for klay: confirm the Pro plan, set the seed
+  environment, tick Preview on the 26 unset secrets, dummy the email token.
+  Until then klay's live target is `local`.
+- A `/be-test` skill owning where a backend test sits.
 
 ## Built
 
@@ -385,10 +427,13 @@ in `$ARGUMENTS`; never rely on inheritance.
   `agents/*.md` into `~/.claude/agents/`. `bin/install.ts` and `setup.ts` were
   duplicating this logic; adding the agents pass twice is what forced the
   extraction.
-- `setup-tz-skills` Section F + `references/config-delivery.md` — scaffolds the
-  `## Delivery` section into a repo's `.claude/fe-design-map.md`.
-- KLAY's own `## Delivery` section, written into its (gitignored)
-  `.claude/fe-design-map.md`.
+- `setup-tz-skills` Section F + `references/config-delivery.md` — scaffolds
+  `.claude/delivery.md`.
+- KLAY's own `.claude/delivery.md`, gitignored.
+- `ship/references/backend-track.md` — the backend track's steps 4, 4b, 5 and
+  10b, the live target, and the migration check.
+- `verify-backend/SKILL.md` — moved in from `~/.claude/skills`, model-invocable,
+  taking a base URL from its brief and keeping a wire log.
 - `ui-shot.mjs --assert` in klaylab/klay, branch `chore/ui-shot-assert`: story
   ids to selectors to computed properties, tokens resolved through a hidden
   probe inside the matched element, `UNASSERTED` as a third outcome, exit 1 on

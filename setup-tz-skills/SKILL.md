@@ -1,6 +1,6 @@
 ---
 name: setup-tz-skills
-description: Scaffold the per-repo config files the tz-skills read — fe-design-map, stakeholders, standup. Use when a tz-skill reports its config file is missing, or when adopting these skills in a new repo.
+description: Scaffold the per-repo config files the tz-skills read — fe-design-map, delivery, stakeholders, standup. Use when a tz-skill reports its config file is missing, or when adopting these skills in a new repo.
 ---
 
 # Setup tz-skills
@@ -48,9 +48,9 @@ Offer to seed the people from Slack. Given a named channel, list its members and
 
 This skill writes no file of its own. It reads the tracker, the ticket URL base, and the ADR and RFC paths from Section A. So when Section A is absent, write Section A first: `spec-review` cannot fetch a ticket without it.
 
-**Section F — `ship`, `ship-epic`.** Read [references/config-delivery.md](references/config-delivery.md). Appends a `## Delivery` section to `.claude/fe-design-map.md`. Its `### Parallel runs` subsection is `ship-epic`'s alone; write it only for a repo whose app can run several dev servers at once.
+**Section F — `ship`, `ship-epic`.** Read [references/config-delivery.md](references/config-delivery.md). Writes `.claude/delivery.md`. Its `### Parallel runs` subsection is `ship-epic`'s alone; write it only for a repo whose app can run several dev servers at once.
 
-Like Section E it writes no file of its own, and it depends on Section A the same way. It also depends on Section E: `ship` runs `spec-review` as one of its phases, so a repo with `## Delivery` and no `## Review exclusions` has a driver whose review phase falls back to defaults.
+It depends on Section E: `ship` runs `spec-review` as one of its phases, so a repo with `## Delivery` and no `## Review exclusions` has a driver whose review phase falls back to defaults.
 
 ### 3. Confirm
 
@@ -71,7 +71,7 @@ On a re-run, fill only the missing sections. A filled section is the user's sour
 Re-read every file this run wrote, and prove it is complete:
 
 ```bash
-grep -n 'TODO:\|{{' .claude/fe-design-map.md .claude/stakeholders.md .claude/standup.md
+grep -n 'TODO:\|{{' .claude/fe-design-map.md .claude/delivery.md .claude/stakeholders.md .claude/standup.md
 ```
 
 Every template placeholder is `{{like this}}`, double-braced, so this pattern cannot fire on a real value. A single brace is legitimate content — `/v1/app/{service}/{resource}` is a URL pattern, not an unfilled field.

@@ -18,11 +18,6 @@ tickets.
 
 ## Non-goals
 
-- **Backend tickets.** `/ship` stops before phase 0 on a backend path, and
-  nothing else drives a backend ticket to a PR. `/klay:build` in the
-  `klay-claude@klaylab` plugin runs 16 phases but ends at a local commit — no
-  PR phase, and its enforcement binary is not built. A backend ticket inside a
-  frontend epic is skipped and named in the report.
 - **Writing to the tracker.** Follow-ups are listed in the run report for the
   user to pass to `/to-tickets`. Creating them unprompted is refused by the
   user's own standing preference.
@@ -33,6 +28,33 @@ tickets.
 `/ship` promoted nothing when this was written, so `/ship-epic` did it. Since
 2026-09-14 `/ship` step 12 promotes its own PR and works the review; see *After
 the PR opens*.
+
+## Backend tickets
+
+Added 2026-09-23, when `/ship` gained a backend track. Measured on this
+machine, not read from docs:
+
+- **Two concurrent `encore test` runs collide.** Every worktree shares one app
+  id, so one test cluster and one pair of databases. Each run drops and
+  recreates them, and the daemon log holds `database "ledger" is being accessed
+  by other users` from two runs on 2026-09-16. Back-to-back runs are safe. So
+  the test command goes under `Serialized steps`; `encore test` takes no
+  namespace flag.
+- **`encore run` isolates only by namespace** (`-n`), with `--port` per
+  process. A shared namespace breaks the branch with fewer migrations.
+- **Migration numbers are reserved in the spawn prompt.** Siblings are on no
+  branch the others can see, so a check against main alone misses them.
+- **A frontend ticket blocked by this run's backend PR builds on main, not on
+  that branch.** klay's API client is hand-written, so the frontend compiles
+  without the backend branch; its proof points at the backend's preview or
+  local server. Stacking would re-show the backend commits once it squashes.
+  This is what lets an unattended run get past its first backend ticket.
+- **`Max sessions` defaults to 2**, set by memory: each backend session may
+  hold a server, and each frontend one a dev server and a browser.
+
+Considered and set aside: Daytona sandboxes, which run the same `encore run`
+in a rented box and on the lower tiers cannot reach `encore.dev`; and pointing
+sessions at staging, which no Encore command supports for branch code.
 
 ## Sessions, not subagents
 
@@ -380,7 +402,10 @@ which is the case that changes abort 6.
 - `ship-epic/SKILL.md` — the epic driver.
 - `CONTEXT.md` — `takeable`, `wave` and `park` added to the delivery glossary.
 - `setup-tz-skills/references/config-delivery.md` — a `### Parallel runs`
-  subsection holding the five keys this skill reads and `/ship` does not.
+  subsection holding the keys this skill reads and `/ship` does not.
+- Backend tickets: `Max sessions`, `Backend ports`, the test lock, migration
+  reservations, and the build-on-main rule for a ticket blocked by this run's
+  backend PR.
 
 Not built: the reordered `/ship` phase list. It is a change to `/ship`, and
 `/ship-epic` delegates whatever order `/ship` holds, so the two land

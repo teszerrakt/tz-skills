@@ -1,6 +1,8 @@
-# Template: the `## Delivery` section
+# Template: `.claude/delivery.md`
 
-Read by `ship`, and by `ship-epic` for the parallel-run keys at the end. It appends to `.claude/fe-design-map.md` rather than to a file of its own, because the facts it sits beside — the tracker, the ADR and RFC paths, the shared UI package under `## Sources` — are the same facts a driven run needs.
+Read by `ship`, and by `ship-epic` for the parallel-run keys at the end. It is a file of its own because a backend-only repo has no frontend design map to append to. An older install appended this section to `.claude/fe-design-map.md`; when that section exists and `delivery.md` does not, offer to move it, and write the new ignore line first.
+
+Write only the tracks the repo has. A frontend-only repo drops every `(BE)` key; a backend-only repo drops the frontend proof keys — visual verification, smoke, screenshots, design assertion, token file.
 
 ## Detect
 
@@ -12,6 +14,8 @@ ls .claude/skills/
 ```
 
 The first finds the token file a colour assertion resolves against. The second finds the repo-scoped skills the phases delegate to: a screenshot skill and a test-policy skill matter most, and a visual-verification skill and an app-launch skill fill the two phases that run the real app.
+
+For the backend track, look for the service root and its migration directories, the backend CI workflow's check and test commands, and a linter config. A linter config that CI never runs still earns the `Lint (BE)` key — scoped to new code, so the old findings stay out of the ticket. Ask which live target the host supports: `preview` needs per-PR preview environments switched on and their secrets set; `local` needs nothing but the machine.
 
 For the typecheck command, read the monorepo task runner's config and then the app's own `package.json`. **An app that declares no `typecheck` script usually typechecks through `build`** — a `tsc -b && <bundler> build` is the same compile, and naming the absent task instead produces a phase that silently passes.
 
@@ -35,6 +39,7 @@ This subsection is the one place a machine-specific gotcha belongs: the driver s
 Consumed by `/ship`. Each key names the project's half of one phase; a phase
 whose key is absent reports `SKIPPED`.
 
+- **Tracks:** frontend {{paths}}; backend {{paths}}.
 - **Worktree root:** {{path}}. Step 0 copies every file `.claude/.gitignore`
   lists that exists in the main checkout, then installs dependencies.
 - **Per-worktree opt-outs:** {{hooks or plugins}}, disabled in the worktree's own
@@ -65,6 +70,20 @@ whose key is absent reports `SKIPPED`.
   writes them in CodeRabbit's shape: `Summary`, `Changes`, `Merge risk`.
 - **PR body write path:** {{command}}, then read the body back and confirm it
   changed.
+- **Backend URL override:** {{env var}} — points the frontend dev server at the
+  backend a ticket was proven against.
+- **Typecheck (BE):** {{command}}, run from {{dir}}.
+- **Lint (BE):** {{command, limited to code new since the base branch}}.
+- **Tests (BE):** {{where a test sits}}. Run {{command scoped to a package}} for
+  the packages the diff touches; CI runs the whole suite.
+- **Live verification (BE):** {{skill}}. Drives the changed endpoints and asserts
+  persisted state; it edits code, so it runs before any review.
+- **Live target (BE):** {{preview | local}}.
+  - preview: {{URL pattern, with the PR number}}; ready when the check
+    {{check name}} reads `success` on the head SHA.
+  - local: start {{command, with namespace and port}}; seed {{command}}; ports
+    {{default}}.
+- **Migrations (BE):** {{directories}}, numbered {{pattern}}.
 
 ### Environment traps
 
@@ -77,6 +96,8 @@ Tell each delegate the ones its phase can hit.
 Read by `/ship-epic` only. A key with no value makes the run serial rather than
 guessing.
 
+- **Max sessions:** {{n}} — set by the machine's memory, not its cores.
+- **Backend ports:** {{range}} — one per backend session on a `local` target.
 - **Dev server ports:** {{env var}}, {{range}} — one port per session. A dev
   server that does not fail on a taken port silently takes the next one, and the
   new origin is rejected by whatever allowlists name the old one.
