@@ -49,10 +49,12 @@ $HOME/.claude/fe-design-map/<repo>/<slug>/
 ├── img/               PNG exports
 ├── api/               one file per endpoint
 ├── prd.md
-├── roles.md
+├── capabilities.md   one row per endpoint, keyed by capability
 ├── figma-styles.md
 └── design-doc.md
 ```
+
+Access is keyed by **capability, never role**. A role is only a default bundle of capabilities that an entity can regrant, so a role name is seed data: list it only to pick test users.
 
 Never push any of it to a remote. It is throwaway, and it is deleted by `fe-design-cleanup` once the build tickets close. Reference it by absolute path so any worktree can read it. Never name this path in a published doc, a commit message, or a code comment.
 

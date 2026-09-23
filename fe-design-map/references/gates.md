@@ -105,7 +105,8 @@ The last one is why frame confirmation belongs in the charting session. An agent
 |---|---|
 | One file per endpoint in the map | endpoint count in `api/` equals the count in the endpoint map |
 | **Nothing vanishes**: UI data needs equal mapped endpoints plus declared gaps | `needs == mapped + gaps` |
-| Every endpoint has a roles row | endpoints missing from `roles.md` → `0` |
+| Every endpoint has a capabilities row | endpoints missing from `capabilities.md` → `0` |
+| Access is keyed by capability | first table header of `capabilities.md` starts `Capability` or `Endpoint`, and no row's key column is a role name → `0` role-keyed rows |
 
 The conservation gate is the load-bearing one. A data need that is neither mapped nor declared a gap is the exact thing that goes missing quietly.
 
