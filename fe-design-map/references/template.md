@@ -2,7 +2,7 @@
 
 Section order is fixed so reviewers keep one mental map across docs. Sections marked *(skip if empty)* are dropped, not left as stubs. Guidance notes are in blockquotes; delete them in the real doc.
 
-**Length is a budget, decided before drafting: 5,000-8,000 words.** Past that the doc is doing the fact base's job a second time and worse. Cut in this order — token dumps (hex, padding, type ramps, spacing: those live in `figma-styles.md`, and §5 names only the deltas), gaps written as paragraphs (§10 is one checklist line each, grouped by code area), the same fact restated in a third section, the case for a decision already settled in `decisions.md`, and any narration of how the harvest ran. Never cut verbatim copy strings, Figma node links, the gate rule as code, the endpoint samples or the role tables — a build cannot reconstruct those from anywhere else.
+**Length is a budget, decided before drafting: 5,000-8,000 words.** Past that the doc is doing the fact base's job a second time and worse. Cut in this order — token dumps (hex, padding, type ramps, spacing: those live in `figma-styles.md`, and §5 names only the deltas), gaps written as paragraphs (§10 is one checklist line each, grouped by code area), the same fact restated in a third section, the case for a decision already settled in `decisions.md`, and any narration of how the harvest ran. Never cut verbatim copy strings, Figma node links, the gate rule as code, the endpoint samples or the capability table — a build cannot reconstruct those from anywhere else.
 
 ---
 
@@ -36,7 +36,7 @@ Figma:
 
 ## 4. Data Source
 
-Base: `{base-url-prefix}`. Auth: {token type}. Roles per section {Roles section number}.
+Base: `{base-url-prefix}`. Auth: {token type}. Capabilities per section {Capabilities section number}.
 
 > One `###` per endpoint. Prose covers: what it drives in the UI, notable fields, error mapping to UI copy, gap refs (G-n). Each sample sits under its own `####` so it collapses natively in Coda.
 
@@ -79,9 +79,12 @@ Base: `{base-url-prefix}`. Auth: {token type}. Roles per section {Roles section 
 
 > One section per cross-component flow (delete, bulk action): trigger, confirmation copy, API call, toasts, edge cases.
 
-## 9. Roles & Permissions
+## 9. Capabilities & Permissions
 
-> Reads vs writes matrix sourced from the project's permissions file (link it). Note which UI affordances hide per role and who the page's main operator is.
+> Sourced from the project's permissions file (link it). One table: capability → what it gates on this page. Name capabilities, never roles: a role is only a default bundle of capabilities, so a role name misleads the moment an entity regrants one. The same goes for live-capture provenance — name each account by the capabilities it held. Note who the page's main operator is, by capability.
+
+| Capability | Gates on this page |
+|---|---|
 
 ## 10. BE Gaps *(skip if empty)*
 
