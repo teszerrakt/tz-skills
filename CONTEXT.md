@@ -48,8 +48,16 @@ _Avoid_: open questions, blockers, ambiguities
 The point before implementation where a run stops until the residue is answered. Distinct from a gate ledger, which decides whether finished work is done.
 _Avoid_: checkpoint, approval, sign-off
 
+**Track**:
+The half of the stack a ticket touches — frontend, backend, or both — picked from the paths its plan names. A track decides a run's proof, never its other phases.
+_Avoid_: mode, flavour, side
+
+**Live target**:
+The backend a run's live proof talks to: the host's per-PR preview, or a local server in an infra namespace of its own. Set per repo, never switched mid-run.
+_Avoid_: environment, staging, sandbox
+
 **Takeable**:
-A ticket a run may start now: unstarted, every blocker complete, no open PR naming it, and carrying the agent label. The label is a veto, never a trigger — it does not discriminate between a ticket that is ready and one already finished.
+A ticket a run may start now: unstarted, every blocker complete or a backend ticket the same run took to a ready PR, no open PR naming it, and carrying the agent label. The label is a veto, never a trigger — it does not discriminate between a ticket that is ready and one already finished.
 _Avoid_: ready, eligible, unblocked, actionable
 
 **Wave**:

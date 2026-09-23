@@ -1,15 +1,15 @@
 ---
 name: ship
-description: Drive one frontend ticket from tracker to a PR ready for review — intake, the reconcile gate, implement, test, review, shots, the PR, then CodeRabbit's comments worked. Use when asked to ship, drive or deliver a ticket end to end, or when another skill needs one ticket taken to a PR.
+description: Drive one ticket — frontend, backend, or both — from tracker to a PR ready for review — intake, the reconcile gate, implement, test, review, proof, the PR, then CodeRabbit's comments worked. Use when asked to ship, drive or deliver a ticket end to end, or when another skill needs one ticket taken to a PR.
 argument-hint: "TRA-XXX"
 ---
 
 # ship
 
-Drive one frontend ticket to a PR **marked ready for review, with CodeRabbit's
-comments worked**, and stop there. No merge. The PR opens as a draft and is
-promoted only after every phase passes: CodeRabbit skips a draft, so the
-promotion is what starts its review.
+Drive one ticket to a PR **marked ready for review, with CodeRabbit's comments
+worked**, and stop there. No merge. The PR opens as a draft and is promoted
+only after every phase passes: CodeRabbit skips a draft, so the promotion is
+what starts its review.
 
 This skill owns four things: the phase sequence, each delegate's **brief**, the
 **gate** between phases, and the **aborts**. Every phase's judgment stays in the
@@ -23,18 +23,24 @@ Design and the measurements behind it: [`docs/ship-design.md`](../docs/ship-desi
 
 Write no new config file. Read, in this order:
 
-1. `.claude/fe-design-map.md` — the tracker prefix, the ticket URL base, the ADR
-   and RFC paths, the Figma file, `## Sources`, and the `## Delivery` section.
-2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-3. Ask the user for what neither file states, as a **questions section** (CONTEXT.md).
+1. `.claude/delivery.md` — the `## Delivery` section. An older install kept it
+   inside `.claude/fe-design-map.md`; when `delivery.md` is absent and that
+   section exists there, read it and offer to move it.
+2. `.claude/fe-design-map.md`, when present — the tracker prefix, the ticket URL
+   base, the ADR and RFC paths, the Figma file, and `## Sources`.
+3. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
+4. Ask the user for what no file states, as a **questions section** (CONTEXT.md).
 
 `## Delivery` names the project's half of every phase:
 
 | Key | Holds |
 |---|---|
+| Tracks | the paths that put a ticket on the frontend track, the backend track, or both |
 | Worktree root | where step 0 puts the tree |
 | Per-worktree opt-outs | the hooks or plugins step 0 disables in the worktree |
 | Typecheck / Lint / Tests | the two commands, and the skill that decides what a test may assert |
+| Backend URL override | the env var that points the frontend dev server at another backend |
+| Backend keys, marked `(BE)` | the backend track's half of steps 4–10b — [`references/backend-track.md`](references/backend-track.md) |
 | Visual verification | the skill that diffs the running app against the design, and edits code |
 | Smoke | the skill that boots the app and reads the console on the changed route |
 | Adversarial review | the reviewer step 8 drives |
@@ -53,11 +59,32 @@ from the report.
 A repo with no `## Delivery` section at all: offer `/setup-tz-skills` once, then
 ask for the values the phases you are about to run need.
 
-## Scope
+## Tracks
 
-Frontend tickets. When the ticket's files land under a backend path, say so and
-stop before step 0 — the proof this skill sequences (stories, computed style,
-Figma tokens) is not the proof a backend change needs.
+A ticket runs on the **frontend track**, the **backend track**, or both, by the
+paths its plan touches against the `Tracks` key. Step 2 picks; step 5 re-checks
+against the real diff, and a ticket that grew a track runs that track's proof
+too. Only the proof differs — every other phase is shared.
+
+| Step | Frontend | Backend |
+|---|---|---|
+| 4 | tests skill, typecheck, lint | tests, typecheck, lint `(BE)` |
+| 5 | visual verification | live verification, when an endpoint changes |
+| 6 | smoke | — |
+| 10 | shots and assert | — |
+| 10b | live clip, when the claim is about the wire | the step-5 flow re-run on the final head |
+
+On both tracks the backend's proof runs first, and the frontend's runs against
+the backend this branch built.
+
+A frontend-only ticket whose brief names a backend — a URL, or another worktree
+to start one from — runs steps 5, 6 and 10b against it, through the `Backend URL
+override` key. Its body opens with `Merge after #N` and the backend head SHA it
+tested, because that PR is not on the base branch yet.
+
+**On the backend track, read [`references/backend-track.md`](references/backend-track.md)
+before step 4.** It holds that track's commands, the migration check, the live
+target and the body's proof table.
 
 ## Briefs
 
@@ -112,7 +139,9 @@ cannot be diffed. That is why intake and reconcile are one phase and not two: a
 delegate that reports what it found instead of where it is makes the next half
 impossible.
 
-Then diff the criteria against the frames, the code and the migrations.
+Then diff the criteria against the frames, the code and the migrations. On the
+backend track the design is the RFC and the schema file: diff against the
+endpoint contract, the permission rules and the tables they name.
 
 **Apply documented precedence first.** The config and the repo's own docs settle
 most conflicts — a rule that says the design file wins over ticket prose resolves
@@ -167,20 +196,24 @@ app-local components.
 Delegate to the built-in `Explore` agent. The brief names each component the plan
 intends to build and asks one question per component: does this already exist?
 
+Pick the ticket's tracks from the paths the plan touches (see Tracks).
+
 Done when every component the plan names is either matched to an existing one or
-proven absent.
+proven absent, and the tracks are named.
 
 ### 3. Implement
 
 The only phase that holds full context. Work the plan from step 2, under the
-decisions from step 1.
+decisions from step 1. On both tracks, build the backend half first: the
+frontend half is proven against it.
 
-Typecheck as you go, using the command from `## Delivery`.
+Typecheck as you go, using each track's command from `## Delivery`.
 
 ### 4. Test, typecheck and lint
 
-Invoke the skill `## Delivery` names for tests. It decides which seam a test
-belongs to and what it may assert; take its judgment over your own.
+Run this step once per track. Invoke the skill `## Delivery` names for tests. It
+decides which seam a test belongs to and what it may assert; take its judgment
+over your own. The backend track's rule and commands: `backend-track.md`.
 
 Then run the repo's typecheck **and lint** commands. CI runs the full gate, so a
 lint slip caught here costs seconds while the same slip caught by CI costs a
@@ -191,18 +224,35 @@ Two self-fix attempts, then abort.
 
 Done when tests, typecheck and lint all pass locally.
 
-### 5. Verify the visuals, while the code can still change
+### 4b. Push and open the draft
 
-Invoke the skill `## Delivery` names for visual verification, forked. It drives
-the change in the running app, diffs it against the design, and exercises the
-interactions.
+Rebase on the base branch, push, and open the PR as a draft, its body one line
+saying the run is in progress. It opens here rather than at step 11 because the
+backend's live proof can run against a preview the host builds per PR, and a
+preview exists only once the PR does. CodeRabbit skips a draft, so nothing
+reviews early.
 
-**It edits code**, which is why it sits here and not beside the shots. Run after
-the review and its edits go unaudited.
+On the backend track, re-check every migration number the diff adds before the
+push (`backend-track.md`, Migrations). Re-check it before every later push too.
+
+Done when the draft exists and its head is the pushed commit.
+
+### 5. Verify, while the code can still change
+
+Re-check the tracks against the diff first. Then, per track:
+
+- **Frontend.** Invoke the skill `## Delivery` names for visual verification,
+  forked. It drives the change in the running app, diffs it against the design,
+  and exercises the interactions.
+- **Backend.** Live verification, when the diff changes an endpoint —
+  `backend-track.md`, Step 5.
+
+**Both edit code**, which is why they sit here and not beside the proof. Run after
+the review and their edits go unaudited.
 
 Done when every discrepancy is fixed, or refused with a stated reason.
 
-### 6. Smoke the changed route
+### 6. Smoke the changed route — frontend track
 
 Invoke the skill `## Delivery` names for the smoke run: boot the app, load the
 route the change touched, read the console.
@@ -223,7 +273,8 @@ Two agents in parallel, each restricted to reading:
 | `tz-altitude-reviewer` | work sitting at the wrong layer, and root causes worth their own ticket |
 
 Both briefs carry the diff range, the standards doc paths from
-`.claude/fe-design-map.md`, and the **comment budget**: a comment exists only to
+`.claude/fe-design-map.md` — and on the backend track, the backend's own
+conventions file — and the **comment budget**: a comment exists only to
 state a constraint the code cannot show; flag every comment that restates its
 next line.
 
@@ -266,7 +317,7 @@ for the push, where step 12 works CodeRabbit's comments.
 A `BLOCK` verdict aborts the run. Opening a PR that carries a known `MISSING` row
 is the failure the gate in step 1 exists to prevent, arriving eight phases later.
 
-### 10. Shoot and assert
+### 10. Shoot and assert — frontend track
 
 Invoke the skill `## Delivery` names for screenshots, forked, so the images stay
 out of this context. The same run asserts computed geometry and style against the
@@ -295,6 +346,10 @@ Done when every state the change built has a shot, and every shot is `PASS`,
 `FAIL`, or `UNASSERTED` with a reason.
 
 ### 10b. Verify live — only when the claim is about the wire
+
+On the backend track this step re-runs step 5's flow against the final head and
+keeps its wire log — `backend-track.md`, Step 10b. The rest of this section is
+the frontend track's.
 
 **Runs when the ticket's acceptance turns on what the server sends**: a
 data-driven menu, a permission the API decides, an optimistic-lock version, a
@@ -329,10 +384,11 @@ only reversed, so every row a recording creates is permanent.
 Done when every claim the body will make has a step behind it, and every step is
 `PASS`, `FAIL` or `UNOBSERVED` with a reason.
 
-### 11. Open the PR as a draft
+### 11. Write the PR body
 
 Write the body to the sections `## Delivery` allows, in that order, carrying the
-shots from step 10, any clip from step 10b, the step-1 decisions, the
+shots from step 10, any clip or backend proof table from step 10b, the step-1
+decisions, the
 out-of-scope findings from step 8, and any `UNASSERTED` or `UNOBSERVED` state.
 The markdown for a shot and for a clip is printed by the skill that produced it;
 paste what it gives you.
@@ -407,8 +463,8 @@ Write the body through the config's write path and
 **read the body back to prove it changed** — a write can report success and
 silently leave the body untouched.
 
-Open it as a draft. Step 12 promotes it once 11b has written the follow-ups, so
-the body is final before anything reviews it.
+The PR stays a draft. Step 12 promotes it once 11b has written the follow-ups,
+so the body is final before anything reviews it.
 
 Done when the re-read body matches what you wrote.
 
@@ -473,8 +529,10 @@ nothing resolved. The brief carries the diff range and step 8's scope rule — a
 fix lands only in files the diff already touches, and anything else becomes a
 reply plus a `Follow-ups` line in 11b's shape.
 
-Re-run step 4's commands before each push. A fix that changes a shot's state
-re-runs step 10 for that state: a stale image misrepresents the diff.
+Re-run step 4's commands before each push, and on the backend track the
+migration check. A fix that changes a shot's state re-runs step 10 for that
+state, and a fix to an endpoint re-runs its step-10b flow: stale proof
+misrepresents the diff.
 
 CI red gets two self-fix attempts, as in step 4. **Flake guard:** the same test
 failing twice with different error text is load, not a bug — stop rather than
@@ -488,10 +546,10 @@ run reports `RATE_LIMITED`, and every CodeRabbit thread has a reply.
 
 ## Aborts
 
-Each stops the run with a report. Aborts 1–6 fire before step 11 and leave **no
-PR**. Abort 7 fires after it: the PR goes back to draft (`gh pr ready <n>
---undo`) with one line in the body saying why, so a ready PR always means every
-phase passed.
+Each stops the run with a report. Aborts 1–2 fire before step 4b and leave **no
+PR**. Every later abort leaves the draft with one line in the body saying why;
+abort 7 fires after promotion, so the PR first goes back to draft (`gh pr ready
+<n> --undo`). A ready PR always means every phase passed.
 
 | # | Condition |
 |---|---|
@@ -502,6 +560,7 @@ phase passed.
 | 5 | An assert `FAIL` that survives the expectation re-check |
 | 6 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
 | 7 | CI still red after two self-fix attempts in step 12 |
+| 8 | The backend's live target never came up — `backend-track.md`, Live target |
 
 Token spend is not an abort condition. The phase list fixes the cost, and a
 running orchestrator cannot measure its own spend.

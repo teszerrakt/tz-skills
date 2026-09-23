@@ -1,14 +1,14 @@
 ---
 name: ship-epic
-description: Drive an epic's takeable frontend tickets to reviewed PRs, three sessions at a time.
+description: Drive an epic's takeable tickets, frontend and backend, to reviewed PRs, a few sessions at a time.
 argument-hint: "TRA-XXX"
 disable-model-invocation: true
 ---
 
 # ship-epic
 
-Drive every **takeable** frontend ticket in one epic to a PR **marked ready for
-review**, each one through `/ship`. This skill owns four things: which tickets it
+Drive every **takeable** ticket in one epic to a PR **marked ready for review**,
+each one through `/ship`, on whichever tracks it touches. This skill owns four things: which tickets it
 takes, how many run at once, what happens when one blocks, and what the user
 reads afterwards. Every phase's judgment stays in `/ship`.
 
@@ -42,13 +42,15 @@ Three consequences shape everything below:
 
 ## Config
 
-Read `.claude/fe-design-map.md` `## Delivery` — the same section `/ship` reads.
-Five keys are this skill's alone, under `### Parallel runs`:
+Read `## Delivery` from `.claude/delivery.md` — the same section `/ship` reads.
+These keys are this skill's alone, under `### Parallel runs`:
 
 | Key | Holds | Absent |
 |---|---|---|
+| Max sessions | how many sessions run at once — the machine's memory sets it | 2 |
 | Dev server ports | the env var and the range, one port per session | run serial |
-| Serialized steps | the step only one session may run at a time, and the lock | run serial |
+| Backend ports | the range a `local` live target takes, one port per backend session | run backend tickets serial |
+| Serialized steps | each step only one session may run at a time, and its lock — the backend test command belongs here when parallel runs share one test database | run serial |
 | Opt-out check | the command that proves the worktree opt-outs inert | assert nothing, and say so in the report |
 | Concurrency pin | the flag that caps one session's task runner | run serial |
 | Alarm | the command run when no session can progress | report quietly |
@@ -61,7 +63,8 @@ the values with a **questions section** (CONTEXT.md).
 A ticket is **takeable** when all four hold:
 
 - its `statusType` is `backlog` or `unstarted`,
-- every `blockedBy` relation is complete,
+- every `blockedBy` relation is complete, or is a backend ticket this run took
+  to a **ready** PR,
 - no open PR names it,
 - it carries `ready-for-agent`.
 
@@ -69,9 +72,14 @@ A ticket is **takeable** when all four hold:
 measured epic all thirteen children carried it, including the nine already Done.
 Removing it parks a ticket, and it does nothing else.
 
-**A backend ticket is skipped and named in the report.** `/ship` stops before
-step 0 on a backend path, and nothing else drives a backend ticket to a PR, so
-a run that took one would produce a session that stops on its first phase.
+**A ticket blocked only by this run's backend PR builds on the base branch, not
+on that PR's branch.** Stacking would break on squash merge: once the backend
+PR squashes, the stacked PR shows its commits again. So the frontend session
+gets the backend in its spawn prompt instead — the PR's preview URL, or its
+worktree and port for a `local` target — and `/ship` proves the frontend against
+it. The frontend PR then reads `Merge after #N`, and the report names the merge
+order. A frontend PR's own API client must not need the backend branch's code to
+compile; where it does, the ticket waits for the merge.
 
 **Six tickets per run.** The binding constraint is how many PRs the user will
 read in one sitting, not the machine. A dozen unreviewed PRs is worse than four,
@@ -86,7 +94,8 @@ already finished.
 B4, then P1, then P2/P3/P4/P5 run together, then P6." An epic that declares none
 runs serial.
 
-**The backbone wave runs serial. Consumer waves run three at a time.** Almost
+**The backbone wave runs serial. Consumer waves run up to `Max sessions` at a
+time.** Almost
 all collision risk lives in the backbone, because that is the wave whose job is
 inventing shared files; consumers mostly add inside their own route folder. Two
 parallel sessions that each need the same helper will each invent one, both PRs
@@ -103,7 +112,8 @@ fixer tries to fix it.
 Assert before the first spawn, not at the phase that trips over it:
 
 - the per-worktree opt-outs `/ship` step 0 writes are **provably inert**,
-- each planned session has a port of its own,
+- each planned session has a port of its own, and each backend session on a
+  `local` target a backend port too,
 - the report directory exists **outside the repo**.
 
 A report file inside a worktree becomes a stray in the diff `/spec-review`
@@ -118,7 +128,16 @@ Everything a session cannot negotiate later goes in its prompt, after the
 - its dev-server port,
 - the concurrency pin,
 - which step takes the serialization lock, and where the lock lives,
-- the per-worktree opt-outs it leaves alone.
+- the per-worktree opt-outs it leaves alone,
+- for a backend session, the **migration numbers it owns**, one per service it
+  will migrate, reserved above the base branch, every open PR, and every
+  sibling's reservation,
+- for a frontend session blocked by this run's backend PR, that backend: the
+  PR number, and its preview URL or its worktree and backend port.
+
+Migration numbers are reserved here because siblings are on no branch the
+others can see: each would take the same next number, and the collision
+surfaces only when the second one merges.
 
 Done when every prompt names its own paths, its own port and its own lock rule.
 A session that has to ask a sibling for one of them has already collided.
@@ -199,6 +218,7 @@ A ready PR passed every phase. A draft one did not, and its body says which.
 | 4 | An assert `FAIL` that survives the expectation re-check |
 | 5 | Two adversarial-review rounds with findings still open |
 | 6 | A denied command — session stopped, the exact command reported |
+| 7 | A backend live target that never came up |
 
 ## The report
 
@@ -207,7 +227,14 @@ the repo.
 
 One row per child of the epic: the ticket, its verdict, its PR, and for anything
 short of ready, the abort number and a one-line reason. Skipped tickets carry
-the reason they were skipped, backend ones included.
+the reason they were skipped.
+
+Then the **merge order**: every `Merge after #N` pair, backend first. A frontend
+PR merged ahead of its backend ships calls to an endpoint that does not exist
+yet.
+
+Delete every infra namespace a `local` session created before the report is
+final; name any that would not delete.
 
 Then the follow-ups the sessions' PR bodies listed, gathered for the user to
 pass to `/to-tickets`. Writing them to the tracker here is refused by the user's
