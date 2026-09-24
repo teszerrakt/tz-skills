@@ -5,6 +5,7 @@
 // unmet.
 import { readFileSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
+import { join } from "node:path";
 
 // --dry inverts the exit code: it passes only when every gate FAILS. Run it at
 // chart time, before any harvest. A gate that already passes on an empty fact
@@ -18,7 +19,16 @@ if (!file) {
   process.exit(2);
 }
 
-const lines = readFileSync(file, "utf8").split("\n");
+const lines = readFileSync(file, "utf8").split(/\r?\n/);
+
+// Windows has no /bin/bash, and the `bash` on its PATH may be WSL's, which runs
+// CHECKs on another filesystem. Use Git for Windows' bash, the one Claude Code uses.
+const gitBash = () => {
+  if (process.env.CLAUDE_CODE_GIT_BASH_PATH) return process.env.CLAUDE_CODE_GIT_BASH_PATH;
+  const execPath = execSync("git --exec-path", { encoding: "utf8" }).trim();
+  return join(execPath, "..", "..", "..", "bin", "bash.exe");
+};
+const shell = process.platform === "win32" ? gitBash() : "/bin/bash";
 
 // $FB comes from the ledger's own `FB:` header, not the caller's environment. An
 // unexported FB used to run every CHECK against `/`, which overwrote each
@@ -84,7 +94,7 @@ for (const gate of gates) {
   let out = "";
   let threw = false;
   try {
-    out = execSync(gate.check, { shell: "/bin/bash", encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env });
+    out = execSync(gate.check, { shell, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env });
   } catch (err) {
     out = `${err.stdout ?? ""}${err.stderr ?? ""}`.trim() || String(err.message);
     threw = true;

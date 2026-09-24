@@ -58,7 +58,9 @@ Type it with the plugin prefix — `/mattpocock-skills:teach`. It is user-invoke
 
 ## Install
 
-Requires [bun](https://bun.sh/).
+Requires [bun](https://bun.sh/). Works on macOS, Linux and Windows. On Windows,
+skills link as junctions, but the two agents are file symlinks, which need
+Developer Mode or an admin shell; the gate runner needs Git for Windows.
 
 ### Recommended — one-liner via bunx
 
