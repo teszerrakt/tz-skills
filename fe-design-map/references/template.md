@@ -2,9 +2,13 @@
 
 The doc follows the page. One `##` per screen region, top to bottom as the user sees it, and everything about a region sits inside it: renders, copy, data, interactions, API samples, access, gaps and open questions. A reader goes through it once, top to bottom, and never has to jump to another section. Human reviewers and the build agent read the same doc.
 
+Two exceptions keep it buildable. Behaviour several regions share is stated once, in **Page-wide rules**. A fact set that becomes one piece of code is also kept whole as a **build table**, because scattering it field by field loses rows.
+
+**Every line traces to the fact base.** Write nothing about the doc itself, and never edit a sample's provenance comment.
+
 Guidance notes are in blockquotes; delete them in the real doc. Sections marked *(skip if empty)* are dropped, not left as stubs.
 
-**Length is a budget, decided before drafting: 5,000-8,000 words.** Past that the doc is doing the fact base's job a second time and worse. Cut in this order — token dumps (hex, padding, type ramps, spacing: those live in `figma-styles.md`, and a **Build** line names only the deltas), gaps written as paragraphs (Now / Ask / Why, one line each), the same fact written twice (an endpoint sample appears once, at the first element that calls it), the case for a decision already settled in `decisions.md`, and any narration of how the harvest ran. Never cut verbatim copy strings, Figma node links, the gate rule as code, the endpoint samples or the capability table — a build cannot reconstruct those from anywhere else.
+**Length is a budget, decided before drafting: 5,000-8,000 words.** Past that the doc is doing the fact base's job a second time and worse. Cut in this order — token dumps (hex, padding, type ramps, spacing: those live in `figma-styles.md`, and a **Build** line names only the deltas), gaps written as paragraphs (Now / Ask / Why, one line each), the same fact written twice (an endpoint sample appears once, under the element whose call it shows), the case for a decision already settled in `decisions.md`, and any narration of how the harvest ran. Never cut verbatim copy strings, Figma node links, the gate rule as code, the endpoint samples or the capability table — a build cannot reconstruct those from anywhere else.
 
 **Heading depth is capped at `####`.** Coda drops the doc's H1 and promotes every heading one level, and only H1-H3 collapse, so a `#####` never collapses.
 
@@ -40,14 +44,20 @@ Figma:
 
 **Terms** *(skip if empty)* — bold term, dash, definition, RFC/ADR link where one exists.
 
+**Layout** — the page shell: column, surface, sticky parts.
+
 **Saving** — draft vs immediate save, which buttons persist, what fires no API call. Elements below cite it as "saves on {trigger}" rather than restating it.
+
+**Shared behaviour** *(skip if empty)* — a check or pattern that fields in several regions run, such as an as-you-type duplicate check. Its rules and its gap live here, once. Each field keeps its own call, trigger, copy and sample.
+
+**Markers** *(skip if empty)* — anything cited in many places, such as an `OQ-n` whose defaults the FE builds. Define it here once, so each spot can cite it in two words.
 
 **Access** — sourced from the project's permissions file (link it). Name capabilities, never roles: a role is only a default bundle, so a role name misleads the moment an entity regrants one. Name live-capture accounts by the capabilities they held. Say who the page's main operator is, by capability.
 
 | Capability | Gates on this page |
 |---|---|
 
-Base: `{base-url-prefix}`. Auth: {token type}.
+**API** — base `{base-url-prefix}`. Auth: {token type}.
 
 ## Page load *(skip if the page fires no call on open)*
 
@@ -109,7 +119,18 @@ Base: `{base-url-prefix}`. Auth: {token type}.
 
 #### {Small surface} *(menu, popover, confirm dialog)*
 
-> A surface the element opens that has no fields of its own nests here, under its trigger: render, copy, what each option does. A multi-element flow (delete, bulk action) lives under the element that starts it.
+> A surface the element opens that has no fields of its own nests here, under its trigger: render, copy, what each option does. A multi-element flow (delete, bulk action) lives under the element that starts it. The other end names it in one line; never describe a flow at both ends.
+
+### Build tables
+
+> In the region where the code runs, usually the footer, keep each fact set that becomes one constant or one function as ONE table. Each field still carries its own line; the table is where the builder writes the code from. The ones that pay:
+>
+> - what each button sends, one row per control × one column per mode (Create, Edit)
+> - which field each control sends: control → wire field (the serializer)
+> - every required field → its error copy (the validation hook)
+> - every gated key → where its marker sits (the constant)
+>
+> Save rules several buttons share, such as what a PATCH sends, sit once, before the first button that uses them.
 
 ## {Surface with fields} (opens from {Region} → {Element})
 
