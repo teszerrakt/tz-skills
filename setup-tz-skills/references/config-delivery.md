@@ -40,8 +40,9 @@ Consumed by `/ship`. Each key names the project's half of one phase; a phase
 whose key is absent reports `SKIPPED`.
 
 - **Tracks:** frontend {{paths}}; backend {{paths}}.
-- **Worktree root:** {{path}}. Step 0 copies every file `.claude/.gitignore`
-  lists that exists in the main checkout, then installs dependencies.
+- **Worktree root:** {{path}}. Step 0 copies every gitignored file
+  `.claude/.gitignore` or `.worktreeinclude` names that exists in the main
+  checkout, then installs dependencies.
 - **Per-worktree opt-outs:** {{hooks or plugins}}, disabled in the worktree's own
   `settings.local.json`. A repo-wide hook fires once per top-level session.
 - **Typecheck:** {{command}}, run from {{dir}}.

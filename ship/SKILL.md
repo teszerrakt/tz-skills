@@ -106,9 +106,12 @@ in scope, and re-checked before each push.
 A fresh worktree runs nothing past `implement` until it has its dependencies and
 every gitignored config the later phases read.
 
-**Derive that file list from `.claude/.gitignore`.** Copy each listed file that
-exists in the main checkout and is missing in the worktree. A hardcoded list goes
-stale the first time a skill gains a config.
+**Derive that file list from `.claude/.gitignore` and the root
+`.worktreeinclude`.** Copy each file either one names that exists in the main
+checkout, is gitignored, and is missing in the worktree. `.worktreeinclude` is
+the list Claude Code itself copies into the worktrees it creates, so the app's
+env files are named once for both. A hardcoded list goes stale the first time a
+skill gains a config.
 
 Name the branch by the repo's own convention. A tracker's suggested name embeds
 the username, which the convention does not.
@@ -120,7 +123,7 @@ gate that runs a whole test suite runs it again for every run in flight.
 Then install dependencies. Stop the run on a failed install: every later phase
 rests on it.
 
-Done when the install exits clean, every gitignored config named by `.gitignore`
+Done when the install exits clean, every gitignored file either list names
 sits in the worktree, and the named opt-outs are in place.
 
 ### 1. Intake and reconcile — the gate

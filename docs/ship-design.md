@@ -188,11 +188,18 @@ can branch on severity and scope. Everything else still waits for the push.
 A fresh worktree cannot run any phase past "implement". It needs `npm ci` plus
 every gitignored config the later phases read.
 
-**Derive the file list from `.claude/.gitignore`; never hardcode it.** Copy each
-listed file that exists in the main checkout and is missing in the worktree. The
+**Derive the file list from `.claude/.gitignore` and the root
+`.worktreeinclude`; never hardcode it.** Copy each gitignored file either one
+names that exists in the main checkout and is missing in the worktree. The
 handoff document hardcoded three such files and had already missed a fourth
 (`fe-design-map.md`, which `/spec-review` reads first) by the time it was
 written.
+
+`.claude/.gitignore` names only the harness config, so a worktree built from it
+alone lacked every app env file, `.env.staging` among them, and a live proof had
+no staging credentials. `.worktreeinclude` is Claude Code's own list for the
+worktrees it creates; step 0 builds its worktree itself, so it must read the list
+too.
 
 Fail loudly on `npm ci` failure. Every later phase depends on it.
 
