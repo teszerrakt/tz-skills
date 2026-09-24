@@ -237,14 +237,14 @@ Delete every infra namespace a `local` session created before the report is
 final; name any that would not delete.
 
 Then the follow-ups the sessions' PR bodies listed, gathered for the user to
-pass to `/to-tickets`. Writing them to the tracker here is refused by the user's
+pass to `/mattpocock-skills:to-tickets`. Writing them to the tracker here is refused by the user's
 own standing preference.
 
 **Carry every field, not the one-line summary.** `/ship` step 11b fixes the
 shape — surface, severity, why it exists, what breaks if it never ships, effort
 with its reason, and a `file:line` anchor. The PR body holds the short form
 because a reviewer scans; this report is the long form, and it is what
-`/to-tickets` reads. A report that copies the PR's one-liners throws away the
+`/mattpocock-skills:to-tickets` reads. A report that copies the PR's one-liners throws away the
 half that makes a follow-up rulable.
 
 **Re-check the anchors before writing them down.** A session's own summary of

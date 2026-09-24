@@ -84,6 +84,12 @@ function pointsAt(target: string): string | null {
   }
 }
 
+/** A junction needs no privilege on Windows; a directory symlink does. */
+function linkType(source: string): "junction" | "file" | undefined {
+  if (process.platform !== "win32") return undefined;
+  return statSync(source).isDirectory() ? "junction" : "file";
+}
+
 export function linkAll(entries: ReturnType<typeof discover>): void {
   let linked = 0;
   let ok = 0;
@@ -105,7 +111,15 @@ export function linkAll(entries: ReturnType<typeof discover>): void {
       continue;
     }
 
-    symlinkSync(source, target);
+    try {
+      symlinkSync(source, target, linkType(source));
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "EPERM") throw err;
+      console.log(
+        `  fail  ${name} (Windows needs Developer Mode or an admin shell to link a file)`
+      );
+      continue;
+    }
     console.log(`  link  ${name}`);
     linked++;
   }

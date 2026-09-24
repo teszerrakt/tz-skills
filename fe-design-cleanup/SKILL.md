@@ -37,8 +37,16 @@ A slug can be untouched for three weeks with its build tickets still open. That 
 The filesystem carries them, so no file records them.
 
 ```bash
-stat --printf='created=%w\n' "$SLUG"
-find "$SLUG" -type f -printf '%T@\n' | sort -n | tail -1   # newest change
+node -e '
+const fs = require("fs"), path = require("path"), dir = process.argv[1];
+let newest = 0;
+const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).forEach((e) => {
+  const f = path.join(d, e.name);
+  e.isDirectory() ? walk(f) : (newest = Math.max(newest, fs.statSync(f).mtimeMs));
+});
+walk(dir);
+console.log(`created=${fs.statSync(dir).birthtime.toISOString()} newest=${new Date(newest).toISOString()}`);
+' "$SLUG"
 du -sh "$SLUG"
 ```
 

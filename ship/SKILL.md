@@ -502,7 +502,7 @@ three tickets should say so; that is the judgment the list exists to support.
 
 **Where each copy lives.** The PR body carries the index table and one line per
 item, because a reviewer scans. The full five fields go in the run report, which
-has no word budget and is what `/to-tickets` reads. Never the tracker — posting
+has no word budget and is what `/mattpocock-skills:to-tickets` reads. Never the tracker — posting
 there unprompted is refused by the user's own standing preference.
 
 Done when every follow-up names its surface, its severity, its consequence, its
