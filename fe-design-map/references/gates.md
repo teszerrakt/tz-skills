@@ -114,9 +114,13 @@ The conservation gate is the load-bearing one. A data need that is neither mappe
 
 | Gate | Check |
 |---|---|
-| All 12 template sections present or marked skipped | `grep -c '^## ' "$FB/design-doc.md"` → `12` |
+| The three fixed sections are present | `grep -cE '^## (What this page covers\|Page-wide rules\|Open questions and gaps)$' "$FB/design-doc.md"` → `3` |
+| At least one region section follows them | `grep '^## ' "$FB/design-doc.md" \| grep -cvE '^## (What this page covers\|Page-wide rules\|Open questions and gaps\|Page load\|Related Tickets)'` → `/^[1-9][0-9]*$/` |
+| Nothing nests past `####` | `test -s "$FB/design-doc.md" && { grep -c '^#####' "$FB/design-doc.md" \|\| true; }` → `0` |
 | Every JSONC block opens with a provenance comment | fenced `jsonc` blocks whose first line is not `//` → `0` |
 | Every Figma node id carries its full URL | bare node ids → `0` |
-| No fact-base path appears in the doc | `grep -c 'fe-design-map/' "$FB/design-doc.md"` → `0` |
+| No fact-base path appears in the doc | `test -s "$FB/design-doc.md" && { grep -c 'fe-design-map/' "$FB/design-doc.md" \|\| true; }` → `0` |
 
 The last one enforces the project's own authoring rule: a published doc never names a machine path.
+
+A zero-count gate wraps its `grep -c` as `test -s … && { grep -c … || true; }`. A bare `grep -c` exits 1 on no match, which the runner reads as a fail, and the `test -s` keeps the gate failing on an empty doc.
