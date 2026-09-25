@@ -1,8 +1,20 @@
 # FE Design Doc Template
 
-Section order is fixed so reviewers keep one mental map across docs. Sections marked *(skip if empty)* are dropped, not left as stubs. Guidance notes are in blockquotes; delete them in the real doc.
+The doc follows the page. One `##` per screen region, top to bottom as the user sees it, and everything about a region sits inside it: renders, copy, data, interactions, API samples, access, gaps and open questions. A reader goes through it once, top to bottom, and never has to jump to another section. Human reviewers and the build agent read the same doc.
 
-**Length is a budget, decided before drafting: 5,000-8,000 words.** Past that the doc is doing the fact base's job a second time and worse. Cut in this order — token dumps (hex, padding, type ramps, spacing: those live in `figma-styles.md`, and §5 names only the deltas), gaps written as paragraphs (§10 is one checklist line each, grouped by code area), the same fact restated in a third section, the case for a decision already settled in `decisions.md`, and any narration of how the harvest ran. Never cut verbatim copy strings, Figma node links, the gate rule as code, the endpoint samples or the capability table — a build cannot reconstruct those from anywhere else.
+Two exceptions keep it buildable. Behaviour several regions share is stated once, in **Page-wide rules**. A fact set that becomes one piece of code is also kept whole as a **build table**, because scattering it field by field loses rows.
+
+**Every line traces to the fact base.** Write nothing about the doc itself, and never edit a sample's provenance comment.
+
+Guidance notes are in blockquotes; delete them in the real doc. Sections marked *(skip if empty)* are dropped, not left as stubs.
+
+**Length is a budget, decided before drafting: 5,000-8,000 words.** Past that the doc is doing the fact base's job a second time and worse. Cut in this order — token dumps (hex, padding, type ramps, spacing: those live in `figma-styles.md`, and a **Build** line names only the deltas), gaps written as paragraphs (Now / Ask / Why, one line each), the same fact written twice (an endpoint sample appears once, under the element whose call it shows), the case for a decision already settled in `decisions.md`, and any narration of how the harvest ran. Never cut verbatim copy strings, Figma node links, the gate rule as code, the endpoint samples or the capability table — a build cannot reconstruct those from anywhere else.
+
+**Heading depth is capped at `####`.** Coda drops the doc's H1 and promotes every heading one level, and only H1-H3 collapse, so a `#####` never collapses.
+
+- `##` a region, or a surface with its own fields
+- `###` an element inside the region
+- `####` an endpoint sample, or a small surface the element opens
 
 ---
 
@@ -12,7 +24,7 @@ Status: {Spec, not yet in build | In build | Shipped} (ticket: {parent or TODO})
 
 ---
 
-## 1. What this page covers
+## What this page covers
 
 > One paragraph: which page/feature this specs and where it sits in the flow.
 
@@ -26,94 +38,141 @@ Figma:
 - [{Frame name} ({node-id})]({figma-url})
 - ...one bullet per harvested frame
 
-## 2. Concepts *(skip if empty)*
+## Page-wide rules
 
-> Domain terms a reader needs before the spec makes sense. Bold term, dash, definition, RFC/ADR link where one exists. Use a callout for any trap (fields that look meaningful but aren't, flags never to send).
+> Only rules that hold across more than one region. A rule about one element goes under that element.
 
-## 3. Persistence model
+**Terms** *(skip if empty)* — bold term, dash, definition, RFC/ADR link where one exists.
 
-> The single highest-leverage paragraph: draft vs immediate-save semantics, what each button actually persists, what fires no API call. Name the open question if design copy and API behavior disagree.
+**Layout** — the page shell: column, surface, sticky parts.
 
-## 4. Data Source
+**Saving** — draft vs immediate save, which buttons persist, what fires no API call. Elements below cite it as "saves on {trigger}" rather than restating it.
 
-Base: `{base-url-prefix}`. Auth: {token type}. Capabilities per section {Capabilities section number}.
+**Shared behaviour** *(skip if empty)* — a check or pattern that fields in several regions run, such as an as-you-type duplicate check. Its rules and its gap live here, once. Each field keeps its own call, trigger, copy and sample.
 
-> One `###` per endpoint. Prose covers: what it drives in the UI, notable fields, error mapping to UI copy, gap refs (G-n). Each sample sits under its own `####` so it collapses natively in Coda.
+**Markers** *(skip if empty)* — anything cited in many places, such as an `OQ-n` whose defaults the FE builds. Define it here once, so each spot can cite it in two words.
 
-### {METHOD} {path}
+**Access** — sourced from the project's permissions file (link it). Name capabilities, never roles: a role is only a default bundle, so a role name misleads the moment an entity regrants one. Name live-capture accounts by the capabilities they held. Say who the page's main operator is, by capability.
 
-{prose}
+| Capability | Gates on this page |
+|---|---|
 
-#### Request
+**API** — base `{base-url-prefix}`. Auth: {token type}.
+
+## Page load *(skip if the page fires no call on open)*
+
+> What loads when the page opens: the calls, the loading state, the empty state, the error state. Renders of each state first. The samples for these calls live here.
+
+#### GET {path} — Response 200
 
 ```jsonc
 // provenance comment per capture-playbook.md
 ```
 
-#### Response 200
+## {Region}
+
+> One `##` per region in screen order: header, main sections, rails, footer. Open with every render of the region — each variant and state, each one captioned with what differs. Then one `###` per element in that region.
+
+![{Region} — {variant A}]({render})
+![{Region} — {variant B}]({render})
+
+### {Element}
+
+> Renders of the element's own states first, when they differ from the region render. Then the fixed lines below, in this order. Drop a line that has nothing to say.
+
+![{Element} — {state}]({render})
+
+- **Shows:** what it displays and where each value comes from (`{endpoint}` → `data.{field}`), plus the fallback when a value is missing
+- **Copy:** every string, verbatim
+- **Does:** each interaction → what opens, changes or is called; call order and failure behaviour for a submit; the toast copy
+- **Rules:** validation, derived values, disabled and loading states
+- **Build:** reuse `{ui-package}/X` | extend X | new — plus only the tokens that differ from the design system, with the [Figma node]({node-url})
+- **Access:** the capability it needs, and what happens without it (hidden, disabled, read-only)
+
+> An open question or a BE gap sits right under the element it touches, as a `warning` callout. 🔴 blocks an FE part until it ships; 🟡 FE ships now on the server's current behaviour.
+
+**OQ-n ({owner: BE | design | BE + design}).** The contradiction or unknown, the interim assumption the FE builds on, and what changes if the answer flips.
+
+**🔴 G-n {Short title}**
+
+- **Now:** {what the server does today}
+- **Ask:** {the change, concrete}
+- **Why:** {source}. Blocks {the FE part}. Overrides RFC-x §y ({clause id})
+
+#### {METHOD} {path} — Request
+
+> Samples sit at the first element that fires the call. A later element names the endpoint and the fields it reads. One `####` per sample so each collapses.
+
+```jsonc
+// provenance comment per capture-playbook.md
+```
+
+#### {METHOD} {path} — Response 200
 
 ```jsonc
 ```
 
-#### Error {code} {case} *(when it drives UI copy)*
+#### {METHOD} {path} — Error {code} {case} *(when it drives UI copy)*
 
 ```jsonc
 ```
 
-## 5. Component Inventory
+#### {Small surface} *(menu, popover, confirm dialog)*
 
-> Per component: Figma node link, verdict (reuse `{ui-package}/X` | extend X | new), and ONLY the tokens that differ from the design system. Full style dump lives in the fact base `figma-styles.md`, not here.
+> A surface the element opens that has no fields of its own nests here, under its trigger: render, copy, what each option does. A multi-element flow (delete, bulk action) lives under the element that starts it. The other end names it in one line; never describe a flow at both ends.
 
-| Component | Figma | Verdict | Deviations |
-|---|---|---|---|
+### Build tables
 
-## 6. Page Anatomy
+> In the region where the code runs, usually the footer, keep each fact set that becomes one constant or one function as ONE table. Each field still carries its own line; the table is where the builder writes the code from. The ones that pay:
+>
+> - what each button sends, one row per control × one column per mode (Create, Edit)
+> - which field each control sends: control → wire field (the serializer)
+> - every required field → its error copy (the validation hook)
+> - every gated key → where its marker sits (the constant)
+>
+> Save rules several buttons share, such as what a PATCH sends, sit once, before the first button that uses them.
 
-> One `###` per region (header, main sections, rails, empty states), top to bottom. Embed the region screenshot. Quote exact copy strings. Note which mode/state each button opens.
+## {Surface with fields} (opens from {Region} → {Element})
 
-## 7. {Component} spec
+> A modal, drawer or sub-form with its own fields gets its own `##`, placed right after the region that opens it. Inside, the same shape as a region: renders, then one `###` per field or control.
 
-> One numbered section per interactive component (modal, card, drawer): fields, validation rules, derived values, submit choreography (call order, failure behavior), button states, toast copy. Repeat the section per component.
+---
 
-## 8. {Flow} spec *(skip if empty)*
+Example — a header region with a logo and an avatar:
 
-> One section per cross-component flow (delete, bulk action): trigger, confirmation copy, API call, toasts, edge cases.
+```markdown
+## Header
 
-## 9. Capabilities & Permissions
+![Header — signed in](…)
+![Header — no entity selected](…)
 
-> Sourced from the project's permissions file (link it). One table: capability → what it gates on this page. Name capabilities, never roles: a role is only a default bundle of capabilities, so a role name misleads the moment an entity regrants one. The same goes for live-capture provenance — name each account by the capabilities it held. Note who the page's main operator is, by capability.
+### Avatar
 
-| Capability | Gates on this page |
-|---|---|
+![Avatar — dropdown open](…)
 
-## 10. BE Gaps *(skip if empty)*
+- **Shows:** `GET /v1/app/me` → `data.avatar_url`; initials when null
+- **Does:** click → opens the account menu below; no API call
+- **Build:** reuse `@klay/ui/Avatar`, size 32 (design system default is 40) — [Figma](…)
 
-> Group the gaps by where the backend fixes them — one `###` per code area, each group becomes one backend ticket at the breakdown. Inside a group, one checklist item per gap, marked 🔴 (blocks an FE part until it ships) or 🟡 (FE ships now on the current behaviour), with the bold id and title alone on the line. Under it, always the same three sub-bullets: **Now**, **Ask**, **Why** — `Why` carries the source (Figma, the sheet), what it blocks, and the RFC clause it overrides. Open the section with the two-line legend.
+#### Account menu
 
-- 🔴 blocks an FE part until it ships
-- 🟡 FE ships now and shows the server's current behaviour until it lands
+- **Copy:** "Settings", "Switch entity", "Log out"
+- **Does:** Log out → Auth0 logout, back to `/login`
+```
+
+---
+
+## Open questions and gaps
+
+> An index only. Each item's full text lives in the section where it applies; here it is one line and a link. Write `— none.` beside a heading with nothing under it.
+
+**Open questions** — `OQ-n` ({owner}) {one line} → [{section}](#)
+
+**BE gaps** — grouped by where the backend fixes them, one `###` per code area; each group becomes one backend ticket at the breakdown.
 
 ### {Code area} — `{file or package}`
 
-- [ ] 🔴 **G-n {Short title}**
-    - **Now:** {what the server does today}
-    - **Ask:** {the change, concrete}
-    - **Why:** {source}. Blocks {the FE part}. Overrides RFC-x §y ({clause id})
-
-## 11. Related Tickets *(skip until tickets exist)*
-
-Published {date} under parent [{ticket}]({url}). Estimates are AI-assisted implementation + buffer for code review and self-test. Total: {N} MD.
-
-| Ticket | Title | Blocked by | Estimate |
-|---|---|---|---|
-
-## 12. TODOs & Open Questions
-
-> Three short lists, each item with an owner. Write `— none.` beside a heading with nothing under it, and one line naming what was settled instead.
-
-**Open questions**
-
-> **OQ-n ({owner: BE | design | BE + design}).** The contradiction or unknown, the interim assumption the FE builds on, and what changes if the answer flips.
+- [ ] 🔴 **G-n {Short title}** → [{section}](#)
 
 **TODOs**
 
@@ -123,13 +182,20 @@ Published {date} under parent [{ticket}]({url}). Estimates are AI-assisted imple
 
 - {The cost the author accepted, and the rule it breaks.}
 
-**Images to add** *(skip if screenshots were auto-embedded)*
+**Images to add** *(skip if every render was embedded)*
+
+## Related Tickets *(skip until tickets exist)*
+
+Published {date} under parent [{ticket}]({url}). Estimates are AI-assisted implementation + buffer for code review and self-test. Total: {N} MD.
+
+| Ticket | Title | Blocked by | Estimate |
+|---|---|---|---|
 
 ---
 
 ## Attaching the frame renders, on a Coda or Superhuman Docs target
 
-Place one render under the section it illustrates rather than dumping all of them at the end, and skip a close-up that is a crop of a render already on the page — say in the doc which ones were left out and why.
+Place each render under the region or element it shows rather than dumping all of them at the end, and skip a close-up that is a crop of a render already on the page — say in the doc which ones were left out and why.
 
 **The flow is FOUR calls and the first three each report success on their own.**
 

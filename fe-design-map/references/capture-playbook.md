@@ -34,7 +34,8 @@ Every JSONC block opens with a provenance comment. Prefer higher tiers; never pr
 
 ## JSONC style
 
-- Fence as `jsonc`. Real ids, real timestamps from the capture.
+- Fence as `jsonc`: the samples carry `//` comments, which plain `json` does not allow. Real ids, real timestamps from the capture.
+- Pretty-print every body: 2-space indent, one key per line, every object and array of objects expanded. Only a short array of scalars (`["WHATSAPP"]`) stays on one line. Several error bodies in one block are each expanded, a blank line between them. The provenance comment stays as captured, however long.
 - Redact PII (emails, person names) but keep UUIDs and shapes intact.
 - Inline `//` comments only for constraints the shape can't show: auto-generated fields, fields never to send, optimistic-lock echoes, gap references (G-n).
 - curl convention: `curl -sS -H "Authorization: Bearer $TOKEN" ... | jq .`
