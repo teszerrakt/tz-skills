@@ -67,12 +67,14 @@ Seven tickets, never more. Four are mandatory.
 | 1 | 🔍 Figma harvest | AFK | mandatory | always |
 | 2 | 🔍 PRD harvest | AFK | optional | the user gives a PRD doc link |
 | 3 | 🔍 API and permissions harvest | AFK | optional | the feature touches an endpoint |
-| 4 | 🔥 Synthesis grilling | with the user | mandatory | always |
-| 5 | 🔧 Live capture | with the user | optional | an endpoint has no saved example |
+| 4 | 🔧 Live capture | AFK | optional | an endpoint has no saved example |
+| 5 | 🔥 Synthesis grilling | with the user | mandatory | always |
 | 6 | 🔧 Draft and publish | with the user | mandatory | always |
 | 7 | 🔧 Build-ticket breakdown | with the user | mandatory | always |
 
-Blocking edges: 4 waits on 1, 2, 3. 5 waits on 3. 6 waits on 4, 5. 7 waits on 6.
+Blocking edges: 4 waits on 3. 5 waits on 1, 2, 3, 4. 6 waits on 5. 7 waits on 6.
+
+Capture runs before grilling for two reasons. It needs no human once its limits are set, so it belongs with the other AFK tickets. And a grilling seeded with live responses settles questions a derived sample would have left open, or opened falsely: a gap the code reading predicted turns out confirmed, sharper, or wrong.
 
 A new question found while a ticket runs becomes `OQ-n` in the doc. It never becomes a ticket on this map.
 
@@ -83,15 +85,18 @@ The user gives a feature and a Figma summary page URL.
 1. **Name the destination.** One or two lines: which page or feature this doc specs. Run the grilling skill only if the scope is unclear.
 2. **Confirm the frames.** `get_metadata` on the Figma page, list the top-level frames, then `AskUserQuestion` (multiSelect) to confirm which belong to this feature. This step must happen here, with the user present — the confirmed **count** is what makes the harvest gates countable.
 3. **Ask for the optional inputs**: PRD doc link, Postman collection, target doc URL, parent build ticket.
+
+   When ticket 4 will exist, also settle its **capture limits** here, in one question: the staging entity, the logins by the capabilities they hold, and whether undeletable leftovers are acceptable (a record that reached an approved or active state often cannot be deleted). This answer is the capture playbook's one approval, given up front, so the capture can run with no one watching. Pick the entity every login shares before you ask.
 4. **Create the fact base** and write `meta.json`.
-5. **Write the gate ledgers** for tickets 1, 2, 3, and 6, before any harvest runs, then **dry-run every one** (`gate-check.mjs --dry`) and confirm each gate fails on the empty fact base. A gate that already passes proves nothing later. Read [references/gates.md](references/gates.md).
+5. **Write the gate ledgers** for tickets 1, 2, 3, 4, and 6, before any harvest runs, then **dry-run every one** (`gate-check.mjs --dry`) and confirm each gate fails on the empty fact base. A gate that already passes proves nothing later. Read [references/gates.md](references/gates.md).
 6. **Create the map** and its tickets on the tracker, then wire the blocking edges in a second pass.
 7. **Fire the harvests.** Dispatch **one subagent per created harvest ticket**, in parallel. Each subagent gets the ticket body, the fact base path, and its ledger path — nothing else.
 
    Splitting a harvest finer than its ticket — one agent per frame, per endpoint — buys speed and costs consistency, and the trade is worse than it looks. Independent writers contradict each other reliably: they hand each other wrong facts, and repairing a file leaves every sibling still citing the disproved claim, so one round of fixes produces about as many contradictions as it closes. The gates do not catch this, because each file passes on its own.
 
    If you split anyway, the split is not finished until a **single writer** has reconciled it: one agent, resolving every disputed claim to one verdict re-derived from source, writing that to `_canon.md`, and only then a pass that makes each file agree. Budget for that pass up front — it is not optional cleanup.
-8. **Stop.** Charting resolves no decision.
+8. **Fire the capture when its input exists.** Ticket 4 reads ticket 3's `api/live-capture.md` work list, so it cannot start with the harvests. Once ticket 3's ledger passes on your own re-run, dispatch **one** capture subagent with the ticket body, the fact base path, its ledger path and the capture limits. One writer covers every endpoint: a capture walks one fixture through many endpoints, so splitting it has the same contradiction cost as splitting a harvest. Sibling maps that share an entity and a fixture cycle can share one capture run, with that one agent writing each fact base.
+9. **Stop.** Charting resolves no decision.
 
 ## Mode: work
 
@@ -102,15 +107,15 @@ The user gives a map, and optionally a ticket.
 3. **Re-run the ledger of every closed harvest this ticket depends on** before trusting its facts: `node ~/.claude/skills/fe-design-map/scripts/gate-check.mjs <ledger>`. A gate that now fails means the harvest is unmet, whatever its comment says.
 4. Resolve the ticket. Read the reference the ticket names.
 5. Post the resolution as a comment, close the ticket, and add one line to the map's Decisions-so-far.
-6. Continue to the next ticket in the same session when it is sequential and cheap. Tickets 5, 6, and 7 are one sitting.
+6. Continue to the next ticket in the same session when it is sequential and cheap. Tickets 6 and 7 are one sitting.
 
 ## Ticket work
 
 **Tickets 1 to 3 — harvest (AFK).** Read [references/gates.md](references/gates.md). Write facts to the fact base, run the ledger, and paste it into the resolution comment with the command output as evidence.
 
-**Ticket 4 — synthesis grilling.** Run the grilling and domain-modeling skills (see [External skills](#external-skills)), seeded with the harvested facts. Classify every answer: a resolved decision goes into the doc as behavior, an unknown becomes `OQ-n` with an owner, a missing endpoint becomes `G-n`. Then present the open-question table — one row per `OQ`, marked `decide`, `ask open`, or `ask with default`. `ask open` is the default mark. Rows marked to ask go to `/ask-stakeholders` as one batch.
+**Ticket 4 — live capture (AFK).** Read [references/capture-playbook.md](references/capture-playbook.md). The agent works inside the capture limits set at chart time and never widens them. A surprise it cannot place inside those limits stops the run: it reports what it created and cleaned and hands back, since no one is there to ask. The ticket closes when ledger 04 passes and ticket 3's ledger still passes.
 
-**Ticket 5 — live capture.** Read [references/capture-playbook.md](references/capture-playbook.md).
+**Ticket 5 — synthesis grilling.** Run the grilling and domain-modeling skills (see [External skills](#external-skills)), seeded with the harvested facts and the live captures. Classify every answer: a resolved decision goes into the doc as behavior, an unknown becomes `OQ-n` with an owner, a missing endpoint becomes `G-n`. Then present the open-question table — one row per `OQ`, marked `decide`, `ask open`, or `ask with default`. `ask open` is the default mark. Rows marked to ask go to `/ask-stakeholders` as one batch.
 
 **Ticket 6 — draft and publish.** Read [references/template.md](references/template.md). Draft in the fact base; the author reads it in the [review artifact](#review-artifact), frame renders included, and iterates there until they approve. Run the ledger before you publish. Publish only after approval. More than three blocking `OQ`s means the doc is not ready — say so and stop.
 

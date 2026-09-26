@@ -110,6 +110,21 @@ The last one is why frame confirmation belongs in the charting session. An agent
 
 The conservation gate is the load-bearing one. A data need that is neither mapped nor declared a gap is the exact thing that goes missing quietly.
 
+### 04 Live capture
+
+The work list is ticket 3's `api/live-capture.md`, so this ledger's gates fail on an empty fact base by construction.
+
+| Gate | Check |
+|---|---|
+| Every work-list row is closed | work-list rows whose status is neither `captured` nor `abandoned: <reason>` → `0`, guarded so a missing list fails |
+| The plan was written before the calls | `test -s "$FB/api/capture-plan.md"` |
+| Every captured row has a live sample | rows marked `captured` whose endpoint file holds no `(live staging, ` provenance line → `0` |
+| No token reached the fact base | `grep -rlE 'eyJ[A-Za-z0-9_-]{20,}\.' "$FB" \| wc -l` → `0`, guarded by the work list existing |
+| The report names what was left behind | `test -s "$FB/api/capture-report.md" && { grep -c '^## Leftovers' "$FB/api/capture-report.md" \|\| true; }` → `1` |
+| Ticket 3 still holds | its ledger re-run inside the CHECK passes |
+
+The last one catches a capture that edited a gap or a needs row and broke conservation.
+
 ### 06 Draft and publish
 
 | Gate | Check |
