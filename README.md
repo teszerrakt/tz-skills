@@ -13,7 +13,7 @@ Personal Claude Code skills:
 
 ### Design docs
 
-`/fe-design-map` charts a frontend design doc as a **closed** seven-ticket map on the issue tracker, then works the tickets across sessions. The three harvest tickets run unattended and prove their output against a gate ledger, so a lazy harvest fails a check instead of passing quietly.
+`/fe-design-map` charts a frontend design doc as a **closed** seven-ticket map on the issue tracker, then works the tickets across sessions. The three harvest tickets and the live capture run unattended and prove their output against a gate ledger, so a lazy harvest fails a check instead of passing quietly. Capture runs before grilling, so the grilling works from live responses rather than samples derived from code.
 
 | Skill | Invocation | What it does |
 | ----- | ---------- | ------------ |

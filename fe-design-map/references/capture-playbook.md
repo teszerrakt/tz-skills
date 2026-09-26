@@ -9,14 +9,17 @@ Rules for capturing real request/response samples for the doc's Data Source sect
 - Keep it in a shell env var for the session only: capture or paste it in the same Bash call that uses it. Capture it without printing it — a command that echoes the token to stdout puts it in the transcript.
 - NEVER: echo it, log it, write it to any file, put it in the doc, or include it in a code sample. Redact `Authorization` headers everywhere.
 
-## Capture plan (one approval)
+## Capture limits and plan (one approval, at chart time)
 
-Before any call, draft the full choreography and present it as one table: order, method + path, purpose, body summary. Get a single approval, then run it end to end.
+The capture runs AFK, so its one approval comes before it starts. At chart time the user approves the **capture limits**: the staging entity, the logins by the capabilities they hold, and whether undeletable leftovers are acceptable. See the SKILL's chart step 3.
+
+Before any call, the agent writes the full choreography to `api/capture-plan.md` as one table: order, method + path, login, purpose, body summary. It then runs the plan end to end without asking. The plan may only use the approved entity and logins, and may only mutate data it created itself.
 
 - **Self-cleaning**: mutations operate on data the plan itself creates. Shape: create, read, mutate, delete, in that order, reusing the created ids. Staging ends the run as it started.
 - **Identifiable test data**: prefix every created name/code with `ZZ-DOCGEN` so leftovers are findable if a step fails mid-run.
-- **Stop on surprise**: an unexpected error aborts the remaining plan; report state (what was created, what was cleaned) and ask before continuing.
-- Verify cleanup at the end (re-list, confirm the ZZ-DOCGEN rows are gone).
+- **Stop on surprise**: an unexpected error aborts the remaining plan. Report state (what was created, what was cleaned) in `api/capture-report.md` and hand back, since no one is there to ask. A behaviour a gap already predicted is not a surprise; it is evidence for that gap.
+- **Update the gaps in place**: a capture that confirms, sharpens or disproves a `G-n` replaces that gap's **Now:** line. A new gap follows the harvest's rules: a need Figma draws gets a `G-n` and a needs row, and anything else goes under `## Undrawn`.
+- Verify cleanup at the end: re-list, confirm the ZZ-DOCGEN rows are gone, and name every leftover (id, code, state) under a `## Leftovers` heading in `api/capture-report.md`, or write `None` there.
 
 ## What to capture per endpoint
 
