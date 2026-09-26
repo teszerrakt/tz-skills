@@ -195,6 +195,16 @@ every phase, and a draft one did not.
 same user, so they share the bot's rate limit — a multi-ticket run is where it
 bites, and the user needs to know which PRs no bot looked at.
 
+**A PR the bot skipped gets an adversarial reviewer instead.** Rate limited,
+or skipped because its base is not `main`: spawn one reviewer subagent per such
+PR, against its diff from its own base, with the ticket as the spec. Never pay
+for the bot's on-demand review, and never keep re-asking it — the limit is
+shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or
+`AskUserQuestion`: it reads and reports, which is the one job a subagent's
+grant fits. Verify each finding against the code yourself, then hand the
+confirmed ones to that ticket's session to fix, as its own CodeRabbit comments
+would be. The report names which PRs were reviewed this way.
+
 Waiting for CI and the review is nearly free, because it overlaps the next
 ticket.
 
