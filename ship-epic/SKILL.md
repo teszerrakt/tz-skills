@@ -7,17 +7,11 @@ disable-model-invocation: true
 
 # ship-epic
 
-Drive every **takeable** ticket in one epic to a PR **marked ready for review**,
-each one through `/ship`, on whichever tracks it touches. This skill owns four things: which tickets it
-takes, how many run at once, what happens when one blocks, and what the user
-reads afterwards. Every phase's judgment stays in `/ship`.
+Drive every **takeable** ticket in one epic to a PR **marked ready for review**, each one through `/ship`, on whichever tracks it touches. This skill owns four things: which tickets it takes, how many run at once, what happens when one blocks, and what the user reads afterwards. Every phase's judgment stays in `/ship`.
 
-It writes no tickets and merges nothing. The human writes the epic and the
-breakdown.
+It writes no tickets and merges nothing. The human writes the epic and the breakdown.
 
-Design and the probe evidence behind every claim here:
-[`docs/ship-epic-design.md`](../docs/ship-epic-design.md). What `/ship` owns:
-[`docs/ship-design.md`](../docs/ship-design.md).
+Design and the probe evidence behind every claim here: [`docs/ship-epic-design.md`](../docs/ship-epic-design.md). What `/ship` owns: [`docs/ship-design.md`](../docs/ship-design.md).
 
 ## Sessions, not subagents
 
@@ -27,23 +21,17 @@ Spawn each ticket as its own background session, and run as one yourself:
 claude --bg -n TRA-424 "/ship TRA-424 …"
 ```
 
-Never a subagent. A subagent's grant carries no `ListAgents`, no `SendMessage`
-and no `AskUserQuestion` — even one declared `Tools: *` — so it can neither
-coordinate nor ask, and `/ship`'s reconcile gate exists to ask. A session holds
-all three.
+Never a subagent. A subagent's grant carries no `ListAgents`, no `SendMessage` and no `AskUserQuestion` — even one declared `Tools: *` — so it can neither coordinate nor ask, and `/ship`'s reconcile gate exists to ask. A session holds all three.
 
 Three consequences shape everything below:
 
 1. A parked ticket holds up nothing else: sessions are separate processes.
-2. Nothing reaches a session while it is working, so coordination is **assigned
-   in the spawn prompt**, never negotiated. A parked session can be answered.
-3. `claude agents --json` reports each session's `kind`, `status` and
-   `waitingFor`, so a blocked session is visible from outside.
+2. Nothing reaches a session while it is working, so coordination is **assigned in the spawn prompt**, never negotiated. A parked session can be answered.
+3. `claude agents --json` reports each session's `kind`, `status` and `waitingFor`, so a blocked session is visible from outside.
 
 ## Config
 
-Read `## Delivery` from `.claude/delivery.md` — the same section `/ship` reads.
-These keys are this skill's alone, under `### Parallel runs`:
+Read `## Delivery` from `.claude/delivery.md` — the same section `/ship` reads. These keys are this skill's alone, under `### Parallel runs`:
 
 | Key | Holds | Absent |
 |---|---|---|
@@ -55,92 +43,58 @@ These keys are this skill's alone, under `### Parallel runs`:
 | Concurrency pin | the flag that caps one session's task runner | run serial |
 | Alarm | the command run when no session can progress | report quietly |
 
-A repo with no `## Delivery` section: offer `/setup-tz-skills` once, then ask for
-the values with a **questions section** (CONTEXT.md).
+A repo with no `## Delivery` section: offer `/setup-tz-skills` once, then ask for the values with a **questions section** (CONTEXT.md).
 
 ## Selection
 
 A ticket is **takeable** when all four hold:
 
 - its `statusType` is `backlog` or `unstarted`,
-- every `blockedBy` relation is complete, or is a backend ticket this run took
-  to a **ready** PR,
+- every `blockedBy` relation is complete, or is a backend ticket this run took to a **ready** PR,
 - no open PR names it,
 - it carries `ready-for-agent`.
 
-**That label is a veto, not a trigger.** It does not discriminate: on the
-measured epic all thirteen children carried it, including the nine already Done.
-Removing it parks a ticket, and it does nothing else.
+**That label is a veto, not a trigger.** It does not discriminate: on the measured epic all thirteen children carried it, including the nine already Done. Removing it parks a ticket, and it does nothing else.
 
-**A ticket blocked only by this run's backend PR builds on the base branch, not
-on that PR's branch.** Stacking would break on squash merge: once the backend
-PR squashes, the stacked PR shows its commits again. So the frontend session
-gets the backend in its spawn prompt instead — the PR's preview URL, or its
-worktree and port for a `local` target — and `/ship` proves the frontend against
-it. The frontend PR then reads `Merge after #N`, and the report names the merge
-order. A frontend PR's own API client must not need the backend branch's code to
-compile; where it does, the ticket waits for the merge.
+**A ticket blocked only by this run's backend PR builds on the base branch, not on that PR's branch.** Stacking would break on squash merge: once the backend PR squashes, the stacked PR shows its commits again. So the frontend session gets the backend in its spawn prompt instead — the PR's preview URL, or its worktree and port for a `local` target — and `/ship` proves the frontend against it. The frontend PR then reads `Merge after #N`, and the report names the merge order. A frontend PR's own API client must not need the backend branch's code to compile; where it does, the ticket waits for the merge.
 
-**Six tickets per run.** The binding constraint is how many PRs the user will
-read in one sitting, not the machine. A dozen unreviewed PRs is worse than four,
-because the later ones rot while the earlier ones are worked.
+**Six tickets per run.** The binding constraint is how many PRs the user will read in one sitting, not the machine. A dozen unreviewed PRs is worse than four, because the later ones rot while the earlier ones are worked.
 
-Done when every child of the epic is takeable, skipped with a stated reason, or
-already finished.
+Done when every child of the epic is takeable, skipped with a stated reason, or already finished.
 
 ## Waves and file ownership
 
-**The epic body declares its waves** — "B1 and B2 run together, then B3, then
-B4, then P1, then P2/P3/P4/P5 run together, then P6." An epic that declares none
-runs serial.
+**The epic body declares its waves** — "B1 and B2 run together, then B3, then B4, then P1, then P2/P3/P4/P5 run together, then P6." An epic that declares none runs serial.
 
-**The backbone wave runs serial. Consumer waves run up to `Max sessions` at a
-time.** Almost
-all collision risk lives in the backbone, because that is the wave whose job is
-inventing shared files; consumers mostly add inside their own route folder. Two
-parallel sessions that each need the same helper will each invent one, both PRs
-will pass CI, and both will pass `/spec-review` — neither duplicate is a stray
-against its own ticket. It stays invisible until a human reads both PRs.
+**The backbone wave runs serial. Consumer waves run up to `Max sessions` at a time.** Almost all collision risk lives in the backbone, because that is the wave whose job is inventing shared files; consumers mostly add inside their own route folder. Two parallel sessions that each need the same helper will each invent one, both PRs will pass CI, and both will pass `/spec-review` — neither duplicate is a stray against its own ticket. It stays invisible until a human reads both PRs.
 
-Pin each session's task runner with the config's concurrency flag. The runner's
-default already stacks test workers until timing-sensitive tests fail on load
-alone, and under a self-fix loop a load-induced failure is worse than noise: the
-fixer tries to fix it.
+Pin each session's task runner with the config's concurrency flag. The runner's default already stacks test workers until timing-sensitive tests fail on load alone, and under a self-fix loop a load-induced failure is worse than noise: the fixer tries to fix it.
 
 ## Startup
 
 Assert before the first spawn, not at the phase that trips over it:
 
 - the per-worktree opt-outs `/ship` step 0 writes are **provably inert**,
-- each planned session has a port of its own, and each backend session on a
-  `local` target a backend port too,
+- each planned session has a port of its own, and each backend session on a `local` target a backend port too,
 - the report directory exists **outside the repo**.
 
-A report file inside a worktree becomes a stray in the diff `/spec-review`
-audits.
+A report file inside a worktree becomes a stray in the diff `/spec-review` audits.
 
 ## The spawn prompt
 
-Everything a session cannot negotiate later goes in its prompt, after the
-`/ship` command:
+Everything a session cannot negotiate later goes in its prompt, after the `/ship` command:
 
 - the paths it owns, and the shared modules it **imports rather than creates**,
 - its dev-server port,
 - the concurrency pin,
 - which step takes the serialization lock, and where the lock lives,
 - the per-worktree opt-outs it leaves alone,
-- for a backend session, the **migration numbers it owns**, one per service it
-  will migrate, reserved above the base branch, every open PR, and every
-  sibling's reservation,
-- for a frontend session blocked by this run's backend PR, that backend: the
-  PR number, and its preview URL or its worktree and backend port.
+- for a backend session, the **migration numbers it owns**, one per service it will migrate, reserved above the base branch, every open PR, and every sibling's reservation,
+- for a frontend session blocked by this run's backend PR, that backend: the PR number, and its preview URL or its worktree and backend port.
 
-Migration numbers are reserved here because siblings are on no branch the
-others can see: each would take the same next number, and the collision
-surfaces only when the second one merges.
+Migration numbers are reserved here because siblings are on no branch the others can see: each would take the same next number, and the collision surfaces only when the second one merges.
 
-Done when every prompt names its own paths, its own port and its own lock rule.
-A session that has to ask a sibling for one of them has already collided.
+Done when every prompt names its own paths, its own port and its own lock rule. A session that has to ask a sibling for one of them has already collided.
 
 ## Watching
 
@@ -153,70 +107,37 @@ Poll `claude agents --json` and read only the sessions you named.
 | `busy` | working | nothing |
 | `idle` with no PR on its branch | denied outright, or died | park, and read its last message for the command |
 
-The last row is the one a stall-only watch misses. Under the `auto` permission
-mode a session never stalls: an unlisted command is **denied outright**, and the
-session either works around it or stops and explains. So the abort signal is a
-branch that reached the end with no PR, not only a session sitting still.
+The last row is the one a stall-only watch misses. Under the `auto` permission mode a session never stalls: an unlisted command is **denied outright**, and the session either works around it or stops and explains. So the abort signal is a branch that reached the end with no PR, not only a session sitting still.
 
-`kind` separates a session you spawned from the user's own interactive one.
-Never act on a session you did not name.
+`kind` separates a session you spawned from the user's own interactive one. Never act on a session you did not name.
 
 ## Human contact
 
-**A blocking spec question parks its ticket, and the run continues.** Never
-answer it from precedence rules on the session's behalf: `/ship`'s gate exists
-because a conflict found there costs one question, while the same conflict found
-at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed
-answer converts the cheap failure into the expensive one, silently.
+**A blocking spec question parks its ticket, and the run continues.** Never answer it from precedence rules on the session's behalf: `/ship`'s gate exists because a conflict found there costs one question, while the same conflict found at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed answer converts the cheap failure into the expensive one, silently.
 
-**Alarm only when no session can progress** — every live session parked on a
-question. Run the config's alarm command then, and only then. Waking the user
-for a question two other sessions are working around trains them to ignore the
-alarm, which costs every later run.
+**Alarm only when no session can progress** — every live session parked on a question. Run the config's alarm command then, and only then. Waking the user for a question two other sessions are working around trains them to ignore the alarm, which costs every later run.
 
-Put the parked questions to the user as one **questions section** (CONTEXT.md),
-at most four across the whole run, then `SendMessage` each answer to the session
-that asked. A parked session resumes with its context intact, so parking costs
-one round trip rather than a re-run.
+Put the parked questions to the user as one **questions section** (CONTEXT.md), at most four across the whole run, then `SendMessage` each answer to the session that asked. A parked session resumes with its context intact, so parking costs one round trip rather than a re-run.
 
-**A permission stall is not a question.** It means the allowlist is wrong, which
-is a config edit rather than a decision: kill the session, park the ticket, write
-the exact denied command to the report, and raise no alarm.
+**A permission stall is not a question.** It means the allowlist is wrong, which is a config edit rather than a decision: kill the session, park the ticket, write the exact denied command to the report, and raise no alarm.
 
 Run completion notifies quietly.
 
 ## After the PR opens
 
-`/ship` step 12 marks its own PR ready and works CodeRabbit's comments, so
-nothing here promotes or fixes. Read the outcome instead: a ready PR passed
-every phase, and a draft one did not.
+`/ship` step 12 marks its own PR ready and works CodeRabbit's comments, so nothing here promotes or fixes. Read the outcome instead: a ready PR passed every phase, and a draft one did not.
 
-**Name every `RATE_LIMITED` review in the report.** Every session pushes as the
-same user, so they share the bot's rate limit — a multi-ticket run is where it
-bites, and the user needs to know which PRs no bot looked at.
+**Name every `RATE_LIMITED` review in the report.** Every session pushes as the same user, so they share the bot's rate limit — a multi-ticket run is where it bites, and the user needs to know which PRs no bot looked at.
 
-**A PR the bot skipped gets an adversarial reviewer instead.** Rate limited,
-or skipped because its base is not `main`: spawn one reviewer subagent per such
-PR, against its diff from its own base, with the ticket as the spec. Never pay
-for the bot's on-demand review, and never keep re-asking it — the limit is
-shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or
-`AskUserQuestion`: it reads and reports, which is the one job a subagent's
-grant fits. Verify each finding against the code yourself, then hand the
-confirmed ones to that ticket's session to fix, as its own CodeRabbit comments
-would be. The report names which PRs were reviewed this way.
+**A PR the bot skipped gets an adversarial reviewer instead.** Rate limited, or skipped because its base is not `main`: spawn one reviewer subagent per such PR, against its diff from its own base, with the ticket as the spec. Never pay for the bot's on-demand review, and never keep re-asking it — the limit is shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or `AskUserQuestion`: it reads and reports, which is the one job a subagent's grant fits. Verify each finding against the code yourself, then hand the confirmed ones to that ticket's session to fix, as its own CodeRabbit comments would be. The report names which PRs were reviewed this way.
 
-Waiting for CI and the review is nearly free, because it overlaps the next
-ticket.
+Waiting for CI and the review is nearly free, because it overlaps the next ticket.
 
-Done when every finished ticket's PR is ready with its review threads answered,
-and every aborted one is a draft whose body says why.
+Done when every finished ticket's PR is ready with its review threads answered, and every aborted one is a draft whose body says why.
 
 ## Draft is the abort signal
 
-Each abort parks one ticket and leaves a **draft PR carrying the reason**.
-`/ship` opens drafts anyway, so this costs nothing, and the PR is the only
-artifact that appears where the user already looks: a branch with no PR is
-invisible among two dozen live worktrees.
+Each abort parks one ticket and leaves a **draft PR carrying the reason**. `/ship` opens drafts anyway, so this costs nothing, and the PR is the only artifact that appears where the user already looks: a branch with no PR is invisible among two dozen live worktrees.
 
 A ready PR passed every phase. A draft one did not, and its body says which.
 
@@ -232,65 +153,28 @@ A ready PR passed every phase. A draft one did not, and its body says which.
 
 ## The report
 
-Write it to `~/.claude/orchestrate/<repo>/<epic>/<timestamp>.md`. Never inside
-the repo.
+Write it to `~/.claude/orchestrate/<repo>/<epic>/<timestamp>.md`. Never inside the repo.
 
-One row per child of the epic: the ticket, its verdict, its PR, and for anything
-short of ready, the abort number and a one-line reason. Skipped tickets carry
-the reason they were skipped.
+One row per child of the epic: the ticket, its verdict, its PR, and for anything short of ready, the abort number and a one-line reason. Skipped tickets carry the reason they were skipped.
 
-Then the **merge order**: every `Merge after #N` pair, backend first. A frontend
-PR merged ahead of its backend ships calls to an endpoint that does not exist
-yet.
+Then the **merge order**: every `Merge after #N` pair, backend first. A frontend PR merged ahead of its backend ships calls to an endpoint that does not exist yet.
 
-Delete every infra namespace a `local` session created before the report is
-final; name any that would not delete.
+Delete every infra namespace a `local` session created before the report is final; name any that would not delete.
 
-Then the follow-ups the sessions' PR bodies listed, gathered for the user to
-pass to `/mattpocock-skills:to-tickets`. Writing them to the tracker here is refused by the user's
-own standing preference.
+Then the follow-ups the sessions' PR bodies listed, gathered for the user to pass to `/mattpocock-skills:to-tickets`. Writing them to the tracker here is refused by the user's own standing preference.
 
-**Filter before you gather.** Carry only follow-ups that pass `/ship` 11b's
-admission bar: a problem a user can notice today, or a known unfixed bug, named
-in one sentence. Drop refactors, coverage gaps for working code, "a future change
-could break this", accepted cosmetic nits, and orchestrator-review notes that
-were verified as not defects — even when a session listed them. Aim for zero to
-five per run, ranked by what a user loses. A measured run carried 16 and the user
-kept 2; the other 14 were noise that buried them.
+**Filter before you gather.** Carry only follow-ups that pass `/ship` 11b's admission bar: a problem a user can notice today, or a known unfixed bug, named in one sentence. Drop refactors, coverage gaps for working code, "a future change could break this", accepted cosmetic nits, and orchestrator-review notes that were verified as not defects — even when a session listed them. Aim for zero to five per run, ranked by what a user loses. A measured run carried 16 and the user kept 2; the other 14 were noise that buried them.
 
-**Say it is a proposal.** End the section with one line: the list is for the
-user to grill, not to hand to `to-tickets` as is. Never suggest running
-`to-tickets` on the list before the user has ruled on each item.
+**Say it is a proposal.** End the section with one line: the list is for the user to grill, not to hand to `to-tickets` as is. Never suggest running `to-tickets` on the list before the user has ruled on each item.
 
-**Carry every field, not the one-line summary.** `/ship` step 11b fixes the
-shape — surface, severity, why it exists, what breaks if it never ships, effort
-with its reason, and a `file:line` anchor. The PR body holds the short form
-because a reviewer scans; this report is the long form, and it is what
-`/mattpocock-skills:to-tickets` reads. A report that copies the PR's one-liners throws away the
-half that makes a follow-up rulable.
+**Carry every field, not the one-line summary.** `/ship` step 11b fixes the shape — surface, severity, why it exists, what breaks if it never ships, effort with its reason, and a `file:line` anchor. The PR body holds the short form because a reviewer scans; this report is the long form, and it is what `/mattpocock-skills:to-tickets` reads. A report that copies the PR's one-liners throws away the half that makes a follow-up rulable.
 
-**Re-check the anchors before writing them down.** A session's own summary of
-its follow-ups is the least verified prose it produced — it is written last,
-after the gates, and nothing audits it. Counts and file references stated there
-have been wrong in a measured run. Grep each one.
+**Re-check the anchors before writing them down.** A session's own summary of its follow-ups is the least verified prose it produced — it is written last, after the gates, and nothing audits it. Counts and file references stated there have been wrong in a measured run. Grep each one.
 
-**Merge across tickets, not just within one.** A session sees only its own
-diff, so it cannot notice that two tickets raised the same follow-up, or that
-one ticket's refactor dissolves another's bug. That judgment exists only here.
-Merging never promotes an item: two refactor notes merged are still a refactor
-note, and still dropped.
+**Merge across tickets, not just within one.** A session sees only its own diff, so it cannot notice that two tickets raised the same follow-up, or that one ticket's refactor dissolves another's bug. That judgment exists only here. Merging never promotes an item: two refactor notes merged are still a refactor note, and still dropped.
 
-Duration goes in the report too: per session, start and end in the user's
-local zone, and the run's wall clock. Token and dollar figures do not — the
-transcripts carry usage, but a subscription is not billed per token, so a
-computed cost is a list-price estimate wearing the clothes of an invoice.
+Duration goes in the report too: per session, start and end in the user's local zone, and the run's wall clock. Token and dollar figures do not — the transcripts carry usage, but a subscription is not billed per token, so a computed cost is a list-price estimate wearing the clothes of an invoice.
 
-**A path in this report is not evidence.** The report lives outside the repo, so
-every artifact it names — a clip, a wire log, a frame — is unreachable to
-anyone but the machine that wrote it. Name the uploaded URL beside the path, and
-where a session finished without uploading, upload the recorded file yourself
-rather than re-running the phase that made it.
+**A path in this report is not evidence.** The report lives outside the repo, so every artifact it names — a clip, a wire log, a frame — is unreachable to anyone but the machine that wrote it. Name the uploaded URL beside the path, and where a session finished without uploading, upload the recorded file yourself rather than re-running the phase that made it.
 
-Done when a reader who watched none of the run can say, per ticket, what
-happened and what is theirs to do next, and can open every artifact the report
-cites.
+Done when a reader who watched none of the run can say, per ticket, what happened and what is theirs to do next, and can open every artifact the report cites.

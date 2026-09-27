@@ -11,13 +11,9 @@ Read by `standup`. Four values and one rule.
 
 ## Detect
 
-Run `git remote -v` for the repo owner and name. Then check the user's recent branch names and
-commit messages for a ticket tag: a bare `#NNN` points at GitHub issues, a `PREFIX-###` points at
-an external tracker.
+Run `git remote -v` for the repo owner and name. Then check the user's recent branch names and commit messages for a ticket tag: a bare `#NNN` points at GitHub issues, a `PREFIX-###` points at an external tracker.
 
-**Ask for the tracker's URL slug rather than deriving it from the remote.** A tracker workspace
-slug and a GitHub org name are two names for one company and they differ often. A wrong slug
-produces a dead link in every standup.
+**Ask for the tracker's URL slug rather than deriving it from the remote.** A tracker workspace slug and a GitHub org name are two names for one company and they differ often. A wrong slug produces a dead link in every standup.
 
 ---
 

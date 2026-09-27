@@ -97,6 +97,4 @@ Names the tracker conventions for the map. `fe-design-map` reads this to create 
 
 ## Fallback name
 
-An older install of this pipeline wrote this config as `.claude/fe-design-doc.md`. If that file
-exists and `fe-design-map.md` does not, offer to rename it and to move its ignore line. Keep the
-old file only while the retired `/fe-design-doc` skill still reads it.
+An older install of this pipeline wrote this config as `.claude/fe-design-doc.md`. If that file exists and `fe-design-map.md` does not, offer to rename it and to move its ignore line. Keep the old file only while the retired `/fe-design-doc` skill still reads it.
