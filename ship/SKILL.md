@@ -294,15 +294,16 @@ output schema, review prompt and the parse rule:
 exited 0 with nothing reviewed.
 
 **A fix is applied only inside files the diff already touches** — the schema's
-`in_scope` field says which. Everything else becomes a line in the PR body's
-`Follow-ups`. `/spec-review` returns `BLOCK` on any stray, and a correctness fix
+`in_scope` field says which. Everything else goes through 11b's admission bar: a
+real bug a user can hit becomes a follow-up, and the rest one line under
+`Considered, not proposed`. `/spec-review` returns `BLOCK` on any stray, and a correctness fix
 outside the ticket's scope is a stray, so an unscoped reviewer would make the run
 strangle itself on its own best findings.
 
 Two rounds. Findings still open after the second aborts the run.
 
-Done when every finding is fixed in scope, recorded as a follow-up, or refused
-with a stated reason.
+Done when every finding is fixed in scope, recorded as a follow-up or a
+`Considered, not proposed` line, or refused with a stated reason.
 
 ### 9. Spec review — last, so it audits everything above
 
@@ -481,6 +482,19 @@ Done when the re-read body matches what you wrote.
 
 ### 11b. The follow-ups, in a shape someone can rule on
 
+**Most runs should propose zero or one.** A follow-up is admitted only when a
+user can notice the problem today — wrong copy on screen, a broken or degraded
+flow, an accessibility failure, data at risk — or when a real bug is known and
+unfixed. Name that user-visible consequence in one sentence, or drop the item.
+
+Not admitted, however true: refactors ("move X into a module", "one path for Y"),
+missing or weak tests for code that works, "a future change could break this",
+cosmetic nits the design already accepted, and anything the ticket or the user
+already ruled on. These get at most one line in the PR body under
+`Considered, not proposed`, with no fields and never in the run report's
+follow-ups. A measured run proposed 16 follow-ups; the user judged 2 real and
+the rest noise, and the noise cost more reading than the two were worth.
+
 A follow-up written as prose cannot be triaged. The reader's questions are
 always the same five, and a line that answers none of them gets re-derived by
 hand or dropped: **is this mine, how bad, why does it exist, what breaks if it
@@ -516,8 +530,9 @@ item, because a reviewer scans. The full five fields go in the run report, which
 has no word budget and is what `/mattpocock-skills:to-tickets` reads. Never the tracker — posting
 there unprompted is refused by the user's own standing preference.
 
-Done when every follow-up names its surface, its severity, its consequence, its
-cost and its anchor, and the merges are stated.
+Done when every proposed follow-up passes the admission bar above and names its
+surface, its severity, its consequence, its cost and its anchor, and the merges
+are stated. Zero proposed follow-ups is a normal, good outcome.
 
 ### 12. Mark ready, then work the review
 
@@ -538,7 +553,8 @@ Work the threads through `/address-review --driven <n>`: one pass, no question
 per thread, the fix committed and pushed by you, replies carrying the real SHA,
 nothing resolved. The brief carries the diff range and step 8's scope rule — a
 fix lands only in files the diff already touches, and anything else becomes a
-reply plus a `Follow-ups` line in 11b's shape.
+reply plus, only if it passes 11b's admission bar, a `Follow-ups` line in 11b's
+shape.
 
 Re-run step 4's commands before each push, and on the backend track the
 migration check. A fix that changes a shot's state re-runs step 10 for that
