@@ -1,0 +1,14 @@
+{
+  "name": "tz-skills",
+  "version": "0.2.0",
+  "description": "Drive tickets to reviewed PRs, review a change against its ticket, chart design docs, and draft standups. Built on Matt Pocock's skills.",
+  "author": {
+    "name": "teszerrakt",
+    "url": "https://github.com/teszerrakt"
+  },
+  "homepage": "https://github.com/teszerrakt/tz-skills#readme",
+  "repository": "https://github.com/teszerrakt/tz-skills",
+  "license": "MIT",
+  "keywords": ["ship", "spec-review", "pr-review", "design-docs", "standup"],
+  "dependencies": ["mattpocock-skills@claude-plugins-official"]
+}

@@ -88,14 +88,14 @@ The user gives a feature and a Figma summary page URL.
 
    When ticket 4 will exist, also settle its **capture limits** here, in one question: the staging entity, the logins by the capabilities they hold, and whether undeletable leftovers are acceptable (a record that reached an approved or active state often cannot be deleted). This answer is the capture playbook's one approval, given up front, so the capture can run with no one watching. Pick the entity every login shares before you ask.
 4. **Create the fact base** and write `meta.json`.
-5. **Write the gate ledgers** for tickets 1, 2, 3, 4, and 6, before any harvest runs, then **dry-run every one** (`gate-check.mjs --dry`) and confirm each gate fails on the empty fact base. A gate that already passes proves nothing later. Read [references/gates.md](references/gates.md).
+5. **Write the gate ledgers** for tickets 1, 2, 3, 4, and 6, before any harvest runs, then **dry-run every one** (`node "${CLAUDE_SKILL_DIR}/scripts/gate-check.mjs" --dry <ledger>`) and confirm each gate fails on the empty fact base. A gate that already passes proves nothing later. Read [references/gates.md](references/gates.md).
 6. **Create the map** and its tickets on the tracker, then wire the blocking edges in a second pass.
-7. **Fire the harvests.** Dispatch **one subagent per created harvest ticket**, in parallel. Each subagent gets the ticket body, the fact base path, and its ledger path — nothing else.
+7. **Fire the harvests.** Dispatch **one subagent per created harvest ticket**, in parallel. Each subagent gets the ticket body, the fact base path, its ledger path, and the gate runner, `${CLAUDE_SKILL_DIR}/scripts/gate-check.mjs` — nothing else. A subagent never loads this skill, so the runner's full path is the only way it finds the script.
 
    Splitting a harvest finer than its ticket — one agent per frame, per endpoint — buys speed and costs consistency, and the trade is worse than it looks. Independent writers contradict each other reliably: they hand each other wrong facts, and repairing a file leaves every sibling still citing the disproved claim, so one round of fixes produces about as many contradictions as it closes. The gates do not catch this, because each file passes on its own.
 
    If you split anyway, the split is not finished until a **single writer** has reconciled it: one agent, resolving every disputed claim to one verdict re-derived from source, writing that to `_canon.md`, and only then a pass that makes each file agree. Budget for that pass up front — it is not optional cleanup.
-8. **Fire the capture when its input exists.** Ticket 4 reads ticket 3's `api/live-capture.md` work list, so it cannot start with the harvests. Once ticket 3's ledger passes on your own re-run, dispatch **one** capture subagent with the ticket body, the fact base path, its ledger path and the capture limits. One writer covers every endpoint: a capture walks one fixture through many endpoints, so splitting it has the same contradiction cost as splitting a harvest. Sibling maps that share an entity and a fixture cycle can share one capture run, with that one agent writing each fact base.
+8. **Fire the capture when its input exists.** Ticket 4 reads ticket 3's `api/live-capture.md` work list, so it cannot start with the harvests. Once ticket 3's ledger passes on your own re-run, dispatch **one** capture subagent with the ticket body, the fact base path, its ledger path, the gate runner's path and the capture limits. One writer covers every endpoint: a capture walks one fixture through many endpoints, so splitting it has the same contradiction cost as splitting a harvest. Sibling maps that share an entity and a fixture cycle can share one capture run, with that one agent writing each fact base.
 9. **Stop.** Charting resolves no decision.
 
 ## Mode: work
@@ -104,7 +104,7 @@ The user gives a map, and optionally a ticket.
 
 1. Load the map body. Do not fetch every ticket.
 2. Choose the ticket: the one named, or the first on the frontier. Assign it to the user's tracker account before any work.
-3. **Re-run the ledger of every closed harvest this ticket depends on** before trusting its facts: `node ~/.claude/skills/fe-design-map/scripts/gate-check.mjs <ledger>`. A gate that now fails means the harvest is unmet, whatever its comment says.
+3. **Re-run the ledger of every closed harvest this ticket depends on** before trusting its facts: `node "${CLAUDE_SKILL_DIR}/scripts/gate-check.mjs" <ledger>`. A gate that now fails means the harvest is unmet, whatever its comment says.
 4. Resolve the ticket. Read the reference the ticket names.
 5. Post the resolution as a comment, close the ticket, and add one line to the map's Decisions-so-far.
 6. Continue to the next ticket in the same session when it is sequential and cheap. Tickets 6 and 7 are one sitting.

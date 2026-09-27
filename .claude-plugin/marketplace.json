@@ -1,0 +1,16 @@
+{
+  "name": "teszerrakt",
+  "owner": {
+    "name": "teszerrakt",
+    "url": "https://github.com/teszerrakt"
+  },
+  "description": "teszerrakt's Claude Code plugins.",
+  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
+  "plugins": [
+    {
+      "name": "tz-skills",
+      "source": "./plugins/tz-skills",
+      "category": "engineering"
+    }
+  ]
+}

@@ -10,7 +10,7 @@ Drive one ticket to a PR **marked ready for review, with CodeRabbit's comments w
 
 This skill owns four things: the phase sequence, each delegate's **brief**, the **gate** between phases, and the **aborts**. Every phase's judgment stays in the skill or the reviewer that already owns it. Where the config names a skill, invoke it and read its report. Contribute no testing and no screenshot or recording knowledge here, and no review verdict of your own.
 
-Design and the measurements behind it: [`docs/ship-design.md`](../docs/ship-design.md).
+Design and the measurements behind it: [`docs/ship-design.md`](https://github.com/teszerrakt/tz-skills/blob/main/docs/ship-design.md).
 
 ## Config
 
@@ -186,8 +186,8 @@ Two agents in parallel, each restricted to reading:
 
 | Agent | Looks for |
 |---|---|
-| `tz-simplify-reviewer` | code that can be deleted or collapsed |
-| `tz-altitude-reviewer` | work sitting at the wrong layer, and root causes worth their own ticket |
+| `tz-skills:simplify-reviewer` | code that can be deleted or collapsed |
+| `tz-skills:altitude-reviewer` | work sitting at the wrong layer, and root causes worth their own ticket |
 
 Both briefs carry the diff range, the standards doc paths from `.claude/fe-design-map.md` — and on the backend track, the backend's own conventions file — and the **comment budget**: a comment exists only to state a constraint the code cannot show; flag every comment that restates its next line.
 

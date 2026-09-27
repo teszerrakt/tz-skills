@@ -1,6 +1,6 @@
 ---
 name: estimate-effort
-description: Estimate AI-assisted implementation effort in MD (man-days) for frontend tickets, calibrated against this repo's own delivery history (per-ticket estimated vs actual, PR diffs, diagnosed bloat causes). Use when sizing tickets or tasks, during the estimates pass of a design-doc or ticket-breakdown skill, or when the user asks how long a ticket or feature will take.
+description: Estimate AI-assisted implementation effort in MD (man-days) for any ticket, frontend or backend, calibrated against this repo's own delivery history (per-ticket estimated vs actual, PR diffs, diagnosed bloat causes). Use when sizing tickets or tasks, during the estimates pass of a design-doc or ticket-breakdown skill, or when the user asks how long a ticket or feature will take.
 ---
 
 # Estimate Effort
@@ -17,14 +17,14 @@ If the file does not exist, estimate with the model below, use 0.25 for both the
 
 ## Drivers — the only things that move a ticket off the floor
 
-1. A first-build state machine that needs design decisions. **Not** a reducer or hook that follows an existing pattern, even the first one.
+1. A first-build state machine that needs design decisions. **Not** a reducer, hook or handler that follows an existing pattern, even the first one.
 2. Two deliverables that would each stand alone as a ticket.
-3. An integration unknown still open at estimate time — a contract not live-verified, or an open question the frontend must absorb. It costs nothing once resolved.
+3. An integration unknown still open at estimate time — a contract not live-verified, or an open question the ticket must absorb. It costs nothing once resolved.
 
 ## Non-drivers — never price these
 
 - Acceptance-criterion, rule, or edge-case count. Each is one pure branch or predicate, plus its test.
-- Surface count, component count, diff volume. Tests and i18n are roughly half of every diff and are near-free.
+- Surface, component or endpoint count, and diff volume. Tests and i18n are roughly half of every diff and are near-free.
 - "No in-repo precedent, sets the pattern" when the artifact is a pure function or a documented library API.
 - Risk notes and contingency. A flagged risk historically resolves before coding or gets absorbed elsewhere.
 - Deferral caveats. A deferral removes scope, so it deflates the estimate.
@@ -35,7 +35,7 @@ These are the usual causes of a 2x to 5x overestimate.
 ## Force the floor when
 
 - The ticket says it reuses, clones, or extends something that already landed.
-- It is the Nth ticket on a surface whose state machinery already shipped. That is a stamp: one hook, one component, i18n, tests.
+- It is the Nth ticket on a surface whose state machinery already shipped. That is a stamp: one hook, one component, i18n, tests — or one handler, one query, tests.
 - The ticket already names the files and the state location, so only the typing remains.
 
 ## Re-estimate when

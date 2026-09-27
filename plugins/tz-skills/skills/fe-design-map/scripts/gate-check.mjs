@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // --dry inverts the exit code: it passes only when every gate FAILS. Run it at
 // chart time, before any harvest. A gate that already passes on an empty fact
@@ -40,6 +41,9 @@ if (!env.FB) {
   console.error(`${file}: no \`FB:\` header and no FB in the environment`);
   process.exit(2);
 }
+// A CHECK that re-runs another ledger calls `node "$GATE_CHECK"`: a path written
+// into a ledger would break when a plugin update moves this script.
+env.GATE_CHECK = fileURLToPath(import.meta.url);
 
 const gates = [];
 let current = null;

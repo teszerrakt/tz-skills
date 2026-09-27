@@ -1,5 +1,5 @@
 ---
-name: tz-simplify-reviewer
+name: simplify-reviewer
 description: Find code in a diff that can be deleted or collapsed. Reports findings; never edits.
 model: opus
 tools: Read, Grep, Glob, Bash

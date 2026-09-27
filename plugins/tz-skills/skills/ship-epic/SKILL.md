@@ -11,7 +11,7 @@ Drive every **takeable** ticket in one epic to a PR **marked ready for review**,
 
 It writes no tickets and merges nothing. The human writes the epic and the breakdown.
 
-Design and the probe evidence behind every claim here: [`docs/ship-epic-design.md`](../docs/ship-epic-design.md). What `/ship` owns: [`docs/ship-design.md`](../docs/ship-design.md).
+Design and the probe evidence behind every claim here: [`docs/ship-epic-design.md`](https://github.com/teszerrakt/tz-skills/blob/main/docs/ship-epic-design.md). What `/ship` owns: [`docs/ship-design.md`](https://github.com/teszerrakt/tz-skills/blob/main/docs/ship-design.md).
 
 ## Sessions, not subagents
 

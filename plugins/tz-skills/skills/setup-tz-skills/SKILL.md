@@ -9,7 +9,7 @@ Provision the per-repo config that the tz-skills read.
 
 Every config file is **per-developer and untracked**. The one tracked change this run makes is the ignore line, so the run shows that diff and says who commits it.
 
-This run installs nothing. Symlinking the skills happens first, through `bunx @teszerrakt/skills`.
+This run installs nothing.
 
 ## Process
 
@@ -17,7 +17,6 @@ This run installs nothing. Symlinking the skills happens first, through `bunx @t
 
 Detect first, ask second. A value a file already states is not a question.
 
-- `~/.claude/skills/` — which of `fe-design-map`, `ask-stakeholders`, `standup`, `estimate-effort`, `spec-review`, `ship` are installed. **Each installed skill adds one section. Each absent skill adds none.**
 - The available-skills list — is `mattpocock-skills:grilling` there, and `mattpocock-skills:domain-modeling`? `fe-design-map` runs both. The plugin name is part of the id, so match what the list shows.
 - `.claude/` — does it exist? Does it hold a `.gitignore`? Which config files exist already, and which sections does each hold?
 - `git remote -v` — the repo owner and the repo name.
@@ -32,7 +31,7 @@ Detect first, ask second. A value a file already states is not a question.
 
 State what exploration found and what stays open. Name a missing mattpocock plugin here, once: link https://github.com/mattpocock/skills and carry on. A missing plugin degrades `fe-design-map`; it does not block this run.
 
-Then take one section per installed skill, in order. Lead each section with the value exploration found, so the user accepts it in one word. Ask only for what no file states.
+Then take every section below, in order: the `tz-skills` plugin installs all of its skills together. Lead each section with the value exploration found, so the user accepts it in one word. Ask only for what no file states.
 
 **Section A — `fe-design-map`.** Read [references/config-fe-design-map.md](references/config-fe-design-map.md). Writes `.claude/fe-design-map.md`.
 
