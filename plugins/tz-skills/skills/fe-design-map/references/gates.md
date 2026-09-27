@@ -35,7 +35,7 @@ A gate is a `- [ ] Gn <title>` line followed by indented `CHECK:`, `EXPECT:`, an
 
 ## Run it
 
-`<skill dir>` is this skill's own directory, the base directory printed when the skill loaded.
+`<skill dir>/scripts/gate-check.mjs` is the gate runner. A session that loaded this skill has its base directory; a harvest or capture subagent has the runner's full path in its brief. Inside a `CHECK`, `$GATE_CHECK` is the runner's own path, so a gate that re-runs another ledger writes `node "$GATE_CHECK" <ledger>` and never names a directory.
 
 ```bash
 FB="$HOME/.claude/fe-design-map/<repo>/<slug>" \
@@ -123,7 +123,7 @@ The work list is ticket 3's `api/live-capture.md`, so this ledger's gates fail o
 | Every captured row has a live sample | rows marked `captured` whose endpoint file holds no `(live staging, ` provenance line → `0` |
 | No token reached the fact base | `grep -rlE 'eyJ[A-Za-z0-9_-]{20,}\.' "$FB" \| wc -l` → `0`, guarded by the work list existing |
 | The report names what was left behind | `test -s "$FB/api/capture-report.md" && { grep -c '^## Leftovers' "$FB/api/capture-report.md" \|\| true; }` → `1` |
-| Ticket 3 still holds | its ledger re-run inside the CHECK passes |
+| Ticket 3 still holds | `node "$GATE_CHECK" <ticket 3's ledger> >/dev/null && echo HOLDS` → `HOLDS` |
 
 The last one catches a capture that edited a gap or a needs row and broke conservation.
 

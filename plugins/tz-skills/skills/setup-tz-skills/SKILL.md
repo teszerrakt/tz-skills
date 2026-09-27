@@ -9,7 +9,7 @@ Provision the per-repo config that the tz-skills read.
 
 Every config file is **per-developer and untracked**. The one tracked change this run makes is the ignore line, so the run shows that diff and says who commits it.
 
-This run installs nothing. Installing the `tz-skills` plugin happens first: see the README.
+This run installs nothing.
 
 ## Process
 

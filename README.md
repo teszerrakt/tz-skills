@@ -96,13 +96,14 @@ claude plugin install tz-skills@teszerrakt
 
 A session then loads the plugin in place from the checkout's `plugins/tz-skills/`, so an edit takes effect at the next session start, or after `/reload-plugins`, with no reinstall.
 
-The repo root is the marketplace, and the plugin is `plugins/tz-skills/`: its skills, its agents, and its eval suite. What never ships stays at the root: `CLAUDE.md`, `CONTEXT.md`, `docs/`, `bin/`. A `CLAUDE.md` at a plugin's root is never loaded, and strict validation fails on it.
+The repo root is the marketplace, and the plugin is `plugins/tz-skills/`: its skills, its agents, and its eval suite. What the plugin does not ship stays at the root: `CLAUDE.md`, `CONTEXT.md`, `docs/`, `bin/`. A `CLAUDE.md` at a plugin's root is never loaded, and strict validation fails on it.
 
 Before a PR:
 
 ```bash
 bun run validate   # claude plugin validate --strict, on the marketplace and on the plugin
-bun run eval       # claude plugin eval plugins/tz-skills
+bun run eval       # validate, then claude plugin eval plugins/tz-skills
+bun test           # the bundled scripts' own tests
 ```
 
 `claude plugin validate --strict .` checks only the marketplace file, never the skills and agents, so the plugin directory gets its own run. Every eval case must fail on the code before its change and pass after it, the rule `gate-check.mjs --dry` already applies to a gate.

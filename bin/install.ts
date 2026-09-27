@@ -1,20 +1,15 @@
 #!/usr/bin/env bun
-/**
- * `bunx @teszerrakt/skills` entry point: add the marketplaces, then install the
- * plugin. Matt Pocock's plugin installs as its dependency from Claude's official
- * marketplace, which a bare config lacks, so that marketplace is added too.
- *
- *   bunx @teszerrakt/skills              install
- *   bunx @teszerrakt/skills --uninstall  uninstall the plugin
- */
+// `bunx @teszerrakt/skills [--uninstall]`.
 
+// Matt Pocock's plugin installs as a dependency from Claude's official
+// marketplace, which a bare config lacks.
 const MARKETPLACES = [
   "anthropics/claude-plugins-official",
   "teszerrakt/tz-skills",
 ];
 const PLUGIN = "tz-skills@teszerrakt";
 
-function plugin(...args: string[]): void {
+function claudePlugin(...args: string[]): void {
   const { exitCode } = Bun.spawnSync(["claude", "plugin", ...args], {
     stdio: ["inherit", "inherit", "inherit"],
   });
@@ -22,8 +17,8 @@ function plugin(...args: string[]): void {
 }
 
 if (process.argv.includes("--uninstall")) {
-  plugin("uninstall", PLUGIN);
+  claudePlugin("uninstall", PLUGIN);
 } else {
-  for (const source of MARKETPLACES) plugin("marketplace", "add", source);
-  plugin("install", PLUGIN);
+  for (const source of MARKETPLACES) claudePlugin("marketplace", "add", source);
+  claudePlugin("install", PLUGIN);
 }

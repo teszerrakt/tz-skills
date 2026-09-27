@@ -10,7 +10,6 @@
     {
       "name": "tz-skills",
       "source": "./plugins/tz-skills",
-      "description": "Drive tickets to reviewed PRs, review a change against its ticket, chart design docs, and draft standups. Built on Matt Pocock's skills.",
       "category": "engineering"
     }
   ]
