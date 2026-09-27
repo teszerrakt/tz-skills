@@ -58,12 +58,14 @@ Type it with the plugin prefix — `/mattpocock-skills:teach`. It is user-invoke
 
 ## Install
 
+Requires [bun](https://bun.sh/) for `bunx` and the repo's `bun run` scripts. Works on macOS, Linux and Windows; on Windows, `fe-design-map`'s gate runner needs Git for Windows.
+
 ```bash
 claude plugin marketplace add teszerrakt/tz-skills
 claude plugin install tz-skills@teszerrakt
 ```
 
-Installing `tz-skills` installs Matt Pocock's `mattpocock-skills` plugin with it, at the same scope, as a declared dependency. `bunx @teszerrakt/skills` runs the same commands; `--uninstall` removes the plugin.
+Installing `tz-skills` installs Matt Pocock's `mattpocock-skills` plugin with it, at the same scope, as a declared dependency. `bunx @teszerrakt/skills` runs the same commands. `claude plugin uninstall tz-skills@teszerrakt` removes the plugin.
 
 **The marketplace Matt Pocock's plugin comes from has to be added first** where it is missing. The dependency is `mattpocock-skills@claude-plugins-official`, from Claude's official marketplace, and installing `tz-skills` does not add that marketplace. Tested on a config with no marketplaces: the install succeeded but `tz-skills` failed to load, with `Dependency "mattpocock-skills@claude-plugins-official" is not installed`. With the official marketplace added first, the same install brought Matt's plugin along (`+ 1 dependency: mattpocock-skills`). `claude plugin marketplace list` shows whether it is there; when it is not:
 
@@ -102,7 +104,7 @@ Before a PR:
 
 ```bash
 bun run validate   # claude plugin validate --strict, on the marketplace and on the plugin
-bun run eval       # validate, then claude plugin eval plugins/tz-skills
+bun run eval       # validate, then claude plugin eval plugins/tz-skills --no-publish
 bun test           # the bundled scripts' own tests
 ```
 

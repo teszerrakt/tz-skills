@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "validate": "claude plugin validate --strict . && claude plugin validate --strict plugins/tz-skills",
-    "eval": "bun run validate && claude plugin eval plugins/tz-skills"
+    "eval": "bun run validate && claude plugin eval plugins/tz-skills --no-publish"
   },
   "engines": {
     "bun": ">=1.0.0"

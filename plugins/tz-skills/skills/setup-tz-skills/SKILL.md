@@ -17,7 +17,6 @@ This run installs nothing.
 
 Detect first, ask second. A value a file already states is not a question.
 
-- The available-skills list — which of `tz-skills:fe-design-map`, `tz-skills:ask-stakeholders`, `tz-skills:standup`, `tz-skills:estimate-effort`, `tz-skills:spec-review`, `tz-skills:ship` are installed. **Each installed skill adds one section. Each absent skill adds none.**
 - The available-skills list — is `mattpocock-skills:grilling` there, and `mattpocock-skills:domain-modeling`? `fe-design-map` runs both. The plugin name is part of the id, so match what the list shows.
 - `.claude/` — does it exist? Does it hold a `.gitignore`? Which config files exist already, and which sections does each hold?
 - `git remote -v` — the repo owner and the repo name.
@@ -32,7 +31,7 @@ Detect first, ask second. A value a file already states is not a question.
 
 State what exploration found and what stays open. Name a missing mattpocock plugin here, once: link https://github.com/mattpocock/skills and carry on. A missing plugin degrades `fe-design-map`; it does not block this run.
 
-Then take one section per installed skill, in order. Lead each section with the value exploration found, so the user accepts it in one word. Ask only for what no file states.
+Then take every section below, in order: the `tz-skills` plugin installs all of its skills together. Lead each section with the value exploration found, so the user accepts it in one word. Ask only for what no file states.
 
 **Section A — `fe-design-map`.** Read [references/config-fe-design-map.md](references/config-fe-design-map.md). Writes `.claude/fe-design-map.md`.
 
