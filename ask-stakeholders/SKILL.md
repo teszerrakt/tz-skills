@@ -15,10 +15,7 @@ Read `.claude/stakeholders.md` in the repo root. Per person: name, Slack handle,
 
 If the file does not exist, ask who owns each question and offer to write the file back.
 
-**A public channel thread is the default**, because that is where the answer stays findable. Do not
-choose a DM on your own. When the user explicitly asks for one, follow **DM mode** below, and say in
-one line that a thread keeps the answer findable so the trade-off is on the record. Then send the DM:
-it is their call and their relationship.
+**A public channel thread is the default**, because that is where the answer stays findable. Do not choose a DM on your own. When the user explicitly asks for one, follow **DM mode** below, and say in one line that a thread keeps the answer findable so the trade-off is on the record. Then send the DM: it is their call and their relationship.
 
 ## Situation, not justification
 
@@ -70,17 +67,11 @@ That clause converts a written reply into a 👍, and it gives silence a defined
 
 Only when the user explicitly asks to DM someone. One person, one message.
 
-**Read their DM history first.** `slack_read_channel` with the person's `user_id` as `channel_id`,
-~60 messages. You are learning four things: the language, what the user calls them, what they call
-themselves, and the message length. Never guess a register you have not read.
+**Read their DM history first.** `slack_read_channel` with the person's `user_id` as `channel_id`, ~60 messages. You are learning four things: the language, what the user calls them, what they call themselves, and the message length. Never guess a register you have not read.
 
-**Record what you learn** in `.claude/stakeholders.md` under that person, so the next DM does not
-re-derive it. A register learned and not written down is a register learned twice.
+**Record what you learn** in `.claude/stakeholders.md` under that person, so the next DM does not re-derive it. A register learned and not written down is a register learned twice.
 
-**The shape changes.** A DM is a conversation, not a channel post, so the parent-plus-threaded-reply
-split does not apply and neither do its word caps. Send one message. Everything else holds: the
-situation once, bare questions, no justification, an example only where it grounds something, and
-one question per topic so each stays answerable on its own.
+**The shape changes.** A DM is a conversation, not a channel post, so the parent-plus-threaded-reply split does not apply and neither do its word caps. Send one message. Everything else holds: the situation once, bare questions, no justification, an example only where it grounds something, and one question per topic so each stays answerable on its own.
 
 **What survives from thread mode**
 - Bare questions. Ask only what that person can actually answer, per their persona.
@@ -90,16 +81,11 @@ one question per topic so each stays answerable on its own.
 **What changes**
 - No `<@U...>` mention: it is a DM, they are the only reader.
 - Address them the way the user does, and refer to the user the way the user does.
-- Match the user's own language, not the skill's. If their DMs are not in English, the DM is not in
-  English either.
-- Keep technical vocabulary in the original language of the codebase, **nouns and verbs both**. A
-  mixed-language register borrows technical terms wholesale rather than translating them; translating
-  a technical verb is the tell that a machine wrote it.
-- Drop anything the reader cannot act on. If the user is informing rather than asking, one short
-  visibility line at the end covers the rest, and no question is manufactured for it.
+- Match the user's own language, not the skill's. If their DMs are not in English, the DM is not in English either.
+- Keep technical vocabulary in the original language of the codebase, **nouns and verbs both**. A mixed-language register borrows technical terms wholesale rather than translating them; translating a technical verb is the tell that a machine wrote it.
+- Drop anything the reader cannot act on. If the user is informing rather than asking, one short visibility line at the end covers the rest, and no question is manufactured for it.
 
-**Still show the whole message and wait for confirmation before sending.** The register is the part
-most likely to be wrong, and only the user can tell you.
+**Still show the whole message and wait for confirmation before sending.** The register is the part most likely to be wrong, and only the user can tell you.
 
 ## Flow
 

@@ -4,20 +4,15 @@ Read by `ask-stakeholders`. Nothing here is detectable. Ask, or seed it from Sla
 
 ## Seeding from Slack
 
-Offer this once. Given a channel the user names, list its members and propose one block per
-member with `Role`, `Answers`, `Does not answer`, and `Register` **left blank**. A guessed
-register produces a badly-pitched question. Write no real name until the user confirms it.
+Offer this once. Given a channel the user names, list its members and propose one block per member with `Role`, `Answers`, `Does not answer`, and `Register` **left blank**. A guessed register produces a badly-pitched question. Write no real name until the user confirms it.
 
 ## Ask for
 
 1. The channel per topic, and the default channel. A channel id, not a name — the name can change.
-2. One block per person the user actually asks. Two or three is a working file; a full team roster
-   is sediment.
-3. The register per person. This is the load-bearing field, and it is the one the user must say
-   out loud. Prompt for it as: *what does this person answer, and in whose vocabulary?*
+2. One block per person the user actually asks. Two or three is a working file; a full team roster is sediment.
+3. The register per person. This is the load-bearing field, and it is the one the user must say out loud. Prompt for it as: *what does this person answer, and in whose vocabulary?*
 
-Keep the worked example in the written file until real blocks replace it. It carries the register
-distinction, which one-line field labels do not.
+Keep the worked example in the written file until real blocks replace it. It carries the register distinction, which one-line field labels do not.
 
 ---
 
