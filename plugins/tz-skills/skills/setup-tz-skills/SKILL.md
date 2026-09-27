@@ -9,7 +9,7 @@ Provision the per-repo config that the tz-skills read.
 
 Every config file is **per-developer and untracked**. The one tracked change this run makes is the ignore line, so the run shows that diff and says who commits it.
 
-This run installs nothing. Symlinking the skills happens first, through `bunx @teszerrakt/skills`.
+This run installs nothing. Installing the `tz-skills` plugin happens first: see the README.
 
 ## Process
 
@@ -17,7 +17,7 @@ This run installs nothing. Symlinking the skills happens first, through `bunx @t
 
 Detect first, ask second. A value a file already states is not a question.
 
-- `~/.claude/skills/` — which of `fe-design-map`, `ask-stakeholders`, `standup`, `estimate-effort`, `spec-review`, `ship` are installed. **Each installed skill adds one section. Each absent skill adds none.**
+- The available-skills list — which of `tz-skills:fe-design-map`, `tz-skills:ask-stakeholders`, `tz-skills:standup`, `tz-skills:estimate-effort`, `tz-skills:spec-review`, `tz-skills:ship` are installed. **Each installed skill adds one section. Each absent skill adds none.**
 - The available-skills list — is `mattpocock-skills:grilling` there, and `mattpocock-skills:domain-modeling`? `fe-design-map` runs both. The plugin name is part of the id, so match what the list shows.
 - `.claude/` — does it exist? Does it hold a `.gitignore`? Which config files exist already, and which sections does each hold?
 - `git remote -v` — the repo owner and the repo name.

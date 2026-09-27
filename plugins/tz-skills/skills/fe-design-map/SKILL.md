@@ -88,7 +88,7 @@ The user gives a feature and a Figma summary page URL.
 
    When ticket 4 will exist, also settle its **capture limits** here, in one question: the staging entity, the logins by the capabilities they hold, and whether undeletable leftovers are acceptable (a record that reached an approved or active state often cannot be deleted). This answer is the capture playbook's one approval, given up front, so the capture can run with no one watching. Pick the entity every login shares before you ask.
 4. **Create the fact base** and write `meta.json`.
-5. **Write the gate ledgers** for tickets 1, 2, 3, 4, and 6, before any harvest runs, then **dry-run every one** (`gate-check.mjs --dry`) and confirm each gate fails on the empty fact base. A gate that already passes proves nothing later. Read [references/gates.md](references/gates.md).
+5. **Write the gate ledgers** for tickets 1, 2, 3, 4, and 6, before any harvest runs, then **dry-run every one** (`node "${CLAUDE_SKILL_DIR}/scripts/gate-check.mjs" --dry <ledger>`) and confirm each gate fails on the empty fact base. A gate that already passes proves nothing later. Read [references/gates.md](references/gates.md).
 6. **Create the map** and its tickets on the tracker, then wire the blocking edges in a second pass.
 7. **Fire the harvests.** Dispatch **one subagent per created harvest ticket**, in parallel. Each subagent gets the ticket body, the fact base path, and its ledger path — nothing else.
 
@@ -104,7 +104,7 @@ The user gives a map, and optionally a ticket.
 
 1. Load the map body. Do not fetch every ticket.
 2. Choose the ticket: the one named, or the first on the frontier. Assign it to the user's tracker account before any work.
-3. **Re-run the ledger of every closed harvest this ticket depends on** before trusting its facts: `node ~/.claude/skills/fe-design-map/scripts/gate-check.mjs <ledger>`. A gate that now fails means the harvest is unmet, whatever its comment says.
+3. **Re-run the ledger of every closed harvest this ticket depends on** before trusting its facts: `node "${CLAUDE_SKILL_DIR}/scripts/gate-check.mjs" <ledger>`. A gate that now fails means the harvest is unmet, whatever its comment says.
 4. Resolve the ticket. Read the reference the ticket names.
 5. Post the resolution as a comment, close the ticket, and add one line to the map's Decisions-so-far.
 6. Continue to the next ticket in the same session when it is sequential and cheap. Tickets 6 and 7 are one sitting.

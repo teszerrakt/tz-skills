@@ -35,9 +35,11 @@ A gate is a `- [ ] Gn <title>` line followed by indented `CHECK:`, `EXPECT:`, an
 
 ## Run it
 
+`<skill dir>` is this skill's own directory, the base directory printed when the skill loaded.
+
 ```bash
 FB="$HOME/.claude/fe-design-map/<repo>/<slug>" \
-  node ~/.claude/skills/fe-design-map/scripts/gate-check.mjs "$FB/gates/01-figma-harvest.md"
+  node "<skill dir>/scripts/gate-check.mjs" "$FB/gates/01-figma-harvest.md"
 ```
 
 It ticks the boxes, writes the first three lines of output into each `EVIDENCE`, prints a per-gate verdict, and exits non-zero while any gate is unmet. Paste the whole ledger into the ticket's resolution comment.
@@ -48,7 +50,7 @@ A gate that cannot fail proves nothing, and it reads exactly like one that passe
 
 ```bash
 FB="$HOME/.claude/fe-design-map/<repo>/<slug>" \
-  node ~/.claude/skills/fe-design-map/scripts/gate-check.mjs --dry "$FB/gates/01-figma-harvest.md"
+  node "<skill dir>/scripts/gate-check.mjs" --dry "$FB/gates/01-figma-harvest.md"
 ```
 
 `--dry` inverts the verdict: it exits zero only when **every** gate fails. It names any gate that passes before the work exists, then resets the boxes and evidence so the dry run leaves no trace.

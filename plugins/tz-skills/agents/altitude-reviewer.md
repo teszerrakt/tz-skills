@@ -1,5 +1,5 @@
 ---
-name: tz-altitude-reviewer
+name: altitude-reviewer
 description: Judge whether a diff's work sits at the right layer, and name the root causes worth their own ticket. Reports findings; never edits.
 model: opus
 tools: Read, Grep, Glob, Bash

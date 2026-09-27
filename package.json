@@ -1,7 +1,7 @@
 {
   "name": "@teszerrakt/skills",
-  "version": "0.1.0",
-  "description": "Personal Claude Code skills — frontend design-doc pipeline (fe-design-map, ask-stakeholders, estimate-effort, fe-design-cleanup), PR review (address-review), standup drafting. Installs via bunx.",
+  "version": "0.2.0",
+  "description": "Installs the tz-skills Claude Code plugin, with Matt Pocock's skills as its dependency.",
   "type": "module",
   "bin": {
     "tz-skills": "./bin/install.ts"
@@ -11,8 +11,8 @@
     "README.md"
   ],
   "scripts": {
-    "setup": "bun run setup.ts",
-    "uninstall": "bun run setup.ts --uninstall"
+    "validate": "claude plugin validate --strict . && claude plugin validate --strict plugins/tz-skills",
+    "eval": "claude plugin eval plugins/tz-skills"
   },
   "engines": {
     "bun": ">=1.0.0"
