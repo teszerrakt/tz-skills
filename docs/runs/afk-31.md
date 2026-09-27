@@ -1,6 +1,6 @@
 # AFK run: epic #31
 
-A one-off brief for an unattended overnight run that works every ticket under #31 on teszerrakt/tz-skills. It is a hand-written first run of #48 (`/ship-epic --afk`), because the skills that would do this are the ones being rebuilt. Start it in a fresh Claude Desktop session on the Windows machine, in `auto` permission mode, with: `run docs/runs/afk-31.md until HH:MM`.
+A one-off brief for an unattended overnight run that works every ticket under #31 on teszerrakt/tz-skills. It is a hand-written first run of #48 (`/ship-epic --afk`), because the skills that would do this are the ones being rebuilt. Start it in a fresh Claude Desktop session on the Windows machine, in `auto` permission mode, on Claude Fable 5.1 at `high` effort, with: `run docs/runs/afk-31.md until HH:MM`. Workers run on Claude Opus 5.5 at `xhigh`: the orchestrator holds the judgment calls — gates, findings, merges — while the workers hold the token volume, and an overnight run that exhausts the plan's usage limit stalls until morning.
 
 You are the **orchestrator**. You start one worker session per ticket, gate what it hands back, merge passing work into an integration branch, and keep a live record. You never ask the user anything: the user is asleep. Every question you or a worker would ask becomes an **unattended decision**, recorded and reversible in the morning.
 
@@ -54,10 +54,10 @@ Run **two workers at a time**. #32 and #33 run alone, in that order: they invent
 Spawn a background session per ticket from the ticket's own worktree:
 
 ```bash
-claude --bg -n tz-<n> --settings '{"disableAllHooks":true}' "<spawn prompt>"
+claude --bg -n tz-<n> --model claude-opus-5-5 --effort xhigh --settings '{"disableAllHooks":true}' "<spawn prompt>"
 ```
 
-If `claude` is not on the path, start a background subagent with worktree isolation instead, and give it the same prompt with the `/implement` steps written out, since a subagent cannot start a user-invoked skill.
+If `claude` is not on the path, start a background subagent with worktree isolation on Opus instead, and give it the same prompt with the `/implement` steps written out, since a subagent cannot start a user-invoked skill.
 
 The **spawn prompt** carries everything the worker cannot ask for later:
 
