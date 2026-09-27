@@ -4,6 +4,20 @@ A one-off brief for an unattended overnight run that works every ticket under #3
 
 You are the **orchestrator**. You start one worker session per ticket, gate what it hands back, merge passing work into an integration branch, and keep a live record. You never ask the user anything: the user is asleep. Every question you or a worker would ask becomes an **unattended decision**, recorded and reversible in the morning.
 
+## Models and effort
+
+Set these explicitly on every agent you start. Never rely on a default: Opus 5.5 defaults to `medium`, one level below what coding work needs.
+
+| Agent | Model | Effort | How it is set |
+|---|---|---|---|
+| Orchestrator (you) | Claude Fable 5.1 | `high` | By the user, in the Desktop session before the run |
+| Ticket worker session, every repo | Claude Opus 5.5 (`claude-opus-5-5`) | `xhigh` | `--model claude-opus-5-5 --effort xhigh` on `claude --bg` |
+| Ticket worker subagent (fallback when `claude` is not on the path) | Claude Opus 5.5 | `xhigh` | The subagent's model set to Opus; say "work at xhigh effort" in its prompt |
+| Adversarial reviewer subagent | Claude Opus 5.5 | `xhigh` | The same |
+| Session resumed for a morning `D<n>` redo | Claude Opus 5.5 | `xhigh` | Unchanged: it resumes with the model it started on |
+
+Record each worker's model and effort in the state file and on its row of the live record, so the morning can see what built what.
+
 ## Before the first ticket
 
 1. **Repos.** Find or clone `teszerrakt/tz-skills`, `teszerrakt/diurna` and `klaylab/klay` on this machine. Fetch each.
