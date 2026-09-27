@@ -183,11 +183,11 @@ Write the report to the scratchpad, never into the repo. It is session output.
 
 Those two tables are the record. **They are not how a question reaches the user** — see step 8.
 
-### 8. The questions section first, then offer the PR post
+### 8. The ledger, then the questions section last
 
 Never post anywhere automatically. The findings split by audience, and one half is a question rather than feedback.
 
-**Lead the reply with a questions section** (CONTEXT.md). Every `AMBIGUOUS` row, and every `MISSING` row the user must rule on, one block each — before the verdict, before the ledger, before the prose. A question after the explanation reads as part of it and gets scrolled past.
+**Close the reply with a questions section** (CONTEXT.md). Every `AMBIGUOUS` row, and every `MISSING` row the user must rule on, one block each — after the verdict, the ledger and the prose, as the last thing in the reply. The reader needs the ledger to answer, and a chat client leaves the reply scrolled to its end: a question at the top is scrolled past before it can be answered, and one in the middle reads as part of the explanation.
 
 ```markdown
 ## ❓ Needs your call
@@ -202,9 +202,9 @@ Never post anywhere automatically. The findings split by audience, and one half 
 Asked because: the ticket says "handle no rows", which reads both ways.
 ```
 
-The row's file, class and both quoted readings stay in the ledger tables below, never in the question. A reader who cannot picture the choice at a glance cannot make it, and deciding it is the only reason the row exists.
+The row's file, class and both quoted readings stay in the ledger tables above, never in the question. A reader who cannot picture the choice at a glance cannot make it, and deciding it is the only reason the row exists.
 
-Then, and only then:
+The offer to post goes in that same section, as its last block — never as a line of prose:
 
 - **To the PR** — the `MISSING` rows and the `STRAY` rows. These are feedback on the diff. Offer it and take one confirmation.
   ```bash
@@ -214,4 +214,4 @@ Then, and only then:
 
 An `AMBIGUOUS` row on the PR blames the author for the ticket's defect. Keep the split.
 
-Write no `❓` section when nothing needs deciding. An empty one trains the reader to ignore the heading.
+Write no `❓` section when nothing needs deciding; end with one line saying nothing needs the reader. An empty section trains the reader to ignore the heading.
