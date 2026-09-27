@@ -269,6 +269,12 @@ load-bearing half: the reported "notifications are too quiet" turned out to be a
 muted default output device, not a loudness problem. Pushover was considered and
 declined — local audio works, and it would send question text to a third party.
 
+**Spawned sessions chimed on their own, bypassing this rule (#49).** Hooks from the user's settings and from every enabled plugin fire in every session, background ones included. On the Windows machine the user's hooks post each event to a desktop pet (Comnyang), and the Warp plugin raises a notification on `Stop` and `Notification`. So every spawned session that waited or finished sounded by itself. A probe `--bg` session with a logging hook fired `PermissionRequest`, then `Notification` (`permission_prompt`), when it asked a question. It fired `Stop` when its turn ended, and `Notification` (`idle_prompt`) 60 s later.
+
+So `/ship-epic` spawns every session with `--settings '{"disableAllHooks":true}'`, the only switch that reaches one. Hooks merge across settings scopes, so an empty `Notification` list in `settings.local.json` removed nothing. And a `settings.local.json` written into a worktree after the session entered it was never read, so `/ship` step 0 cannot carry it. `claude agents --json` still reports a hooks-off session as `waiting` / `input needed`, so this rule sees every parked session as before. The flag passed here under an allow rule for `claude`; whether the `auto` classifier passes it without one is unmeasured.
+
+The ticket's other two suspects do not hold. This rule reads `status` and `waitingFor` and compares no clock, so a WSL zone that differs from Windows' cannot fire it; the skill's only times are the report's durations. And it fires on one property of the whole run, so even counting a finished or idle session as parked could not sound once per session.
+
 **A permission stall is not a question.** `waitingFor: "permission prompt"` means
 the allowlist is wrong, which is a config edit rather than a decision. The
 session is killed, the ticket parked, and the exact denied command written to the
