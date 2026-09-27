@@ -21,7 +21,7 @@ Spawn each ticket as its own background session, and run as one yourself:
 claude --bg -n TRA-424 --settings '{"disableAllHooks":true}' "/ship TRA-424 …"
 ```
 
-**Spawn it with hooks off.** The user's hooks and every plugin's fire in every session, so a spawned session that waits or finishes chimes on its own, bypassing the alarm rule under *Human contact*. The flag is the only switch that reaches it: hooks merge across settings scopes, so no narrower override removes one, and a `settings.local.json` written into a worktree after the session entered it is never read.
+**Spawn it with hooks off.** The user's hooks and every plugin's fire in every session, so a spawned session that waits or finishes chimes on its own, bypassing the alarm rule under *Human contact*. The flag turns off every hook, the repo's own included. A worktree `settings.local.json` cannot carry it: a session never reads one written after it entered the worktree. If the classifier refuses the flag, report an allowlist gap; never spawn without it.
 
 Never a subagent. A subagent's grant carries no `ListAgents`, no `SendMessage` and no `AskUserQuestion` — even one declared `Tools: *` — so it can neither coordinate nor ask, and `/ship`'s reconcile gate exists to ask. A session holds all three.
 
