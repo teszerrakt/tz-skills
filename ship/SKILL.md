@@ -51,6 +51,7 @@ Write no new config file. Read, in this order:
 | Token file | where a colour token resolves to its name |
 | PR body sections | the allowed headings, in order, and the caps |
 | PR body write path | how to write a body, and how to prove it landed |
+| Spec-review BLOCK | `strict` or `lenient` — whether step 9 may fix a stray-only `BLOCK` once |
 | Environment traps | the machine-specific gotchas a delegate must be told |
 
 **A phase whose config line is absent reports `SKIPPED`.** It never disappears
@@ -320,6 +321,13 @@ for the push, where step 12 works CodeRabbit's comments.
 A `BLOCK` verdict aborts the run. Opening a PR that carries a known `MISSING` row
 is the failure the gate in step 1 exists to prevent, arriving eight phases later.
 
+**`Spec-review BLOCK: lenient` buys one fix-and-rerun, for strays only.** When
+every row behind the `BLOCK` is a stray the ticket never asked for, delete those
+changes, re-run step 4's typecheck, lint and tests, then run `/spec-review` once
+more. A second `BLOCK` aborts. A `MISSING` criterion aborts at once, lenient or not: deleting
+code cannot supply a criterion. An absent key reads as `strict`. Name every
+deleted stray in the PR body, so the reviewer sees what the run took back out.
+
 ### 10. Shoot and assert — frontend track
 
 Invoke the skill `## Delivery` names for screenshots, forked, so the images stay
@@ -559,7 +567,7 @@ abort 7 fires after promotion, so the PR first goes back to draft (`gh pr ready
 | 1 | Residue from step 1 unanswered — park the run |
 | 2 | Typecheck, lint or tests still failing after two self-fix attempts |
 | 3 | Two adversarial rounds with findings still open |
-| 4 | `/spec-review` returns `BLOCK` |
+| 4 | `/spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
 | 5 | An assert `FAIL` that survives the expectation re-check |
 | 6 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
 | 7 | CI still red after two self-fix attempts in step 12 |

@@ -377,7 +377,10 @@ These stop the run with **no PR opened**, and a report:
 3. Two adversarial rounds with findings still open.
 4. `/spec-review` returns `BLOCK` — a `MISSING` row, or an undefended stray.
    Opening a PR carrying a known `MISSING` row is the exact failure the reconcile
-   gate exists to prevent, arriving eight phases later.
+   gate exists to prevent, arriving eight phases later. A repo that sets
+   `Spec-review BLOCK: lenient` trades one abort for one re-run when every
+   flagged row is a stray: deleting a stray costs less than a parked ticket, and
+   the re-run audits the deletion. A `MISSING` row never qualifies.
 5. An assert `FAIL` that survives an expectation re-check.
 6. A live-verification step `FAIL`, or a body claim with no wire line.
 
