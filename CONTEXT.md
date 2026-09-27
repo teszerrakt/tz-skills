@@ -15,11 +15,11 @@ A file of runnable checks, written before the work starts, that decides whether 
 _Avoid_: checklist, definition of done
 
 **Questions section**:
-The one shape a skill uses to ask a human anything: its own section at the top of the reply, under a `❓` heading, holding one block per question. A block is the question in under 15 words, then **one option per bullet** — the choice bolded, then what a person would see, under 15 words each — then a `✨` line recommending one, then a single `Asked because:` line carrying only what the answer turns on. Questions are labelled `Q1`, `Q2`, the labels `/grilling` already uses. At most four. No field names, no file paths, no review vocabulary.
+The one shape a skill uses to ask a human anything: its own section closing the reply, under a `❓` heading, after the context the reader needs to answer, with nothing after it. It holds one block per question. A block is the question in under 15 words, then **one option per bullet** — the choice bolded, then what a person would see, under 15 words each — then a `✨` line recommending one, then a single `Asked because:` line carrying only what the answer turns on. Questions are labelled `Q1`, `Q2`, the labels `/grilling` already uses. At most four. No field names, no file paths, no review vocabulary.
 
 **Not a table.** A terminal renders `<br>` literally, so a table cell cannot hold one option per line, and options crammed onto one line are the failure this shape exists to fix.
 
-Four ways a question goes unread, all measured rather than assumed: written as prose, written as a data structure, placed after the explanation, or padded past a glance. A fifth wastes the reader instead: asking without recommending, which offloads the asker's own judgment. Never write an empty one.
+Four ways a question goes unread, all measured rather than assumed: written as prose, written as a data structure, placed where the reader is not looking, or padded past a glance. Where the reader looks is the end: a chat client leaves a long reply scrolled to its last line, and the reader wants the context before the ask, so a section at the top scrolls away unanswered and one in the middle reads as part of the explanation. A fifth wastes the reader instead: asking without recommending, which offloads the asker's own judgment. Never write an empty one; when nothing needs the reader, end with one line saying so.
 _Avoid_: questions table, open questions section, clarifications, blockers list
 
 **Build ticket**:
