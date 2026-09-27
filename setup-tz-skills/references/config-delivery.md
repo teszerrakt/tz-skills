@@ -71,6 +71,9 @@ whose key is absent reports `SKIPPED`.
   writes them in CodeRabbit's shape: `Summary`, `Changes`, `Merge risk`.
 - **PR body write path:** {{command}}, then read the body back and confirm it
   changed.
+- **Spec-review BLOCK:** {{strict | lenient}}. `strict` aborts on any `BLOCK`.
+  `lenient` lets step 9 delete stray-only findings and re-run once; a `MISSING`
+  criterion still aborts. Absent reads as `strict`.
 - **Backend URL override:** {{env var}} — points the frontend dev server at the
   backend a ticket was proven against.
 - **Typecheck (BE):** {{command}}, run from {{dir}}.

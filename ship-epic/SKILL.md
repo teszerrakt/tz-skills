@@ -224,7 +224,7 @@ A ready PR passed every phase. A draft one did not, and its body says which.
 |---|---|
 | 1 | Residue from the reconcile gate — parked, session resumable |
 | 2 | Typecheck, lint or tests still failing after two self-fix attempts |
-| 3 | `/spec-review` returns `BLOCK` |
+| 3 | `/spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
 | 4 | An assert `FAIL` that survives the expectation re-check |
 | 5 | Two adversarial-review rounds with findings still open |
 | 6 | A denied command — session stopped, the exact command reported |
