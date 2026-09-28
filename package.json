@@ -1,6 +1,6 @@
 {
   "name": "@teszerrakt/skills",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Installs the tz-skills Claude Code plugin, with Matt Pocock's skills as its dependency.",
   "type": "module",
   "bin": {
