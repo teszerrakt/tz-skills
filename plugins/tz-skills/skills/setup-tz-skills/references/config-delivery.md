@@ -1,6 +1,13 @@
-# Template: `.claude/delivery.md`
+# Template: the delivery file
 
-Read by `ship`, and by `ship-epic` for the parallel-run keys at the end. It is a file of its own because a backend-only repo has no frontend design map to append to. An older install appended this section to `.claude/fe-design-map.md`; when that section exists and `delivery.md` does not, offer to move it, and write the new ignore line first.
+Committed at `docs/agents/delivery.md`, or kept untracked at `.claude/delivery.md` in a repo that will not take committed config. Read by `ship`, by `ship-epic` for the parallel-run keys at the end, and by `spec-review` for its `## Review exclusions`. It is a file of its own because a backend-only repo has no frontend design map to append to.
+
+Two older homes to move from, each on the user's say-so:
+
+- `.claude/delivery.md` in a repo that now takes committed config: move it to `docs/agents/delivery.md` unchanged, and drop its ignore line.
+- A `## Delivery` section inside `.claude/fe-design-map.md`, where an older install appended it: move it into the delivery file.
+
+**A committed file reaches every clone.** Never write a credential or a personal id here; name the gitignored file that holds it.
 
 Write only the tracks the repo has. A frontend-only repo drops every `(BE)` key; a backend-only repo drops the frontend proof keys — visual verification, smoke, screenshots, design assertion, token file.
 
@@ -28,8 +35,6 @@ A key with no value at all is correct when the repo has no such phase. `ship` re
 ## Environment traps earn their place by having cost time
 
 This subsection is the one place a machine-specific gotcha belongs: the driver ships from tz-skills and carries none. Write only traps someone has actually hit — a browser automation that fails on this OS, a CLI that aborts silently, a route that redirects for the wrong role. A speculative trap costs every delegate's attention for a failure that never happens.
-
-**Never write a credential here.** Name the gitignored file that holds it.
 
 ---
 

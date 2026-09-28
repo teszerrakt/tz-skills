@@ -12,7 +12,7 @@ Judge one diff against one contract. Two questions, no others:
 
 The burden of proof sits on the diff. Silence is never proof. A reviewer who cannot anchor a row writes `MISSING`, not `MET`.
 
-This skill does not review code quality. `/code-review` (CodeRabbit) owns that axis. See [ADR-0001](https://github.com/teszerrakt/tz-skills/blob/main/docs/adr/0001-spec-review-owns-the-spec-axis-alone.md).
+This skill does not review code quality. Matt Pocock's `mattpocock-skills:code-review` owns that axis before the push, and CodeRabbit, where a repo has it, reviews the pushed PR. See [ADR-0001](https://github.com/teszerrakt/tz-skills/blob/main/docs/adr/0001-spec-review-owns-the-spec-axis-alone.md).
 
 ## Vocabulary
 
@@ -22,9 +22,12 @@ The terms below are defined in [CONTEXT.md](https://github.com/teszerrakt/tz-ski
 
 Write no new config file. Read, in this order:
 
-1. `.claude/fe-design-map.md` — the tracker, the team prefix, the ticket URL base, the ADR and RFC paths, the docs platform, and the `## Review exclusions` section.
-2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-3. Ask the user for what neither file states, as a **questions section** (CONTEXT.md).
+1. `docs/agents/issue-tracker.md` — Matt Pocock's tracker file. Fetch the ticket and its comments exactly as its "fetch the relevant ticket" section says.
+2. `docs/agents/domain.md` — where the ADRs live. RFCs sit in `docs/rfc/` when the repo has one, and a ticket or an ADR may link its own.
+3. The delivery file's `## Review exclusions` section, and nothing else from it: `docs/agents/delivery.md`, or the `.claude/delivery.md` **fallback config** (CONTEXT.md) only when the committed one is absent.
+4. Ask the user for what no file states, as a **questions section** (CONTEXT.md).
+
+Nothing here comes from a design-map config, so a repo without one reviews the same way.
 
 A missing `## Review exclusions` section is not a blocker. Fall back to the defaults in step 4, name the fallback in the report, and offer `/setup-tz-skills` once.
 
@@ -51,7 +54,7 @@ Confirm the ref resolves and the diff is non-empty before anything else runs.
 
 ### 2. Resolve the contract
 
-Read the ticket id from the branch name (`feat/tra-418-…`) or from the commit subjects (`(TRA-418)`). Fetch four sources:
+Read the ticket id from the branch name (`feat/tra-418-…`) or from the commit subjects (`(TRA-418)`). Fetch four sources, the ticket and its comments through the tracker file:
 
 | Source | Role |
 |---|---|
@@ -60,7 +63,7 @@ Read the ticket id from the branch name (`feat/tra-418-…`) or from the commit 
 | The design doc | Detail, binding **only** for the sections the ticket names. |
 | ADRs and RFCs | Constraints. A diff can violate one. An ADR never adds scope. |
 
-The tracker caveat in `docs/agents/issue-tracker.md` applies: work lands here without a ticket. When no ticket resolves, stop with the `NO_CONTRACT` verdict in step 6. Do not infer a contract from the branch name. A review against a guessed ticket manufactures both the misses and the strays.
+Work can land without a ticket. When no ticket resolves, stop with the `NO_CONTRACT` verdict in step 6. Do not infer a contract from the branch name. A review against a guessed ticket manufactures both the misses and the strays.
 
 ### 3. Extract the ledger rows, then confirm them
 
@@ -84,7 +87,7 @@ For a PR that declares several tickets, build one ledger per ticket.
 
 ### 4. Fix the noise floor
 
-Three kinds of changed file, three treatments. Read the globs from config; these are the defaults.
+Three kinds of changed file, three treatments. Read the globs from the delivery file's `## Review exclusions`; these are the defaults when it has none.
 
 | Kind | Default globs | Treatment |
 |---|---|---|

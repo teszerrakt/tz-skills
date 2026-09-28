@@ -1,24 +1,42 @@
 ---
 name: setup-tz-skills
-description: Scaffold the per-repo config files the tz-skills read — fe-design-map, delivery, stakeholders, standup. Use when a tz-skill reports its config file is missing, or when adopting these skills in a new repo.
+description: Scaffold the per-repo config files the tz-skills read — delivery, fe-design-map, stakeholders, standup — on top of Matt Pocock's setup. Use when a tz-skill reports its config file is missing, or when adopting these skills in a new repo.
 ---
 
 # Setup tz-skills
 
 Provision the per-repo config that the tz-skills read.
 
-Every config file is **per-developer and untracked**. The one tracked change this run makes is the ignore line, so the run shows that diff and says who commits it.
+It builds on Matt Pocock's setup, which describes the repo's tracker, triage labels and domain docs in `docs/agents/`. `ship` and `spec-review` fetch their tickets through his tracker file, not through anything this run writes.
 
 This run installs nothing.
 
+## Where each file goes
+
+| File | Home | Holds |
+|---|---|---|
+| `delivery.md` | `docs/agents/`, committed beside Matt Pocock's files | `## Delivery` and `## Review exclusions`: repo facts every clone reads alike |
+| `fe-design-map.md` | `.claude/`, untracked | the design-map config |
+| `stakeholders.md`, `standup.md`, `estimate-calibration.md` | `.claude/`, untracked | personal ids and delivery history, never shared |
+
+The delivery file is **committed config** (CONTEXT.md). A team repo that will not take committed config keeps the same file under the same name in `.claude/`, untracked: the **fallback config**. Every skill reads the committed path first and the `.claude/` copy only when the committed one is absent, so adopting committed config later is a plain file move.
+
+Write the committed file unless the user says the repo will not take committed config; then write the fallback.
+
 ## Process
 
-### 1. Explore
+### 1. Require Matt Pocock's setup
+
+Find his tracker file, `docs/agents/issue-tracker.md`.
+
+When it is missing, stop. Say his setup has not run, tell the user to type `/mattpocock-skills:setup-matt-pocock-skills` and then run this skill again, and write nothing, not even an ignore line, however the request is worded. His setup is user-invoked, so this skill cannot run it for them.
+
+### 2. Explore
 
 Detect first, ask second. A value a file already states is not a question.
 
 - The available-skills list — is `mattpocock-skills:grilling` there, and `mattpocock-skills:domain-modeling`? `fe-design-map` runs both. The plugin name is part of the id, so match what the list shows.
-- `.claude/` — does it exist? Does it hold a `.gitignore`? Which config files exist already, and which sections does each hold?
+- `docs/agents/` and `.claude/` — which config files exist already, and which sections does each hold? Does `.claude/` hold a `.gitignore`?
 - `git remote -v` — the repo owner and the repo name.
 - A staging-token command — a `Makefile` target or a `package.json` script. Search for `token`.
 - `docs/adr/` and `docs/rfc/` — the design-doc directories.
@@ -27,7 +45,7 @@ Detect first, ask second. A value a file already states is not a question.
 - The typecheck command — the task runner's config, then the app's own `package.json`. An app declaring no `typecheck` script typechecks through `build`.
 - Monorepo signals — `pnpm-workspace.yaml`, a `workspaces` field, or a populated `packages/*`.
 
-### 2. Report, then ask
+### 3. Report, then ask
 
 State what exploration found and what stays open. Name a missing mattpocock plugin here, once: link https://github.com/mattpocock/skills and carry on. A missing plugin degrades `fe-design-map`; it does not block this run.
 
@@ -43,34 +61,32 @@ Offer to seed the people from Slack. Given a named channel, list its members and
 
 **Section D — `estimate-effort`.** Create no file. `estimate-effort` decides to label its output **uncalibrated** by testing whether `.claude/estimate-calibration.md` exists. An empty stub makes the file exist, so the skill trusts a floor that no actual supports. Say the skill runs uncalibrated, and offer to derive the file from merged PRs and closed tickets as a separate run.
 
-**Section E — `spec-review`.** Read [references/config-review-exclusions.md](references/config-review-exclusions.md). Appends a `## Review exclusions` section to `.claude/fe-design-map.md`.
+**Section E — `ship`, `ship-epic`.** Read [references/config-delivery.md](references/config-delivery.md). Writes the `## Delivery` section of the delivery file, at the home [Where each file goes](#where-each-file-goes) picks. Its `### Parallel runs` subsection is `ship-epic`'s alone; write it only for a repo whose app can run several dev servers at once.
 
-This skill writes no file of its own. It reads the tracker, the ticket URL base, and the ADR and RFC paths from Section A. So when Section A is absent, write Section A first: `spec-review` cannot fetch a ticket without it.
+**Section F — `spec-review`.** Read [references/config-review-exclusions.md](references/config-review-exclusions.md). Appends a `## Review exclusions` section to the delivery file. A repo that runs `spec-review` without `ship` writes the delivery file with this section alone. `spec-review` fetches its ticket through Matt Pocock's tracker file, so it needs nothing from Section A.
 
-**Section F — `ship`, `ship-epic`.** Read [references/config-delivery.md](references/config-delivery.md). Writes `.claude/delivery.md`. Its `### Parallel runs` subsection is `ship-epic`'s alone; write it only for a repo whose app can run several dev servers at once.
+`ship` runs `spec-review` as one of its phases, so a delivery file with no `## Review exclusions` gives the driver a review phase that falls back to defaults.
 
-It depends on Section E: `ship` runs `spec-review` as one of its phases, so a repo with `## Delivery` and no `## Review exclusions` has a driver whose review phase falls back to defaults.
-
-### 3. Confirm
+### 4. Confirm
 
 Show the full text of every file before you write it. Let the user edit it first.
 
-### 4. Write
+### 5. Write
 
-**Write the ignore line before the config file it covers.** A config file that exists before its ignore line can enter a commit, and these files hold Slack handles and delivery history.
+**Write the ignore line before the untracked file it covers.** An untracked file that exists before its ignore line can enter a commit, and these files hold Slack handles and delivery history.
 
-1. Append one line per file to `.claude/.gitignore`. Create that file if it is absent.
-2. Show the ignore diff. Say the user commits it.
-3. Write each config file from its template.
+1. Append one line per untracked file to `.claude/.gitignore`. Create that file if it is absent.
+2. Write each config file from its template, at its home.
+3. Show the diff of every tracked change — the ignore lines, and the delivery file when it is committed config. Say the user commits it.
 
 On a re-run, fill only the missing sections. A filled section is the user's source of truth: to change one, show the old text and the new text, then wait.
 
-### 5. Verify
+### 6. Verify
 
-Re-read every file this run wrote, and prove it is complete:
+Re-read every file this run wrote, and prove it is complete. Pass the files this run wrote:
 
 ```bash
-grep -n 'TODO:\|{{' .claude/fe-design-map.md .claude/delivery.md .claude/stakeholders.md .claude/standup.md
+grep -n 'TODO:\|{{' docs/agents/delivery.md .claude/delivery.md .claude/fe-design-map.md .claude/stakeholders.md .claude/standup.md
 ```
 
 Every template placeholder is `{{like this}}`, double-braced, so this pattern cannot fire on a real value. A single brace is legitimate content — `/v1/app/{service}/{resource}` is a URL pattern, not an unfilled field.

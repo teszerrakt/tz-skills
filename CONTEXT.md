@@ -30,6 +30,16 @@ _Avoid_: task, story, work item
 A child issue of a wayfinder map that resolves one decision or one harvest.
 _Avoid_: research ticket, spike
 
+### Config
+
+**Committed config**:
+A file of repo facts a skill reads, committed beside Matt Pocock's config, so every clone and every session reads the same values. The delivery file is one.
+_Avoid_: project config, shared config, tracked config
+
+**Fallback config**:
+An untracked copy of a committed config file, under the same name, for a repo that will not take committed config. A skill reads it only when the committed file is absent. A personal file such as the standup config is not fallback config: it has no committed home.
+_Avoid_: local config, override, untracked config
+
 ### Delivery
 
 **Phase**:

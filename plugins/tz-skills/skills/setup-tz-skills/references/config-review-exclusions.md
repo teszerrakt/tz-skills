@@ -1,6 +1,8 @@
 # Template: the `## Review exclusions` section
 
-Read by `spec-review`. It appends to `.claude/fe-design-map.md` rather than to a file of its own, because every other fact that skill needs — the tracker, the ticket URL base, the ADR and RFC paths — already lives there.
+Read by `spec-review`. It is a section of the delivery file — `docs/agents/delivery.md`, or the `.claude/delivery.md` fallback — because `ship` runs `spec-review` as one of its phases, and one file then holds what both read.
+
+An older install appended this section to `.claude/fe-design-map.md`. When it exists there and the delivery file has none, offer to move it.
 
 ## Detect
 
