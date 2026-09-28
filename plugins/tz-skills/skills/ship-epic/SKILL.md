@@ -46,6 +46,7 @@ Read `## Delivery` from the delivery file — `docs/agents/delivery.md`, else th
 | Opt-out check | the command that proves the worktree opt-outs inert | assert nothing, and say so in the report |
 | Concurrency pin | the flag that caps one session's task runner | run serial |
 | Alarm | the command run when no session can progress | report quietly |
+| Ask | the command that shows one parked question on the user's screen and prints the option they picked | ask in the questions section only |
 
 A repo with no `## Delivery` section: offer `/setup-tz-skills` once, then ask for the values with a **questions section** (CONTEXT.md).
 
@@ -122,6 +123,10 @@ The last row is the one a stall-only watch misses. Under the `auto` permission m
 **Alarm only when no session can progress** — every live session parked on a question. Run the config's alarm command then, and only then. Waking the user for a question two other sessions are working around trains them to ignore the alarm, which costs every later run.
 
 Put the parked questions to the user as one **questions section** (CONTEXT.md), at most four across the whole run, then `SendMessage` each answer to the session that asked. A parked session resumes with its context intact, so parking costs one round trip rather than a re-run.
+
+**Where the config names an `Ask` command, put each parked question through it too**, one call per question, as soon as the session parks: the question, its options with what the user would see, the recommended one, and the `Asked because:` line. The user is usually in another window, and a question written only in this conversation waits until they look. The questions section is still written, and it stays the record. An option the command prints is the user's answer; `later` or a timeout means they will answer in the conversation, so wait there and do not ask twice.
+
+**A session that doubts a relayed answer is answered by the user, in that session.** It was told nothing reaches it mid-run, so it may refuse to take another session's word that an answer is the user's. Do not argue or re-send: tell the user which session to attach to, and what to type.
 
 **A permission stall is not a question.** It means the allowlist is wrong, which is a config edit rather than a decision: kill the session, park the ticket, write the exact denied command to the report, and raise no alarm.
 
