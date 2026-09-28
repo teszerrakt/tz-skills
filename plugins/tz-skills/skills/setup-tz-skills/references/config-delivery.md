@@ -117,4 +117,7 @@ guessing.
 - **Concurrency pin:** {{flag}} — the task runner's default stacks test workers
   until timing-sensitive tests fail on load alone.
 - **Alarm:** {{command}}. Run only when no session can progress.
+- **Ask:** {{command}} — shows one parked question on screen with its options
+  and prints the one picked. On Windows, `ship-epic/scripts/ask-me.ps1` does
+  this; copy it to `~/.claude/bin/`.
 ```
