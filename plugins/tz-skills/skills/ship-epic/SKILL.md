@@ -46,7 +46,9 @@ Read `## Delivery` from the delivery file — `docs/agents/delivery.md`, else th
 | Opt-out check | the command that proves the worktree opt-outs inert | assert nothing, and say so in the report |
 | Concurrency pin | the flag that caps one session's task runner | run serial |
 | Alarm | the command run when no session can progress | report quietly |
-| Ask | the command that shows one parked question on the user's screen and prints the option they picked | ask in the questions section only |
+| Ask | the command a session runs to put its own question on the user's screen; it blocks, and prints the answer into that session | ask in the questions section only |
+| Status | the command a session runs at each `/ship` step and when it stops | watch from `claude agents --json` alone |
+| Run context | the command that tells the command center what the run ships | send nothing |
 
 A repo with no `## Delivery` section: offer `/setup-tz-skills` once, then ask for the values with a **questions section** (CONTEXT.md).
 
@@ -81,7 +83,8 @@ Assert before the first spawn, not at the phase that trips over it:
 
 - the per-worktree opt-outs `/ship` step 0 writes are **provably inert**,
 - each planned session has a port of its own, and each backend session on a `local` target a backend port too,
-- the report directory exists **outside the repo**.
+- the report directory exists **outside the repo**,
+- where the config names `Run context`, the command center has been sent the run: every child of the epic, finished ones too, each with its wave and the ticket it waits for.
 
 A report file inside a worktree becomes a stray in the diff `/spec-review` audits.
 
@@ -95,7 +98,8 @@ Everything a session cannot negotiate later goes in its prompt, after the `/ship
 - which step takes the serialization lock, and where the lock lives,
 - the per-worktree opt-outs it leaves alone,
 - for a backend session, the **migration numbers it owns**, one per service it will migrate, reserved above the base branch, every open PR, and every sibling's reservation,
-- for a frontend session blocked by this run's backend PR, that backend: the PR number, and its preview URL or its worktree and backend port.
+- for a frontend session blocked by this run's backend PR, that backend: the PR number, and its preview URL or its worktree and backend port,
+- the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*.
 
 Migration numbers are reserved here because siblings are on no branch the others can see: each would take the same next number, and the collision surfaces only when the second one merges.
 
@@ -124,13 +128,25 @@ The last row is the one a stall-only watch misses. Under the `auto` permission m
 
 Put the parked questions to the user as one **questions section** (CONTEXT.md), at most four across the whole run, then `SendMessage` each answer to the session that asked. A parked session resumes with its context intact, so parking costs one round trip rather than a re-run.
 
-**Where the config names an `Ask` command, put each parked question through it too**, one call per question, as soon as the session parks: the question, its options with what the user would see, the recommended one, and the `Asked because:` line. The user is usually in another window, and a question written only in this conversation waits until they look. The questions section is still written, and it stays the record. An option the command prints is the user's answer; `later` or a timeout means they will answer in the conversation, so wait there and do not ask twice.
+**Where the config names an `Ask` command, the session asks through it, not you.** The command goes in the spawn prompt. The session runs it in the background when its gate finds a question, one call per question: the question, its options with what the user would see, the recommended one, the `Asked because:` line, and a diff or JSON example where one makes the choice easier to picture. The command blocks until the user answers, and prints the answer into the session that asked, so the answer is the user's own and there is nothing to relay. Never put the same question on screen yourself: two cards for one question collect two answers. The questions section is still written for a question the command could not deliver, and `SendMessage` stays the route for those.
 
 **A session that doubts a relayed answer is answered by the user, in that session.** It was told nothing reaches it mid-run, so it may refuse to take another session's word that an answer is the user's. Do not argue or re-send: tell the user which session to attach to, and what to type.
 
 **A permission stall is not a question.** It means the allowlist is wrong, which is a config edit rather than a decision: kill the session, park the ticket, write the exact denied command to the report, and raise no alarm.
 
 Run completion notifies quietly.
+
+## The command center
+
+Optional, and on when the config names `Status`. It is a local page that holds what the run knows, so the knowledge outlives you: an orchestrator gets compacted, runs out of usage or restarts, and a run watched only from its memory goes stale each time. The files are in [`command-center/`](./command-center/).
+
+**Every session reports for itself.** `Status` at the start of each `/ship` step, with the step, what it is doing and its model; with its PR once one exists; and once more when it stops, with one reason from the command's fixed list. You are no longer the only writer, which is what kept a measured run's page wrong whenever the orchestrator was busy.
+
+**A `revised:` line in a `Status` reply is the user changing an earlier answer.** The session redoes what the old answer touched, and says so in its commit message. A change to a finished ticket never reaches a session: the command center keeps it as a follow-up, and the report carries it.
+
+**Merge state comes from the host, not from a session.** The command center reads each ticket's PR through `gh`, so a ticket merged before the run, or after its session ended, still reads merged. That is why `Run context` lists every child, not only the takeable ones.
+
+**The report is still written.** The page holds the run while it runs, and the report is what the user reads afterwards. Carry the page's decisions into it, changed answers included.
 
 ## After the PR opens
 

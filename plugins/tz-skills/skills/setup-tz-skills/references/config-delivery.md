@@ -117,7 +117,14 @@ guessing.
 - **Concurrency pin:** {{flag}} — the task runner's default stacks test workers
   until timing-sensitive tests fail on load alone.
 - **Alarm:** {{command}}. Run only when no session can progress.
-- **Ask:** {{command}} — shows one parked question on screen with its options
-  and prints the one picked. On Windows, `ship-epic/scripts/ask-me.ps1` does
-  this; copy it to `~/.claude/bin/`.
+- **Ask:** {{command}} — a session runs it to put its own question on screen,
+  and it blocks until the answer. `ship-epic/command-center/` does this on any
+  machine with Node: copy the folder to `~/.claude/ship-ui/` and name
+  `node ~/.claude/ship-ui/ship-ui.mjs ask …`. Without Node, on Windows,
+  `ship-epic/scripts/ask-me.ps1` shows the card alone.
+- **Status:** {{command}} — `node ~/.claude/ship-ui/ship-ui.mjs status …`. A
+  session runs it at each step and when it stops. Naming it turns the command
+  center on.
+- **Run context:** {{command}} — `node ~/.claude/ship-ui/ship-ui.mjs run --file
+  <json>`, once, before the first spawn.
 ```
