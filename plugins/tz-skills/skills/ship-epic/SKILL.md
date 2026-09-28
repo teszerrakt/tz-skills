@@ -35,7 +35,7 @@ Three consequences shape everything below:
 
 ## Config
 
-Read `## Delivery` from `.claude/delivery.md` — the same section `/ship` reads. These keys are this skill's alone, under `### Parallel runs`:
+Read `## Delivery` from the delivery file — `docs/agents/delivery.md`, else the `.claude/delivery.md` **fallback config** (CONTEXT.md) — the same section `/ship` reads. These keys are this skill's alone, under `### Parallel runs`:
 
 | Key | Holds | Absent |
 |---|---|---|

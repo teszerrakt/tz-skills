@@ -1,0 +1,8 @@
+{
+  "name": "mattpocock-skills",
+  "version": "0.0.0",
+  "description": "Eval stand-in for Matt Pocock's plugin. The eval sandbox loads only the plugin under test, so a case loads this to meet tz-skills' dependency.",
+  "author": {
+    "name": "teszerrakt"
+  }
+}

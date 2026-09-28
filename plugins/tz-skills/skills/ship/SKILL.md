@@ -16,10 +16,11 @@ Design and the measurements behind it: [`docs/ship-design.md`](https://github.co
 
 Write no new config file. Read, in this order:
 
-1. `.claude/delivery.md` — the `## Delivery` section. An older install kept it inside `.claude/fe-design-map.md`; when `delivery.md` is absent and that section exists there, read it and offer to move it.
-2. `.claude/fe-design-map.md`, when present — the tracker prefix, the ticket URL base, the ADR and RFC paths, the Figma file, and `## Sources`.
-3. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-4. Ask the user for what no file states, as a **questions section** (CONTEXT.md).
+1. The delivery file's `## Delivery` section: `docs/agents/delivery.md`, or the `.claude/delivery.md` **fallback config** (CONTEXT.md) only when the committed one is absent. An older install kept the section inside `.claude/fe-design-map.md`; when neither delivery file exists and that section exists there, read it and offer to move it.
+2. `docs/agents/issue-tracker.md` — Matt Pocock's tracker file. Fetch the ticket and read its blockers exactly as it says.
+3. `docs/agents/domain.md` — where the ADRs live.
+4. `.claude/fe-design-map.md`, when present — the Figma file and `## Sources`, which names the endpoint contracts and the conventions.
+5. Ask the user for what no file states, as a **questions section** (CONTEXT.md).
 
 `## Delivery` names the project's half of every phase:
 
@@ -92,7 +93,7 @@ Done when the install exits clean, every gitignored file either list names sits 
 
 This phase pays for the skill. A ticket-versus-design conflict found here costs one question; found at PR time it costs a re-implementation, a re-shoot, and a body rewrite.
 
-Delegate the intake half: fetch the ticket, **check each blocker's real status in the tracker rather than trusting the ticket's own list**, and collect the design frames and design-doc references the ticket names.
+Delegate the intake half: fetch the ticket through the tracker file, **check each blocker's real status in the tracker rather than trusting the ticket's own list**, and collect the design frames and design-doc references the ticket names.
 
 **It hands back paths, not prose.** The reconcile has to *diff* acceptance criteria against those frames and against the code and migrations, and a summary cannot be diffed. That is why intake and reconcile are one phase and not two: a delegate that reports what it found instead of where it is makes the next half impossible.
 
@@ -189,7 +190,7 @@ Two agents in parallel, each restricted to reading:
 | `tz-skills:simplify-reviewer` | code that can be deleted or collapsed |
 | `tz-skills:altitude-reviewer` | work sitting at the wrong layer, and root causes worth their own ticket |
 
-Both briefs carry the diff range, the standards doc paths from `.claude/fe-design-map.md` — and on the backend track, the backend's own conventions file — and the **comment budget**: a comment exists only to state a constraint the code cannot show; flag every comment that restates its next line.
+Both briefs carry the diff range, the standards docs — the ADRs the domain doc points at, the conventions `## Sources` names, and on the backend track the backend's own conventions file — and the **comment budget**: a comment exists only to state a constraint the code cannot show; flag every comment that restates its next line.
 
 Done when every finding is applied or refused with a stated reason.
 

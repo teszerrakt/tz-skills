@@ -104,25 +104,31 @@ Before a PR:
 
 ```bash
 bun run validate   # claude plugin validate --strict, on the marketplace and on the plugin
-bun run eval       # validate, then claude plugin eval plugins/tz-skills --no-publish
+bun run eval       # validate, then claude plugin eval plugins/tz-skills, with fixtures and file writes allowed
 bun test           # the bundled scripts' own tests
 ```
 
 `claude plugin validate --strict .` checks only the marketplace file, never the skills and agents, so the plugin directory gets its own run. Every eval case must fail on the code before its change and pass after it, the rule `gate-check.mjs --dry` already applies to a gate.
 
+A case that needs a repo builds it with its own `fixture.sh`, which `--scaffold` runs, and a case that writes config needs `--allow-tools Write Edit`; `bun run eval` passes both, since every case here is ours. No case gets a shell: a run that grants `Bash` needs a sandbox backend, and native Windows has none, so a case exports what git would show as fixture files instead.
+
 ## Per-repo config
 
-Several skills read config from the repository you invoke them in. Every file is per-developer and stays untracked, so no workspace identifier and no delivery data lives in this repo.
+Several skills read config from the repository you invoke them in. That config builds on [Matt Pocock's setup](https://github.com/mattpocock/skills), which describes the repo's tracker, triage labels and domain docs in `docs/agents/`. `ship` and `spec-review` fetch a ticket through his tracker file, so run `/mattpocock-skills:setup-matt-pocock-skills` first; `/tz-skills:setup-tz-skills` stops and names it when his tracker file is missing.
+
+The delivery config holds repo facts, so it is **committed** beside his files. The other files stay **untracked** in `.claude/`: the personal ones hold ids and delivery history that never belong in a shared repo.
 
 | File | Read by | Holds |
 | ---- | ------- | ----- |
+| `docs/agents/delivery.md`, committed | `ship`, `ship-epic`, `spec-review` | the project's half of every phase, per track: commands, delegate skills, live target, migrations, parallel-run limits; and `spec-review`'s review exclusions |
 | `.claude/fe-design-map.md` | `fe-design-map` | docs platform and home doc, API base URL, permissions source, Figma workspace, PRD home, tracker teams, doc authoring preferences |
-| `.claude/delivery.md` | `ship`, `ship-epic` | the project's half of every phase, per track: commands, delegate skills, live target, migrations, parallel-run limits |
 | `.claude/stakeholders.md` | `ask-stakeholders` | per colleague: handle, public channel, role, what they answer, and the register to write in |
 | `.claude/standup.md` | `standup` | standup channel id, my Slack user id, GitHub login, and which ticket system to link |
 | `.claude/estimate-calibration.md` | `estimate-effort` | the repo's estimated-versus-actual table, its floor and step size, and the diagnosed cause per miss |
 
-Run `/tz-skills:setup-tz-skills` in a new repo to scaffold these. It detects what the repo already states — the remote, the token command, the ADR and RFC directories, the shared UI package — and asks only for what no file holds. It writes each ignore line **before** the file it covers, so a config file cannot exist unignored, and it ends by grepping its own output for leftover placeholders.
+A team repo that will not take committed config keeps the same file under the same name in `.claude/`, untracked. Every skill reads the committed path first and the `.claude/` copy only when it is absent, so committing it later is a plain file move.
+
+Run `/tz-skills:setup-tz-skills` in a new repo to scaffold these. It detects what the repo already states — the remote, the token command, the ADR and RFC directories, the shared UI package — and asks only for what no file holds. It writes each ignore line **before** the untracked file it covers, so an untracked config file cannot exist unignored, and it ends by grepping its own output for leftover placeholders.
 
 A skill whose config file is missing also asks for the values itself, then offers to write the file so the next run skips the questions. `estimate-effort` also labels its output **uncalibrated** until the file exists — an estimate calibrated on another codebase is a guess wearing a number.
 
