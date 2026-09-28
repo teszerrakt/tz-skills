@@ -386,6 +386,8 @@ payload question is therefore moot rather than answered.
 one held at a permission prompt. See the auto-mode caveat under *Human contact*,
 which is the case that changes abort 6.
 
+**The orchestrator is no longer the only writer.** Measured on a six-ticket run (TRA-692). The orchestrator wrote the run's page by polling, and the page was wrong four ways: it went stale when the orchestrator hit its usage limit and again each time it was compacted; one failed batch write left it silently behind; tickets merged before it looked read as not started; and a session refused an answer the orchestrator relayed, asking the user to confirm it in person. A card the session raised itself had no such problem, because the click printed into the session that asked. So each session now reports its own steps and asks its own questions through the command center, and merge state is read from the host through `gh`. The state lives in a file rather than in the orchestrator's context, which is what lets a restarted orchestrator pick a run up.
+
 ## Open items
 
 - Injecting the `@auth0/auth0-spa-js` cache entry to start a browser signed in,
@@ -406,6 +408,8 @@ which is the case that changes abort 6.
 - Backend tickets: `Max sessions`, `Backend ports`, the test lock, migration
   reservations, and the build-on-main rule for a ticket blocked by this run's
   backend PR.
+
+- `ship-epic/command-center/` — the page, its server, the session-side command and the Windows toast, with `Status` and `Run context` added to the parallel-run keys.
 
 Not built: the reordered `/ship` phase list. It is a change to `/ship`, and
 `/ship-epic` delegates whatever order `/ship` holds, so the two land
