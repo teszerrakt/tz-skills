@@ -146,7 +146,7 @@ table below is the order that shipped.
 | 6 | Smoke the changed route | config-named skill | a dirty console |
 | 7 | Simplify | two agents, below | — |
 | 8 | Adversarial review | Opus subagent, read-only | two rounds with findings open |
-| 9 | Spec review | `/spec-review` | verdict `BLOCK` |
+| 9 | Spec review | `/spec-review --driven`, fresh `claude -p` session, rows from step 1 | verdict `BLOCK`; `NEEDS_ROWS` parks |
 | 10 | Shots + assert | config-named skill | assert `FAIL` |
 | 10b | Verify live | config-named skill | step `FAIL`, or a claim with no wire line |
 | 11 | Draft PR | `/ship` (main) | — |
@@ -156,6 +156,10 @@ Steps 0–8 change code and 9–11 judge it. That split is the point of the orde
 `/spec-review` ran at 6 and computed its verdict against a diff simplify then
 edited, so its anchors could be deleted by the time the PR opened and simplify's
 own edits were audited by nothing.
+
+Step 9 also ran inline, in the author's session, which wrote the ledger rows after
+the build and verified its own anchors. The rows now come from step 1, before any
+code exists, and the verdict from a fresh session that never saw the build.
 
 Step 12 is the forced exception: a bot comments only on a pushed PR. Its fixes
 stay minimal and in scope, and re-run step 4 before each push. It waits on the

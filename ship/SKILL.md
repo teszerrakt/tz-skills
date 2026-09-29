@@ -70,6 +70,8 @@ A frontend-only ticket whose brief names a backend — a URL, or another worktre
 
 Every delegate gets its brief in `$ARGUMENTS`: **the ticket id, the diff range, and the phase's one question.** A skill fork inherits the caller's history and still refuses when its own rules demand a file or a seam that nothing named. Name it.
 
+**A phase that judges the code never runs in the author's context.** The author anchors on its own conversation and grades its own reading. Step 8 is a fresh subagent, and step 9 a fresh session.
+
 ## Process
 
 **Every code-mutating phase finishes before anything verifies.** Steps 0–8 change code; steps 9–11 judge it and report. A verification run before the last edit judges a diff that no longer exists. Step 12 is the one exception: a bot comments only on a pushed PR, so its fixes land after verification — minimal, in scope, and re-checked before each push.
@@ -123,9 +125,11 @@ Record every decision, rule-settled and asked alike, in the **commit message and
 
 The acceptance criteria stay exactly as written, wherever the record lands. `/spec-review` builds one ledger row per criterion and demands an anchor, so criteria edited to match what was built make every row pass by construction. A commit is append-only and is itself an anchor.
 
+**Write the ledger rows here, before any code exists**, in `/spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md`, outside the worktree: a file inside it is a stray to step 9. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
+
 **A criterion the build departs from is reported, never quietly reconciled.** Say so in the PR body, in its own paragraph, naming the criterion and what replaced it — that is the one place a reviewer looks for it.
 
-Done when the residue is empty and every decision has a home in the commits or the body.
+Done when the residue is empty, every decision has a home in the commits or the body, and `rows.json` and `ticket.md` are written.
 
 ### 2. Plan, and grep for reuse before writing
 
@@ -207,7 +211,14 @@ Done when every finding is fixed in scope, recorded as a follow-up or a `Conside
 
 ### 9. Spec review — last, so it audits everything above
 
-Run `/spec-review` against the diff.
+Run `/spec-review` in driven mode, in a fresh headless session, with the rows step 1 wrote:
+
+```bash
+claude -p "/spec-review --driven <base>...<head> --rows <dir>/rows.json --ticket <dir>/ticket.md" \
+  --add-dir <dir> --allowedTools "Read,Grep,Glob,Bash(git:*),Agent" > <dir>/spec-review.md
+```
+
+A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. Gate on the verdict line parsed from that file, never on the exit code, as step 8 gates on parsed JSON. No verdict line is a failed review. `NEEDS_ROWS` means step 1 wrote no rows, which parks the run as abort 1. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
 
 It runs **after** every code-mutating phase. Run before simplify, it computed its verdict against a diff that no longer existed: the anchors it cited could be deleted by the time the PR opened, and simplify's own edits were never audited by anything.
 
@@ -359,7 +370,7 @@ Each stops the run with a report. Aborts 1–2 fire before step 4b and leave **n
 
 | # | Condition |
 |---|---|
-| 1 | Residue from step 1 unanswered — park the run |
+| 1 | Residue from step 1 unanswered, or `/spec-review` returns `NEEDS_ROWS` — park the run |
 | 2 | Typecheck, lint or tests still failing after two self-fix attempts |
 | 3 | Two adversarial rounds with findings still open |
 | 4 | `/spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |

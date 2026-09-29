@@ -78,7 +78,7 @@ A ticket in prose is normal. Convert it to rows, and **quote on every row**. A r
 
 A **prohibition row** is a first-class row. A prose ticket states what the diff must not do more often than an AC list does.
 
-Print the rows and wait for the user to correct them, under a **questions section** (CONTEXT.md) asking exactly that. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix — and a paraphrase printed without a visible question reads as a statement and goes unchecked.
+Print the rows and wait for the user to correct them, under a **questions section** (CONTEXT.md) asking exactly that. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix — and a paraphrase printed without a visible question reads as a statement and goes unchecked. **Driven mode** skips this step: its rows arrive confirmed.
 
 For a PR that declares several tickets, build one ledger per ticket.
 
@@ -215,3 +215,15 @@ The offer to post goes in that same section, as its last block — never as a li
 An `AMBIGUOUS` row on the PR blames the author for the ticket's defect. Keep the split.
 
 Write no `❓` section when nothing needs deciding; end with one line saying nothing needs the reader. An empty section trains the reader to ignore the heading.
+
+---
+
+## Driven mode
+
+`/spec-review --driven <base>...<head> --rows <rows.json> --ticket <ticket.md>` is for a driver such as `/ship` step 9. The driver starts it in a fresh session, because its own context is the author's, and an author reads its own diff as meeting the rows.
+
+- **The rows arrive confirmed.** Skip step 3: the driver extracted them before any code existed and asked about the doubtful ones then. With no `--rows`, return the verdict `NEEDS_ROWS` and stop. Never extract rows here: nobody is left to confirm them, and the paraphrase would be the grader's own.
+- **The contract is `--ticket`.** Step 2 reads that file in place of the tracker. Everything else in step 2 still applies.
+- **The diff range is the argument.** Step 1 resolves nothing else.
+- Steps 4–7 run unchanged: agents A and B, the parent's anchor check, the verdict, the report.
+- **No questions section and no offer to post.** A driven run has no reader. Return the report with its verdict as the first line, `VERDICT: <verdict>`, and every `AMBIGUOUS` row in its table for the driver to route.
