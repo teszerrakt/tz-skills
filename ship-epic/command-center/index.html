@@ -53,6 +53,7 @@
   .segs { display: flex; gap: 3px; }
   .seg { flex: 1; height: 6px; border-radius: 2px; background: var(--line); }
   .segs.tall .seg { height: 8px; }
+  .seg.review { flex: 0 0 18%; margin-left: 8px; }
   .seg.ok { background: var(--ok); } .seg.run { background: var(--run); } .seg.you { background: var(--you); } .seg.bad { background: var(--bad); }
   .order-row { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px; color: var(--soft); }
   .order-row .id { font-family: var(--mono); font-size: 12px; width: 66px; flex: none; color: var(--dim); }
@@ -273,7 +274,8 @@ function tickets() {
     if (t.key !== 'merged' && t.pr?.state === 'OPEN') t.merge = prState(t, byId)
     if (t.key === 'done' && t.merge) [t.word, t.tone] = t.merge
     // A review run after the worker finished (the orchestrator's) is one more step on the ticket.
-    const doneAt = (state.events[t.ticket] || []).filter((e) => e.kind === 'done').at(-1)?.at
+    // After the first finish: the worker may be resumed to fix what the review found, and finish again.
+    const doneAt = (state.events[t.ticket] || []).find((e) => e.kind === 'done')?.at
     const last = t.key === 'done' && doneAt ? (state.reviews || []).filter((r) => r.ticket === t.ticket && r.at > doneAt).at(-1) : null
     if (last) t.review = { by: last.by || 'review', running: /^running/i.test(last.verdict), verdict: last.verdict }
     if (t.review?.running) [t.word, t.tone] = [`being reviewed`, 'run']
@@ -317,7 +319,7 @@ function segs(t, tall) {
   const done = t.key === 'done' || t.key === 'merged'
   return el('div', { class: 'segs' + (tall ? ' tall' : ''), 'aria-hidden': 'true' },
     Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done || i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })),
-    t.review ? el('div', { class: 'seg ' + (t.review.running ? 'run' : 'ok') }) : '')
+    t.review ? el('div', { class: 'seg review ' + (t.review.running ? 'run' : 'ok') }) : '')
 }
 const stepText = (t) => [t.at ? `step ${t.at} of ${t.of}` : '', t.review ? (t.review.running ? `${t.review.by} running` : `${t.review.by}: ${t.review.verdict}`) : ''].filter(Boolean).join(' · ')
 
