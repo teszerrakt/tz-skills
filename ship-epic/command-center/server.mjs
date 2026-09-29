@@ -141,12 +141,17 @@ async function prChecks(repo, number) {
   const ci = contexts.filter((c) => !bot(c.name || c.context))
   const failing = ci.filter((c) => BAD.includes(c.conclusion || c.state)).map((c) => c.name || c.context)
   const running = ci.some((c) => (c.__typename === 'CheckRun' ? c.status !== 'COMPLETED' : ['PENDING', 'EXPECTED'].includes(c.state)))
-  const limited = contexts.some((c) => bot(c.context) && /rate limit/i.test(c.description || ''))
-    || pr.comments.nodes.some((c) => bot(c.author?.login) && /rate limited by coderabbit/i.test(c.body))
+  // The bot's own check says what it did; a clean review leaves no review object, only "Review completed".
+  const said = contexts.find((c) => bot(c.context || c.name))?.description || ''
+  const rabbit = pr.reviews.nodes.some((r) => bot(r.author?.login)) || /completed/i.test(said) ? 'reviewed'
+    : /rate limit/i.test(said) ? 'limited'
+    : /skipped/i.test(said) ? 'skipped'
+    : !said && pr.comments.nodes.some((c) => bot(c.author?.login) && /rate limited by coderabbit/i.test(c.body)) ? 'limited'
+    : 'waiting'
   return {
     ci: !ci.length ? 'none' : failing.length ? 'failing' : running ? 'running' : 'green',
     failing,
-    rabbit: pr.reviews.nodes.some((r) => bot(r.author?.login)) ? 'reviewed' : limited ? 'limited' : 'waiting',
+    rabbit,
     threads: pr.reviewThreads.nodes.filter((t) => !t.isResolved).length,
   }
 }

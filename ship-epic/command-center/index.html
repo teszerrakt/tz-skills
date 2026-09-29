@@ -137,7 +137,9 @@
   .dec .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font: 12px/1.5 var(--mono); color: var(--dim); margin-bottom: 4px; }
   .dec .meta .away { color: var(--you); }
   .dec .main .why, .dec .main .was { max-width: 78ch; }
-  .dec .row.decision { flex-wrap: wrap; }
+  .dec .row.decision, .dec .row.merge { flex-wrap: wrap; }
+  .dec .row.merge .main { min-width: 220px; }
+  .dec .row.merge > .st { margin-left: auto; }
   .dec .row.decision .main { min-width: 260px; }
   .find { display: flex; gap: 12px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); }
   .find .fid { font-family: var(--mono); font-size: 12px; color: var(--dim); width: 34px; flex: none; }
@@ -257,7 +259,7 @@ function tickets() {
   const planned = state.run?.tickets || []
   const seen = new Set(planned.map((t) => t.ticket))
   const extra = Object.keys(state.workers).filter((t) => !seen.has(t)).map((ticket) => ({ ticket, title: '', group: 0, after: '' }))
-  return [...planned, ...extra].map((t) => {
+  const list = [...planned, ...extra].map((t) => {
     const w = state.workers[t.ticket]
     const pr = state.prs[t.ticket]
     const key = pr?.state === 'MERGED' ? 'merged' : w ? (w.stopped || '') : 'queued'
@@ -265,6 +267,34 @@ function tickets() {
     const [at, of] = String(w?.step || '').split('/').map(Number)
     return { ...t, w, pr, key, word, tone, at: at || 0, of: of || 12 }
   })
+  // A finished ticket reads its PR's merge state, so the Workers list and Merge order never disagree.
+  const byId = Object.fromEntries(list.map((t) => [t.ticket, t]))
+  for (const t of list) {
+    if (t.key !== 'merged' && t.pr?.state === 'OPEN') t.merge = prState(t, byId)
+    if (t.key === 'done' && t.merge) [t.word, t.tone] = t.merge
+    // A review run after the worker finished (the orchestrator's) is one more step on the ticket.
+    const doneAt = (state.events[t.ticket] || []).filter((e) => e.kind === 'done').at(-1)?.at
+    const last = t.key === 'done' && doneAt ? (state.reviews || []).filter((r) => r.ticket === t.ticket && r.at > doneAt).at(-1) : null
+    if (last) t.review = { by: last.by || 'review', running: /^running/i.test(last.verdict), verdict: last.verdict }
+    if (t.review?.running) [t.word, t.tone] = [`being reviewed`, 'run']
+  }
+  return list
+}
+
+function prState(t, byId) {
+  const parent = t.after && byId[t.after]
+  if (parent && parent.key !== 'merged') return [`merge ${parent.pr ? '#' + parent.pr.number : parent.ticket} first`, 'wait']
+  if (t.pr.draft) return ['still a draft', 'run']
+  if (t.w && t.key !== 'done') return ['worker is still on it', 'run']
+  const c = t.pr.checks
+  if (!c) return ['could not read its checks', 'wait']
+  if (c.ci === 'failing') return ['CI is failing', 'bad']
+  if (c.ci === 'running') return ['CI is running', 'run']
+  if (c.threads) return [`${c.threads} review thread${c.threads > 1 ? 's' : ''} open`, 'you']
+  if (c.rabbit === 'waiting') return ['waiting on CodeRabbit', 'wait']
+  if (c.rabbit === 'limited') return ['waiting on CodeRabbit, rate limited', 'wait']
+  if (c.rabbit === 'skipped') return ['ready, CodeRabbit skipped it', 'ok']
+  return ['ready to merge', 'ok']
 }
 
 const label = (name, text, style) => el('div', { class: 'label', style }, icon(name, 15), text)
@@ -286,8 +316,10 @@ function attachLine(key) {
 function segs(t, tall) {
   const done = t.key === 'done' || t.key === 'merged'
   return el('div', { class: 'segs' + (tall ? ' tall' : ''), 'aria-hidden': 'true' },
-    Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done || i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })))
+    Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done || i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })),
+    t.review ? el('div', { class: 'seg ' + (t.review.running ? 'run' : 'ok') }) : '')
 }
+const stepText = (t) => [t.at ? `step ${t.at} of ${t.of}` : '', t.review ? (t.review.running ? `${t.review.by} running` : `${t.review.by}: ${t.review.verdict}`) : ''].filter(Boolean).join(' · ')
 
 // A sailboat; an orange dot while a question waits.
 function favicon(waiting) {
@@ -430,7 +462,7 @@ function story(t) {
     brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 14), brain(t)) : '',
     attachLine(t.ticket),
     sess(t.ticket)?.sessionId ? el('div', { class: 'mono' }, `session ${sess(t.ticket).sessionId}`) : '',
-    el('div', { class: 'stack', style: 'gap: 8px' }, label('steps', t.at ? `Step ${t.at} of ${t.of}` : 'Steps'), segs(t, true)),
+    el('div', { class: 'stack', style: 'gap: 8px' }, label('steps', stepText(t) || 'Steps'), segs(t, true)),
     found.length || reviews(t.ticket).length ? el('div', {}, label('alert', `Findings · ${found.filter((f) => f.outcome === 'open' || f.outcome === 'held').length} open`, 'padding-bottom: 10px'),
       reviewLine(t.ticket), found.map(findingRow)) : '',
     el('div', {}, label('clock', 'What happened', 'padding-bottom: 10px'),
@@ -477,21 +509,7 @@ function mergeList() {
   const none = all.filter((t) => t.key !== 'merged' && !(t.pr && t.pr.state === 'OPEN'))
   if (!all.some((t) => t.pr)) return [el('div', { class: 'empty' }, el('b', {}, 'No PR yet.'), el('span', {}, 'PRs show up here once a worker opens one. The order follows which ticket waits for which.'))]
 
-  const note = (t) => {
-    const parent = t.after && byId[t.after]
-    if (parent && parent.key !== 'merged') return [`wait: merge ${parent.pr ? '#' + parent.pr.number : parent.ticket} first`, 'wait']
-if (t.pr.draft) return ['still a draft', 'run']
-    if (t.w && t.key !== 'done') return ['worker is still on it', 'run']
-    const c = t.pr.checks
-    if (!c) return ['could not read its checks', 'wait']
-    if (c.ci === 'failing') return ['CI is failing', 'bad']
-    if (c.ci === 'running') return ['CI is running', 'run']
-    if (c.threads) return [`${c.threads} review thread${c.threads > 1 ? 's' : ''} open`, 'you']
-    if (c.rabbit === 'waiting') return ['waiting on CodeRabbit', 'wait']
-    if (c.rabbit === 'limited') return ['can merge now, CodeRabbit skipped it', 'ok']
-    return ['can merge now', 'ok']
-  }
-  const row = (n, t, words, tone) => el('div', { class: 'dec' }, el('div', { class: 'row' },
+  const row = (n, t, words, tone) => el('div', { class: 'dec' }, el('div', { class: 'row merge' },
     el('div', { class: 'mono', style: 'width: 24px; flex: none; padding-top: 2px' }, n),
     el('div', { class: 'id mono' }, t.ticket),
     el('div', { class: 'main' },
@@ -500,7 +518,7 @@ if (t.pr.draft) return ['still a draft', 'run']
         t.pr ? el('a', { class: 'with', href: t.pr.url, target: '_blank', rel: 'noopener' }, icon('pr', 13), '#' + t.pr.number) : '',
         t.pr?.checks ? [
           { green: 'CI green', running: 'CI running', failing: 'CI failing: ' + t.pr.checks.failing.join(', '), none: 'no CI' }[t.pr.checks.ci],
-          { reviewed: 'CodeRabbit reviewed', limited: 'CodeRabbit rate limited, did not review', waiting: 'CodeRabbit not done' }[t.pr.checks.rabbit],
+          { reviewed: 'CodeRabbit reviewed', limited: 'CodeRabbit rate limited, not reviewed yet', skipped: 'CodeRabbit skipped it', waiting: 'CodeRabbit not done' }[t.pr.checks.rabbit],
           `${t.pr.checks.threads} thread${t.pr.checks.threads === 1 ? '' : 's'} open`,
         ].join(' · ') : '')),
     el('span', { class: 'st ' + tone }, icon(TONE_ICON[tone], 14), words)))
@@ -509,7 +527,7 @@ if (t.pr.draft) return ['still a draft', 'run']
     merged.length ? label('check', `Merged · ${merged.length}`) : '',
     ...merged.map((t) => row(String(++n), t, t.pr?.mergedAt ? `merged ${clock(t.pr.mergedAt)}` : 'merged', 'ok')),
     open.length ? label('order', `Merge next, in this order · ${open.length}`, 'padding-top: 12px') : '',
-    ...open.map((t) => row(String(++n), t, ...note(t))),
+    ...open.map((t) => row(String(++n), t, ...t.merge)),
     none.length ? label('pause', `No PR yet · ${none.length}`, 'padding-top: 12px') : '',
     ...none.map((t) => row('', t, t.after && byId[t.after]?.key !== 'merged' ? `starts after ${t.after}` : t.word, 'wait')),
   ].filter(Boolean)
@@ -564,7 +582,7 @@ function renderRight() {
         el('span', { class: 'mono' }, t.key === 'merged' && t.pr?.mergedAt ? clock(t.pr.mergedAt) : t.w ? clock(t.w.at) : '')),
       el('div', { class: 'doing' }, (t.key === 'merged' && !t.w ? t.title : t.w?.doing) || t.title || (t.after ? `Starts when ${t.after} is merged.` : '')),
       segs(t),
-      t.at ? el('div', { class: 'mono' }, `step ${t.at} of ${t.of}`) : '',
+      stepText(t) ? el('div', { class: 'mono' }, stepText(t)) : '',
       brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 13), brain(t)) : '',
       sess(t.ticket)?.id ? el('div', { class: 'mono' }, `attach ${sess(t.ticket).id}${sess(t.ticket).status === 'gone' ? ' · ended' : ''}`) : ''))
     : [el('div', { class: 'summary', style: 'padding-top: 14px' }, 'No worker has reported yet.')]))
