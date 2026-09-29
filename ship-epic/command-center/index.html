@@ -79,6 +79,15 @@
   .current { min-height: 46px; border: 1px dashed var(--line); border-radius: 6px; padding: 8px 14px; color: var(--dim); display: flex; align-items: center; gap: 12px; }
   .current span:first-child { flex: 1; }
   .pill { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 9px 2px; border: 1px solid currentColor; white-space: nowrap; }
+  .runpick { appearance: none; -webkit-appearance: none; font: 500 12.5px/1 var(--mono); color: var(--ink); background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238f8f8f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; border: 1px solid var(--line); border-radius: 6px; padding: 8px 32px 8px 12px; cursor: pointer; max-width: min(340px, 60vw); text-overflow: ellipsis; }
+  .runpick:hover { border-color: var(--dim); }
+  .runpick option { background: var(--panel); color: var(--ink); }
+  .switch { display: inline-flex; align-items: center; gap: 10px; background: none; border: 0; padding: 4px 2px; color: var(--soft); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .switch .track { position: relative; width: 32px; height: 18px; border-radius: 999px; background: var(--line); transition: background .15s; flex: none; }
+  .switch .knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--soft); transition: left .15s, background .15s; }
+  .switch[aria-checked="true"] { color: var(--ink); }
+  .switch[aria-checked="true"] .track { background: var(--ok); }
+  .switch[aria-checked="true"] .knob { left: 16px; background: #0a0a0a; }
   .pill.rec { color: var(--run); background: var(--run-bg); border-color: transparent; }
   .st { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; white-space: nowrap; }
   .st.ok { color: var(--ok); } .st.run { color: var(--run); } .st.bad { color: var(--bad); } .st.wait { color: var(--dim); }
@@ -134,10 +143,10 @@
 <header>
   <span class="brand">SHIP</span>
   <span class="bar"></span>
-  <select class="mono" id="runPick" aria-label="Which run to show" style="background: var(--bg); color: var(--soft); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px"></select>
+  <select class="runpick" id="runPick" aria-label="Which run to show"></select>
   <span class="mono" id="runId" style="color: var(--you)"></span>
   <span class="grow"></span>
-  <button type="button" class="btn quiet mono" id="toasts" style="min-height: 30px; padding: 0 10px" hidden></button>
+  <button type="button" class="switch" id="toasts" role="switch" aria-checked="true" hidden><span class="track"><span class="knob"></span></span><span>Pop-ups</span></button>
   <span class="where" id="where" hidden></span>
   <span class="mono" id="live">connecting</span>
 </header>
@@ -263,7 +272,7 @@ function renderToasts() {
   b.hidden = !!ui.view || !live
   if (b.hidden) return
   const on = live.toasts !== false
-  b.replaceChildren(icon(on ? 'ask' : 'pause', 14), on ? 'Pop-ups on' : 'Pop-ups off')
+  b.setAttribute('aria-checked', String(on))
   b.title = on ? 'Questions also pop up at the corner of the screen. Click to stop them.' : 'Questions wait here only. Click to pop them up again.'
   b.onclick = () => post('/api/settings', { toasts: !on })
 }
@@ -540,7 +549,7 @@ async function loadRuns() {
   try { const r = await (await fetch('/api/runs')).json(); ui.runs = Array.isArray(r) ? r : [] } catch { ui.runs = [] }
   const pick = $('runPick')
   pick.replaceChildren(...ui.runs.map((r) => el('option', { value: r.live ? '' : r.id, selected: (r.live ? '' : r.id) === ui.view },
-    `${r.id}${r.live ? ' · live' : ''}${r.startedAt ? ' · ' + new Date(r.startedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}`)))
+    [r.live ? '● ' : '', r.id, r.title ? ` — ${r.title.length > 38 ? r.title.slice(0, 37) + '…' : r.title}` : '', r.live ? ' · live' : r.startedAt ? ' · ' + new Date(r.startedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''].join(''))))
   pick.hidden = !ui.runs.length
 }
 const EMPTY = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {} }
