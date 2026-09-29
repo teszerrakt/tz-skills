@@ -258,7 +258,7 @@ function pump() {
   toastBusy = true
   showing = { id: q.id }
   showing.child = toast({
-    kind: 'question', tag: q.ticket, state: 'waiting for you', time: clock(q.askedAt), title: q.question,
+    kind: 'question', tag: q.ticket === 'RUN' ? 'ORCHESTRATOR' : q.ticket, state: 'waiting for you', time: clock(q.askedAt), title: q.question,
     options: q.options, recommended: q.recommended, because: q.because, more: open.length - 1,
   }, (out) => {
     const choice = (out.match(/^choice: (.*)$/m) || [])[1] || ''
@@ -471,8 +471,11 @@ async function route(req, res) {
       answer: null,
     }
     state.questions.push(q)
-    const w = (state.workers[ticket] ||= { ticket })
-    Object.assign(w, { stopped: 'question', doing: q.question, at: q.askedAt })
+    // The orchestrator asks as RUN; it is no worker, so it gets no row in the Workers list.
+    if (ticket !== 'RUN') {
+      const w = (state.workers[ticket] ||= { ticket })
+      Object.assign(w, { stopped: 'question', doing: q.question, at: q.askedAt })
+    }
     log(ticket, 'asked', 'Asked you a question', q.question)
     save()
     pump()
@@ -521,7 +524,8 @@ async function route(req, res) {
     if (!choice) return send(res, 400, { error: 'choice is required' })
     if (choice === d.choice) return send(res, 400, { error: 'that is already the answer' })
     const at = now()
-    const finished = FINISHED.includes(state.workers[d.ticket]?.stopped)
+    // No status call ever reads the orchestrator's outbox, so its changed answers become follow-ups.
+    const finished = d.ticket === 'RUN' || FINISHED.includes(state.workers[d.ticket]?.stopped)
     ;(d.history ||= []).push({ choice: d.choice, note: d.note, at: d.revisedAt || d.at })
     const was = d.choice
     Object.assign(d, { choice, note, revisedAt: at, delivery: finished ? 'follow-up' : 'sent', readAt: '' })

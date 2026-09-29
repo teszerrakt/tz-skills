@@ -409,7 +409,7 @@ function questionCard(q, more) {
   const t = tickets().find((x) => x.ticket === q.ticket)
   const behind = tickets().filter((x) => x.after === q.ticket).map((x) => x.ticket)
   return el('div', { class: 'card you' + (location.hash === '#' + q.id ? ' focus' : ''), id: q.id },
-    el('div', { class: 'top mono' }, el('span', { class: 'ask-ic' }, icon('ask', 16)), el('span', { style: 'color: var(--ink)' }, q.ticket),
+    el('div', { class: 'top mono' }, el('span', { class: 'ask-ic' }, icon('ask', 16)), el('span', { style: 'color: var(--ink)' }, who(q.ticket)),
       el('span', {}, t?.title || ''), el('span', { class: 'grow' }), el('span', {}, `asked ${clock(q.askedAt)} · waiting ${ago(q.askedAt)}`)),
     el('div', { class: 'q' }, q.question),
     el('div', { class: 'opts' }, q.options.map((o, i) => el('button', { type: 'button', class: 'opt' + (i === q.recommended ? ' rec' : ''), onclick: () => answer(o.label) },
@@ -419,19 +419,20 @@ function questionCard(q, more) {
     q.example ? el('pre', {}, q.example) : '',
     q.because ? el('div', { class: 'because' }, 'Asked because: ' + q.because) : '',
     el('div', { class: 'free' }, box, el('button', { type: 'button', class: 'btn main', onclick: () => answer('') }, icon('up'), 'Send text')),
-    el('div', { class: 'mono' }, [`Stops ${q.ticket}${t?.w?.step ? ` at step ${t.w.step.replace('/', ' of ')}` : ''}.`,
-      behind.length ? `${behind.join(', ')} waits behind it.` : 'Nothing else waits on it.'].join(' ')))
+    el('div', { class: 'mono' }, q.ticket === 'RUN' ? 'Asked by the orchestrator about the whole run. It waits for your answer.'
+      : [`Stops ${q.ticket}${t?.w?.step ? ` at step ${t.w.step.replace('/', ' of ')}` : ''}.`,
+        behind.length ? `${behind.join(', ')} waits behind it.` : 'Nothing else waits on it.'].join(' ')))
 }
 
 function decisionRow(d) {
   const revising = ui.revising === d.id
-  const finished = ['done', 'merged'].includes(state.workers[d.ticket]?.stopped)
+  const finished = d.ticket === 'RUN' || ['done', 'merged'].includes(state.workers[d.ticket]?.stopped)
   const last = (d.history || []).at(-1)
   const delivery = { 'sent': 'sent, the worker has not read it yet', 'read': `read by the worker at ${clock(d.readAt)}`, 'follow-up': 'saved as a follow-up' }[d.delivery]
   const away = d.by === 'orchestrator'
   const row = el('div', { class: 'row decision' },
     el('div', { class: 'main' },
-      el('div', { class: 'meta' }, el('span', { style: 'color: var(--ink)' }, d.ticket),
+      el('div', { class: 'meta' }, el('span', { style: 'color: var(--ink)' }, who(d.ticket)),
         away ? el('span', { class: 'away' }, `${d.dn} · decided while you were away`) : el('span', {}, 'you decided'),
         el('span', {}, clock(d.at))),
       el('div', { class: 'ask' }, d.question),
@@ -500,6 +501,7 @@ function story(t) {
       : el('div', { class: 'summary' }, 'Nothing recorded yet.')))
 }
 
+const who = (ticket) => (ticket === 'RUN' ? 'Orchestrator' : ticket)
 const isOpen = (f) => f.outcome === 'open' || f.outcome === 'held'
 const findings = (ticket) => (state.findings || []).filter((f) => f.ticket === ticket)
 const judgeId = (ticket, by) => `j-${ticket}-${String(by || 'review').replace(/[^a-z0-9]+/gi, '-')}`
