@@ -29,7 +29,7 @@ const SEVERITIES = ['blocker', 'major', 'minor', 'note']
 const OUTCOMES = ['open', 'fixed', 'refused', 'withdrawn', 'held']
 
 fs.mkdirSync(DATA_DIR, { recursive: true })
-let state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {} }
+let state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {}, toasts: true }
 if (fs.existsSync(STATE_FILE)) state = { ...state, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }
 
 const streams = new Set()
@@ -228,11 +228,16 @@ function toast(spec, done) {
   }
   child.on('close', end)
   child.on('error', end)
+  return child
 }
+
+// The question the toast on screen is asking, so an answer given elsewhere can close it.
+let showing = null
 
 // One toast at a time: they share one corner of the screen.
 function pump() {
   if (!TOASTS_ON || toastBusy) return
+  if (state.toasts === false) return void (notices.length = 0)
   const notice = notices.shift()
   if (notice) {
     toastBusy = true
@@ -246,12 +251,14 @@ function pump() {
   const q = open.find((x) => (snoozed.get(x.id) || 0) <= Date.now())
   if (!q) return
   toastBusy = true
-  toast({
+  showing = { id: q.id }
+  showing.child = toast({
     kind: 'question', tag: q.ticket, state: 'waiting for you', time: clock(q.askedAt), title: q.question,
     options: q.options, recommended: q.recommended, because: q.because, more: open.length - 1,
   }, (out) => {
     const choice = (out.match(/^choice: (.*)$/m) || [])[1] || ''
     const note = (out.match(/^text: (.*)$/m) || [])[1] || ''
+    showing = null
     if ((choice || note) && !q.answer) applyAnswer(q, { choice, note, via: 'toast' })
     else {
       snoozed.set(q.id, Date.now() + (SNOOZE_MS[out] || SNOOZE_MS.timeout))
@@ -265,6 +272,7 @@ setInterval(pump, 15_000).unref()
 
 function applyAnswer(q, { choice, note, via }) {
   q.answer = { choice, note, via, at: now() }
+  if (showing?.id === q.id && via !== 'toast') showing.child?.kill()
   const away = via === 'orchestrator'
   const d = {
     id: q.id, ticket: q.ticket, run: q.run, question: q.question,
@@ -396,18 +404,32 @@ async function route(req, res) {
     const prev = state.run
     state.run = {
       id: text(b.id, 40), title: text(b.title, 200), summary: text(b.summary, 600), repo: text(b.repo, 80),
-      target: text(b.target, 80), where: text(b.where, 120), github: text(b.github, 120), startedAt: text(b.startedAt, 40) || now(),
+      afk: b.afk === true, target: text(b.target, 80), where: text(b.where, 120), github: text(b.github, 120), startedAt: text(b.startedAt, 40) || now(),
       tickets: (Array.isArray(b.tickets) ? b.tickets : []).slice(0, 60).map((t) => ({
         ticket: text(t.ticket, 40), title: text(t.title, 200), group: Number(t.group) || 1,
         after: text(t.after, 40), url: text(t.url, 300),
       })).filter((t) => t.ticket),
     }
-    if (prev?.id !== state.run.id) state.sessions = {}
+    if (prev?.id !== state.run.id) {
+      state.sessions = {}
+      // Nobody is at the screen for an --afk run; the switch on the page turns them back on.
+      state.toasts = !state.run.afk
+    }
     archiveOtherRuns(prev)
     save()
     readSessions()
     refreshPrs()
     return send(res, 200, state.run)
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/settings') {
+    const b = await readBody(req)
+    if (typeof b.toasts !== 'boolean') return send(res, 400, { error: 'toasts must be true or false' })
+    state.toasts = b.toasts
+    if (!b.toasts && showing) showing.child?.kill()
+    save()
+    pump()
+    return send(res, 200, { toasts: state.toasts })
   }
 
   if (req.method === 'POST' && url.pathname === '/api/followups') {

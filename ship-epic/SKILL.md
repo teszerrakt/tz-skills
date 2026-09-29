@@ -166,7 +166,7 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **A spec-review `BLOCK` on strays alone is yours to rule.** Keep or revert: both live on the branch, so it is a `D<n>` like any other. Revert unless the stray is the only way the ticket's own criteria pass. The repo's `Spec-review BLOCK` setting still decides when a `BLOCK` aborts; this only rules on one that would. A `MISSING` row still blocks.
 
-**Nothing sounds.** The alarm never fires under `--afk`. A question you cannot decide parks and the run goes on; when every live session is parked, start nothing and wait. When the run ends, send one quiet push notification naming the command center's address and the report's path.
+**Nothing sounds.** The alarm never fires under `--afk`, and `Run context` carries `"afk": true`, which turns the command center's pop-ups off for the run; the user turns them back on from the page. A question you cannot decide parks and the run goes on; when every live session is parked, start nothing and wait. When the run ends, send one quiet push notification naming the command center's address and the report's path.
 
 **The cutoff.** No ticket starts after `--until`. At start, state it in the machine's local zone with its UTC offset and the time left, from `date` on this machine, for example "no new tickets after 07:00 WIB (UTC+7), 7h 40m from now". WSL's zone can differ from Windows', and this line is where a wrong one shows before the user sleeps. The six-ticket cap still holds.
 

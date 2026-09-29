@@ -137,6 +137,7 @@
   <select class="mono" id="runPick" aria-label="Which run to show" style="background: var(--bg); color: var(--soft); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px"></select>
   <span class="mono" id="runId" style="color: var(--you)"></span>
   <span class="grow"></span>
+  <button type="button" class="btn quiet mono" id="toasts" style="min-height: 30px; padding: 0 10px" hidden></button>
   <span class="where" id="where" hidden></span>
   <span class="mono" id="live">connecting</span>
 </header>
@@ -255,6 +256,16 @@ function segs(t, tall) {
   const done = t.key === 'done' || t.key === 'merged'
   return el('div', { class: 'segs' + (tall ? ' tall' : ''), 'aria-hidden': 'true' },
     Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done || i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })))
+}
+
+function renderToasts() {
+  const b = $('toasts')
+  b.hidden = !!ui.view || !live
+  if (b.hidden) return
+  const on = live.toasts !== false
+  b.replaceChildren(icon(on ? 'ask' : 'pause', 14), on ? 'Pop-ups on' : 'Pop-ups off')
+  b.title = on ? 'Questions also pop up at the corner of the screen. Click to stop them.' : 'Questions wait here only. Click to pop them up again.'
+  b.onclick = () => post('/api/settings', { toasts: !on })
 }
 
 function renderLeft() {
@@ -516,7 +527,7 @@ function renderRight() {
 
 function render() {
   if (!state) return
-  renderLeft(); renderMid(); renderRight()
+  renderToasts(); renderLeft(); renderMid(); renderRight()
 }
 
 function route() {
