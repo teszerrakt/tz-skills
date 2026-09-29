@@ -111,5 +111,5 @@ A statement in a PR body or commit that names which ledger row is postponed and 
 _Avoid_: partial, WIP, follow-up
 
 **Verdict**:
-The single outcome of a review: `BLOCK`, `PASS_WITH_NOTES`, `PASS`, or `NO_CONTRACT`.
+The single outcome of a review: `BLOCK`, `PASS_WITH_NOTES`, `PASS`, or `NO_CONTRACT` — and, in driven mode only, `NEEDS_ROWS`.
 _Avoid_: score, grade, status

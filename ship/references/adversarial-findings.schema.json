@@ -1,8 +1,12 @@
 {
   "type": "object",
   "additionalProperties": false,
-  "required": ["findings"],
+  "required": ["canary", "findings"],
   "properties": {
+    "canary": {
+      "type": "string",
+      "description": "The rest of any line in the reviewer's context that begins `CANARY:`, or `none`. Anything but `none` voids the review."
+    },
     "findings": {
       "type": "array",
       "description": "One entry per defect. Empty when the diff is clean.",

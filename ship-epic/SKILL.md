@@ -45,6 +45,7 @@ Read `## Delivery` from `.claude/delivery.md` — the same section `/ship` reads
 | Ask | the command a session runs to put its own question on the user's screen; it blocks, and prints the answer into that session | ask in the questions section only |
 | Status | the command a session runs at each `/ship` step and when it stops | watch from `claude agents --json` alone |
 | Run context | the command that tells the command center what the run ships | send nothing |
+| Finding | the command a session or the orchestrator runs to show a judge's finding and its outcome on the page | findings reach the user only through the PR body and the report |
 
 A repo with no `## Delivery` section: offer `/setup-tz-skills` once, then ask for the values with a **questions section** (CONTEXT.md).
 
@@ -150,11 +151,13 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **Name every `RATE_LIMITED` review in the report.** Every session pushes as the same user, so they share the bot's rate limit — a multi-ticket run is where it bites, and the user needs to know which PRs no bot looked at.
 
-**A PR the bot skipped gets an adversarial reviewer instead.** Rate limited, or skipped because its base is not `main`: spawn one reviewer subagent per such PR, against its diff from its own base, with the ticket as the spec. Never pay for the bot's on-demand review, and never keep re-asking it — the limit is shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or `AskUserQuestion`: it reads and reports, which is the one job a subagent's grant fits. Verify each finding against the code yourself, then hand the confirmed ones to that ticket's session to fix, as its own CodeRabbit comments would be. The report names which PRs were reviewed this way.
+**A rate-limited PR already had its fallback reviewer**: `/ship` step 12 runs it, and reports the PR as waiting on CodeRabbit. Carry that wording into the report, never "ready for review".
+
+**A PR the bot skipped for its base gets an adversarial reviewer instead.** When its base is not `main`, spawn one `tz-fresh-reviewer` per such PR, given its diff from its own base saved as a file, with the ticket as the spec. Never pay for the bot's on-demand review, and never keep re-asking it — the limit is shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or `AskUserQuestion`: it reads and reports, which is the one job a subagent's grant fits. Verify each finding against the code yourself, then hand the confirmed ones to that ticket's session to fix, as its own CodeRabbit comments would be. Show every finding to the user through the config's `Finding` command too, confirmed or not, with what you did about it: the user reads the command center, not the hand-off. Give yours ids `O<n>`, so they never collide with a session's `F<n>`, and re-send the same id when its outcome changes. The report names which PRs were reviewed this way.
 
 Waiting for CI and the review is nearly free, because it overlaps the next ticket.
 
-Done when every finished ticket's PR is ready with its review threads answered, and every aborted one is a draft whose body says why.
+Done when every finished ticket's PR is ready with its review threads answered or named as waiting on CodeRabbit, and every aborted one is a draft whose body says why.
 
 ## Draft is the abort signal
 
@@ -169,6 +172,8 @@ A ready PR passed every phase. A draft one did not, and its body says which.
 | 3 | `/spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
 | 4 | An assert `FAIL` that survives the expectation re-check |
 | 5 | Two adversarial-review rounds with findings still open |
+| 5b | `/spec-review` printed no verdict, or `NEEDS_ROWS` / `NO_CONTRACT` — `/ship` abort 9 |
+| 5c | The rate-limit fallback reviewer holds a `blocker` or `major` — `/ship` abort 10, PR back to draft |
 | 6 | A denied command — session stopped, the exact command reported |
 | 7 | A backend live target that never came up |
 
