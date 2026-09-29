@@ -174,7 +174,7 @@ Re-check the tracks against the diff first. Then, per track:
 
 **Both edit code**, which is why they sit here and not beside the proof. Run after the review and their edits go unaudited.
 
-Done when every discrepancy is fixed, or refused with a stated reason.
+Done when every discrepancy is fixed, or refused with a stated reason that step 11 carries into the body.
 
 ### 6. Smoke the changed route — frontend track
 
@@ -195,7 +195,7 @@ Two agents in parallel, each restricted to reading:
 
 Both briefs carry the diff range, the standards doc paths from `.claude/fe-design-map.md` — and on the backend track, the backend's own conventions file — and the **comment budget**: a comment exists only to state a constraint the code cannot show; flag every comment that restates its next line.
 
-Done when every finding is applied or refused with a stated reason.
+Done when every finding is applied, or refused with a stated reason that step 11 carries into the body.
 
 ### 8. Adversarial review
 
@@ -205,9 +205,11 @@ The one local quality pass, and the last phase that may change code. Invocation,
 
 **A fix is applied only inside files the diff already touches** — the schema's `in_scope` field says which. Everything else goes through 11b's admission bar: a real bug a user can hit becomes a follow-up, and the rest one line under `Considered, not proposed`. `/spec-review` returns `BLOCK` on any stray, and a correctness fix outside the ticket's scope is a stray, so an unscoped reviewer would make the run strangle itself on its own best findings.
 
+**A refused `blocker` or `major` goes back to the same reviewer once**, with the refusal reason — the re-check brief is in `adversarial-review.md`. If the reviewer holds, the finding stays open. The author refusing its own reviewer's finding is the self-grading this step exists to prevent. A `minor` may be refused outright.
+
 Two rounds. Findings still open after the second aborts the run.
 
-Done when every finding is fixed in scope, recorded as a follow-up or a `Considered, not proposed` line, or refused with a stated reason.
+Done when every finding is fixed in scope, recorded as a follow-up or a `Considered, not proposed` line, or refused — a `blocker` or `major` only after the reviewer dropped it — with a stated reason that step 11 carries into the body.
 
 ### 9. Spec review — last, so it audits everything above
 
@@ -265,7 +267,9 @@ Done when every claim the body will make has a step behind it, and every step is
 
 ### 11. Write the PR body
 
-Write the body to the sections `## Delivery` allows, in that order, carrying the shots from step 10, any clip or backend proof table from step 10b, the step-1 decisions, the out-of-scope findings from step 8, and any `UNASSERTED` or `UNOBSERVED` state. The markdown for a shot and for a clip is printed by the skill that produced it; paste what it gives you.
+Write the body to the sections `## Delivery` allows, in that order, carrying the shots from step 10, any clip or backend proof table from step 10b, the step-1 decisions, the out-of-scope findings from step 8, every finding refused in steps 5, 7 and 8, and any `UNASSERTED` or `UNOBSERVED` state.
+
+**A refusal is one `Refused:` line**: the finding's claim word for word, then the reason in one clause. A refusal the reviewer of the PR never sees is the author's word closing its own finding. The markdown for a shot and for a clip is printed by the skill that produced it; paste what it gives you.
 
 **Every artifact offered as proof is uploaded, or it is not proof.** A file on a local branch, in a worktree, or at a path in a report is invisible to the person being asked to believe it — they cannot open it, so the claim it backs reverts to your word. This bites hardest on the artifact that cost the most to make: a recorded clip is the strongest evidence a run produces and the easiest to leave sitting on disk, because recording it feels like the finish line.
 

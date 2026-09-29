@@ -33,6 +33,14 @@ Pass the ticket id, the diff range, and this text:
 
 The last line matters. A reviewer asked for findings produces findings, and a run that fixes invented ones burns two rounds and aborts on nothing.
 
+## The re-check of a refusal
+
+A refused `blocker` or `major` goes back to the reviewer that raised it — continued, or a fresh one given the finding — with this text, the finding's JSON, and the author's reason:
+
+> The author refused this finding with the reason below. Read the code again. Hold the finding if its failure path still reproduces; drop it if the reason shows it cannot. Answer `{"hold": true|false, "why": "<one sentence>"}`.
+
+Gate on the parsed answer, as above. `hold: true` keeps the finding open for the next round. Asking once is the cap: a second refusal of a held finding is an open finding, not a new question.
+
 ## Why not the CodeRabbit CLI
 
 It is installed and it works, but the seat is Free: **three reviews per developer per hour**. A three-ticket run with one re-review each is six calls. It also buys a duplicate, since GitHub CodeRabbit reviews every PR after the push at no cost and no limit.
