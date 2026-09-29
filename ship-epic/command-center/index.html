@@ -54,6 +54,10 @@
   .seg { flex: 1; height: 6px; border-radius: 2px; background: var(--line); }
   .segs.tall .seg { height: 8px; }
   .seg.review { flex: 0 0 18%; margin-left: 8px; }
+  .seg.run { position: relative; overflow: hidden; }
+  .seg.run::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent); transform: translateX(-100%); animation: sweep 1.6s ease-in-out infinite; animation-delay: var(--phase, 0ms); }
+  @keyframes sweep { to { transform: translateX(100%); } }
+  @media (prefers-reduced-motion: reduce) { .seg.run::after { display: none; } }
   .seg.ok { background: var(--ok); } .seg.run { background: var(--run); } .seg.you { background: var(--you); } .seg.bad { background: var(--bad); }
   .order-row { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px; color: var(--soft); }
   .order-row .id { font-family: var(--mono); font-size: 12px; width: 66px; flex: none; color: var(--dim); }
@@ -593,6 +597,9 @@ function renderRight() {
 function render() {
   if (!state) return
   renderToasts(); renderLeft(); renderMid(); renderRight()
+  // Every redraw rebuilds the bars; a phase from the clock keeps the sweep from restarting mid-stroke.
+  const phase = `-${Date.now() % 1600}ms`
+  for (const seg of document.querySelectorAll('.seg.run')) seg.style.setProperty('--phase', phase)
 }
 
 function route() {
