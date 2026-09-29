@@ -70,7 +70,7 @@ A frontend-only ticket whose brief names a backend — a URL, or another worktre
 
 Every delegate gets its brief in `$ARGUMENTS`: **the ticket id, the diff range, and the phase's one question.** A skill fork inherits the caller's history and still refuses when its own rules demand a file or a seam that nothing named. Name it.
 
-**A phase that judges the code never runs in the author's context.** The author anchors on its own conversation and grades its own reading. Step 8 is a fresh subagent, and step 9 a fresh session.
+**A phase that judges the code never runs in the author's context.** The author anchors on its own conversation and grades its own reading. Step 8 is a fresh subagent, step 9 a fresh session, and a disputed bot thread in step 12 gets a fresh second opinion.
 
 ## Process
 
@@ -364,6 +364,8 @@ Re-run step 4's commands before each push, and on the backend track the migratio
 CI red gets two self-fix attempts, as in step 4. **Flake guard:** the same test failing twice with different error text is load, not a bug — stop rather than fix it a third time.
 
 Two review rounds; CodeRabbit re-reviews each push. Threads still open after the second keep their reply and wait for the human.
+
+Every `DISPUTED→REPLY` thread goes in the run report under what needs the user: a second opinion sided with the code, but a bug report the author argued down is still the user's to read.
 
 Done when CI is green, the `CodeRabbit` check reads `Review completed` or the run reports `RATE_LIMITED`, and every CodeRabbit thread has a reply.
 
