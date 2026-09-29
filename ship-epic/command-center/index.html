@@ -147,9 +147,16 @@
   .dec .row.merge .main { min-width: 220px; }
   .dec .row.merge > .st { margin-left: auto; }
   .dec .row.decision .main { min-width: 260px; }
+  .judge { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 16px 0 6px; }
+  .judge:first-child { padding-top: 4px; }
+  .judge b { font-weight: 600; }
+  .judge .v { font: 12px/1.4 var(--mono); color: var(--dim); }
   .find { display: flex; gap: 12px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); }
   .find .fid { font-family: var(--mono); font-size: 12px; color: var(--dim); width: 34px; flex: none; }
-  .find .main { flex: 1; min-width: 0; }
+  .find { flex-wrap: wrap; }
+  .find .main { flex: 1; min-width: 180px; }
+  .find .main .mono { overflow-wrap: anywhere; }
+  .find > .st { margin-left: auto; }
   .sev { font-family: var(--mono); font-size: 11px; width: 56px; flex: none; }
   .sev.blocker { color: var(--bad); } .sev.major { color: var(--you); } .sev.minor, .sev.note { color: var(--dim); }
   .revise { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 12px; }
@@ -282,7 +289,12 @@ function tickets() {
     // After the first finish: the worker may be resumed to fix what the review found, and finish again.
     const doneAt = (state.events[t.ticket] || []).find((e) => e.kind === 'done')?.at
     const last = t.key === 'done' && doneAt ? (state.reviews || []).filter((r) => r.ticket === t.ticket && r.at > doneAt).at(-1) : null
-    if (last) t.review = { by: last.by || 'review', running: /^running/i.test(last.verdict), verdict: last.verdict }
+    if (last) {
+      const open = (state.findings || []).filter((f) => f.ticket === t.ticket && f.by === last.by && isOpen(f)).length
+      const running = /^running/i.test(last.verdict)
+      t.review = { by: last.by || 'review', running, verdict: last.verdict, open,
+        tone: running ? 'run' : open ? 'you' : /BLOCK|FAIL/i.test(last.verdict) ? 'bad' : 'ok' }
+    }
     if (t.review?.running) [t.word, t.tone] = [`being reviewed`, 'run']
   }
   return list
@@ -326,9 +338,9 @@ function segs(t, tall) {
   const tail = t.key === 'done' && t.merge && t.merge[1] !== 'ok' ? t.merge[1] : ''
   return el('div', { class: 'segs' + (tall ? ' tall' : ''), 'aria-hidden': 'true' },
     Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done ? (tail && i === t.of - 1 ? tail : 'ok') : i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })),
-    t.review ? el('div', { class: 'seg review ' + (t.review.running ? 'run' : 'ok') }) : '')
+    t.review ? el('div', { class: 'seg review ' + t.review.tone }) : '')
 }
-const stepText = (t) => [t.at ? `step ${t.at} of ${t.of}` : '', t.review ? (t.review.running ? `${t.review.by} running` : `${t.review.by}: ${t.review.verdict}`) : ''].filter(Boolean).join(' · ')
+const stepText = (t) => [t.at ? `step ${t.at} of ${t.of}` : '', t.review ? (t.review.running ? `${t.review.by} running` : `${t.review.by}: ${t.review.verdict}${t.review.open ? ` · ${t.review.open} open` : ''}`) : ''].filter(Boolean).join(' · ')
 
 // A sailboat; an orange dot while a question waits.
 function favicon(waiting) {
@@ -471,9 +483,11 @@ function story(t) {
     brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 14), brain(t)) : '',
     attachLine(t.ticket),
     sess(t.ticket)?.sessionId ? el('div', { class: 'mono' }, `session ${sess(t.ticket).sessionId}`) : '',
-    el('div', { class: 'stack', style: 'gap: 8px' }, label('steps', stepText(t) || 'Steps'), segs(t, true)),
-    found.length || reviews(t.ticket).length ? el('div', {}, label('alert', `Findings · ${found.filter((f) => f.outcome === 'open' || f.outcome === 'held').length} open`, 'padding-bottom: 10px'),
-      reviewLine(t.ticket), found.map(findingRow)) : '',
+    el('div', { class: 'stack', style: 'gap: 8px' }, label('steps', stepText(t) || 'Steps'), segs(t, true),
+      t.review ? el('button', { type: 'button', class: 'btn quiet', style: 'min-height: 28px; padding: 0; align-self: flex-start', onclick: () => document.getElementById(judgeId(t.ticket, t.review.by))?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+        icon('alert', 14), `See what ${t.review.by} found`) : ''),
+    found.length || reviews(t.ticket).length ? el('div', {}, label('alert', `Findings · ${found.filter(isOpen).length} open`, 'padding-bottom: 4px'),
+      judgeGroups(t.ticket)) : '',
     el('div', {}, label('clock', 'What happened', 'padding-bottom: 10px'),
       events.length ? events.map((e) => el('div', { class: 'ev' }, el('div', { class: 't mono tone-' + (tone[e.kind] || '') }, clock(e.at)),
         el('div', { class: 'ei tone-' + (tone[e.kind] || '') }, icon(EVENT_ICON[e.kind] || 'pulse', 16)),
@@ -481,11 +495,28 @@ function story(t) {
       : el('div', { class: 'summary' }, 'Nothing recorded yet.')))
 }
 
+const isOpen = (f) => f.outcome === 'open' || f.outcome === 'held'
 const findings = (ticket) => (state.findings || []).filter((f) => f.ticket === ticket)
-const reviews = (ticket) => (state.reviews || []).filter((r) => r.ticket === ticket)
-const reviewLine = (ticket) => reviews(ticket).length
-  ? el('div', { class: 'mono', style: 'padding-bottom: 6px' }, reviews(ticket).map((r) => `${r.by || 'review'}: ${r.verdict}`).join(' · ')) : ''
+const judgeId = (ticket, by) => `j-${ticket}-${String(by || 'review').replace(/[^a-z0-9]+/gi, '-')}`
+const RANK = { blocker: 0, major: 1, minor: 2, note: 3 }
 
+// One group per judge, in the order they first spoke: its latest verdict, its open count, open findings first.
+function judgeGroups(ticket) {
+  const found = findings(ticket)
+  const revs = reviews(ticket)
+  const judges = [...new Set([...revs, ...found].sort((a, b) => String(a.at).localeCompare(String(b.at))).map((x) => x.by || 'review'))]
+  return judges.map((by) => {
+    const mine = found.filter((f) => (f.by || 'review') === by)
+      .sort((a, b) => isOpen(b) - isOpen(a) || (RANK[a.severity] ?? 9) - (RANK[b.severity] ?? 9))
+    const verdict = revs.filter((r) => (r.by || 'review') === by).at(-1)?.verdict
+    const open = mine.filter(isOpen).length
+    return el('div', { id: judgeId(ticket, by) },
+      el('div', { class: 'judge' }, el('b', {}, by), verdict ? el('span', { class: 'v' }, verdict) : '',
+        open ? el('span', { class: 'badge you' }, `${open} open`) : mine.length ? el('span', { class: 'st ok' }, icon('check', 14), 'all closed') : ''),
+      mine.map(findingRow))
+  })
+}
+const reviews = (ticket) => (state.reviews || []).filter((r) => r.ticket === ticket)
 function findingRow(f) {
   const [word, tone] = OUTCOME[f.outcome] || [f.outcome, 'wait']
   const was = (f.history || []).map((h) => h.outcome).join(' → ')
@@ -502,10 +533,10 @@ function findingList() {
   if (!all.length && !(state.reviews || []).length) return [el('div', { class: 'empty' }, el('b', {}, 'No findings yet.'),
     el('span', {}, 'Each reviewer finding lands here, with who found it and what happened to it.'))]
   const byTicket = [...new Set([...all, ...(state.reviews || [])].map((f) => f.ticket))]
-  const rank = { blocker: 0, major: 1, minor: 2, note: 3 }
   return byTicket.map((ticket) => el('div', { class: 'dec' },
-    el('div', { class: 'top' }, el('span', { class: 'wid mono', style: 'color: var(--ink)' }, ticket), el('span', { class: 'grow' }), reviewLine(ticket)),
-    [...findings(ticket)].sort((a, b) => (rank[a.severity] ?? 9) - (rank[b.severity] ?? 9)).map(findingRow)))
+    el('div', { class: 'top' }, el('span', { class: 'wid mono', style: 'color: var(--ink)' }, ticket), el('span', { class: 'grow' }),
+      findings(ticket).filter(isOpen).length ? el('span', { class: 'badge you' }, `${findings(ticket).filter(isOpen).length} open`) : ''),
+    judgeGroups(ticket)))
 }
 
 function mergeList() {
