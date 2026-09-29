@@ -124,7 +124,7 @@ const PR_QUERY = `query($owner: String!, $name: String!, $n: Int!) {
     } } } } } }
     reviews(first: 60) { nodes { author { login } } }
     comments(last: 40) { nodes { author { login } body } }
-    reviewThreads(first: 100) { nodes { isResolved } }
+    reviewThreads(first: 100) { nodes { id isResolved path line comments(first: 1) { nodes { author { login } body url } } } }
   } }
 }`
 const BAD = ['FAILURE', 'TIMED_OUT', 'CANCELLED', 'ACTION_REQUIRED', 'STARTUP_FAILURE', 'ERROR']
@@ -153,6 +153,22 @@ async function prChecks(repo, number) {
     failing,
     rabbit,
     threads: pr.reviewThreads.nodes.filter((t) => !t.isResolved).length,
+    items: pr.reviewThreads.nodes.map(reviewItem),
+  }
+}
+
+// One PR review thread, in a finding's shape. A bot's comment opens with a severity tag and a bold title.
+const SEV_TAGS = [[/critical|potential issue|major/i, 'major'], [/refactor|nitpick|minor|trivial/i, 'minor']]
+function reviewItem(t, i) {
+  const c = t.comments.nodes[0] || {}
+  const body = String(c.body || '')
+  const title = /\*\*([^*\n]{4,200})\*\*/.exec(body)?.[1] || body.replace(/<[^>]*>|[_*`>#]/g, '').split('\n').map((l) => l.trim()).find(Boolean) || ''
+  const tag = body.slice(0, 200)
+  return {
+    id: 'T' + (i + 1), by: 'PR review', author: c.author?.login || '', url: c.url || '',
+    severity: SEV_TAGS.find(([re]) => re.test(tag))?.[1] || 'note',
+    claim: title.slice(0, 300), anchor: t.path ? `${t.path}${t.line ? ':' + t.line : ''}` : '',
+    outcome: t.isResolved ? 'fixed' : 'open',
   }
 }
 

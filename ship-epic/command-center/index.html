@@ -229,7 +229,7 @@ const ICONS = {
 }
 const TONE_ICON = { ok: 'check', run: 'pulse', you: 'ask', wait: 'pause', bad: 'alert' }
 const EVENT_ICON = { asked: 'ask', decided: 'ask', changed: 'pencil', read: 'check', step: 'pulse', 'usage-limit': 'alert', 'gate-failed': 'alert', done: 'check', merged: 'pr', finding: 'alert', review: 'list' }
-const OUTCOME = { open: ['open', 'you'], fixed: ['fixed', 'ok'], refused: ['not fixed, with a reason', 'bad'], withdrawn: ['withdrawn', 'wait'], held: ['still open after a second look', 'bad'] }
+const OUTCOME = { working: ['being worked on', 'run'], open: ['open', 'you'], fixed: ['fixed', 'ok'], refused: ['not fixed, with a reason', 'bad'], withdrawn: ['withdrawn', 'wait'], held: ['still open after a second look', 'bad'] }
 function icon(name, size = 16) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   for (const [k, v] of Object.entries({ class: 'ic', width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
@@ -502,8 +502,15 @@ function story(t) {
 }
 
 const who = (ticket) => (ticket === 'RUN' ? 'Orchestrator' : ticket)
-const isOpen = (f) => f.outcome === 'open' || f.outcome === 'held'
-const findings = (ticket) => (state.findings || []).filter((f) => f.ticket === ticket)
+const isOpen = (f) => f.outcome === 'open' || f.outcome === 'held' || f.outcome === 'working'
+// Judges' findings plus the PR's review threads. While the ticket's worker is active, its open items are being worked on.
+const findings = (ticket) => {
+  const w = state.workers[ticket]
+  const active = w && !w.stopped
+  const threads = (state.prs[ticket]?.checks?.items || []).map((x) => ({ ...x, ticket }))
+  return [...(state.findings || []).filter((f) => f.ticket === ticket), ...threads]
+    .map((f) => (active && f.outcome === 'open' ? { ...f, outcome: 'working' } : f))
+}
 const judgeId = (ticket, by) => `j-${ticket}-${String(by || 'review').replace(/[^a-z0-9]+/gi, '-')}`
 const RANK = { blocker: 0, major: 1, minor: 2, note: 3 }
 
@@ -531,7 +538,8 @@ function findingRow(f) {
     el('span', { class: 'fid' }, f.id),
     el('span', { class: 'sev ' + f.severity }, f.severity),
     el('div', { class: 'main' }, el('div', {}, f.claim),
-      el('div', { class: 'mono' }, [f.by && `found by ${f.by}`, f.anchor, was && `was ${was}`].filter(Boolean).join(' · '))),
+      el('div', { class: 'mono' }, [f.by && `found by ${f.author || f.by}`, f.anchor, was && `was ${was}`].filter(Boolean).join(' · '),
+        f.url ? [' · ', el('a', { href: f.url, target: '_blank', rel: 'noopener' }, 'open thread')] : '')),
     el('span', { class: 'st ' + tone }, icon(TONE_ICON[tone], 14), word))
 }
 
