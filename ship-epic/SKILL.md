@@ -182,13 +182,13 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **Name every `RATE_LIMITED` review in the report.** Every session pushes as the same user, so they share the bot's rate limit — a multi-ticket run is where it bites, and the user needs to know which PRs no bot looked at.
 
-**A rate-limited PR already had its fallback reviewer**: `/ship` step 12 runs it, and reports the PR as waiting on CodeRabbit. Carry that wording into the report, never "ready for review".
+**A rate-limited PR already had its fallback reviewer**: `/ship` step 12 runs it. A clean fallback review makes the PR ready for review, backup-reviewed; carry that into the report with CodeRabbit named as rate limited, and list what is still open for any PR that is not clean.
 
 **A PR the bot skipped for its base gets an adversarial reviewer instead.** When its base is not `main`, spawn one `tz-fresh-reviewer` per such PR, given its diff from its own base saved as a file, with the ticket as the spec. Never pay for the bot's on-demand review, and never keep re-asking it — the limit is shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or `AskUserQuestion`: it reads and reports, which is the one job a subagent's grant fits. Verify each finding against the code yourself, then hand the confirmed ones to that ticket's session to fix, as its own CodeRabbit comments would be. Show every finding to the user through the config's `Finding` command too, confirmed or not, with what you did about it: the user reads the command center, not the hand-off. Give yours ids `O<n>`, so they never collide with a session's `F<n>`, and re-send the same id when its outcome changes. Send `--verdict running` when your review starts and its verdict when it ends: a finished ticket shows as being reviewed only in between. The report names which PRs were reviewed this way.
 
 Waiting for CI and the review is nearly free, because it overlaps the next ticket.
 
-Done when every finished ticket's PR is ready with its review threads answered or named as waiting on CodeRabbit, and every aborted one is a draft whose body says why.
+Done when every finished ticket's PR is ready with its review threads answered or its fallback review clean, and every aborted one is a draft whose body says why.
 
 ## Draft is the abort signal
 

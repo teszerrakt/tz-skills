@@ -283,8 +283,6 @@ function tickets() {
   // A finished ticket reads its PR's merge state, so the Workers list and Merge order never disagree.
   const byId = Object.fromEntries(list.map((t) => [t.ticket, t]))
   for (const t of list) {
-    if (t.key !== 'merged' && t.pr?.state === 'OPEN') t.merge = prState(t, byId)
-    if (t.key === 'done' && t.merge) [t.word, t.tone] = t.merge
     // A review run after the worker finished (the orchestrator's) is one more step on the ticket.
     // After the first finish: the worker may be resumed to fix what the review found, and finish again.
     const doneAt = (state.events[t.ticket] || []).find((e) => e.kind === 'done')?.at
@@ -295,7 +293,8 @@ function tickets() {
       t.review = { by: last.by || 'review', running, verdict: last.verdict, open,
         tone: running ? 'run' : open ? 'you' : /BLOCK|FAIL/i.test(last.verdict) ? 'bad' : 'ok' }
     }
-    if (t.review?.running) [t.word, t.tone] = [`being reviewed`, 'run']
+    if (t.key !== 'merged' && t.pr?.state === 'OPEN') t.merge = prState(t, byId)
+    if (t.key === 'done' && t.merge) [t.word, t.tone] = t.merge
   }
   return list
 }
@@ -309,7 +308,13 @@ function prState(t, byId) {
   if (!c) return ['could not read its checks', 'wait']
   if (c.ci === 'failing') return ['CI is failing', 'bad']
   if (c.ci === 'running') return ['CI is running', 'run']
+  if (t.review?.running) return ['being reviewed', 'run']
   if (c.threads) return [`${c.threads} review thread${c.threads > 1 ? 's' : ''} open`, 'you']
+  const open = (state.findings || []).filter((f) => f.ticket === t.ticket && isOpen(f)).length
+  if (open) return [`${open} open, needs you`, 'you']
+  // A clean fallback review stands in for a rate-limited bot (the user's rule).
+  const backup = t.review && /fallback|orchestrator/i.test(t.review.by)
+  if (c.rabbit !== 'reviewed' && c.rabbit !== 'skipped' && backup) return ['ready · backup-reviewed', 'ok']
   if (c.rabbit === 'waiting') return ['waiting on CodeRabbit', 'wait']
   if (c.rabbit === 'limited') return ['waiting on CodeRabbit, rate limited', 'wait']
   if (c.rabbit === 'skipped') return ['ready, CodeRabbit skipped it', 'ok']
