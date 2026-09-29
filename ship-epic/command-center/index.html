@@ -10,7 +10,9 @@
   :root {
     --bg: #000; --panel: #0a0a0a; --raised: #111; --hover: #1a1a1a; --line: #2a2a2a;
     --ink: #ededed; --soft: #a1a1a1; --dim: #8f8f8f;
-    --you: #f5a623; --bad: #ff6166; --ok: #45d483; --run: #52a8ff; --run-bg: #0a1f38;
+    --you: #f5a623; --bad: #ff6166; --ok: #45d483; --run: #52a8ff;
+    --you-bg: #2b1d06; --bad-bg: #2d1012; --ok-bg: #0b2616; --run-bg: #0a1f38;
+    --control: 32px;
     --mono: "Geist Mono", Consolas, ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
@@ -29,10 +31,8 @@
   header .bar { width: 1px; height: 18px; background: var(--line); }
   header .grow { flex: 1; }
   .where { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; color: var(--soft); }
-  .where span { display: flex; align-items: center; gap: 7px; padding: 5px 12px; }
+  .where span { display: flex; align-items: center; gap: 7px; height: calc(var(--control) - 2px); padding: 0 12px; }
   .where span + span { border-left: 1px solid var(--line); }
-  #live { display: flex; align-items: center; gap: 8px; color: var(--ok); }
-  #live.off { color: var(--bad); }
   .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 340px minmax(0, 1fr) 380px; }
   .col { padding: 28px; overflow: auto; display: flex; flex-direction: column; gap: 28px; }
   .col.left { border-right: 1px solid var(--line); padding-left: 32px; }
@@ -80,11 +80,14 @@
   .opt .detail { color: var(--soft); font-size: 13px; }
   .current { min-height: 46px; border: 1px dashed var(--line); border-radius: 6px; padding: 8px 14px; color: var(--dim); display: flex; align-items: center; gap: 12px; }
   .current span:first-child { flex: 1; }
-  .pill { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 9px 2px; border: 1px solid currentColor; white-space: nowrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font: 600 11px/1 var(--mono); letter-spacing: .04em; border-radius: 999px; padding: 5px 9px; white-space: nowrap; }
+  .badge.you { color: var(--you); background: var(--you-bg); } .badge.run { color: var(--run); background: var(--run-bg); }
+  .badge.ok { color: var(--ok); background: var(--ok-bg); } .badge.bad { color: var(--bad); background: var(--bad-bg); }
   .runmenu { position: relative; }
-  .runbtn { display: inline-flex; align-items: center; gap: 8px; max-width: min(360px, 60vw); font: 500 12.5px/1 var(--mono); color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px 8px 12px; cursor: pointer; }
+  .runbtn { display: inline-flex; align-items: center; gap: 10px; height: var(--control); max-width: min(420px, 60vw); font-size: 13px; font-weight: 500; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px 0 12px; cursor: pointer; }
+  .runbtn .id { font: 500 12.5px/1 var(--mono); }
   .runbtn .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .runbtn .ic { color: var(--dim); }
+  .runbtn > .ic { color: var(--dim); }
   .runbtn:hover, .runbtn[aria-expanded="true"] { border-color: var(--dim); }
   .runlist { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: 380px; max-width: 90vw; max-height: 60vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, .6); }
   .runlist .head { font: 12px/1 var(--mono); color: var(--dim); padding: 8px 10px 6px; }
@@ -93,26 +96,22 @@
   .runopt[aria-selected="true"] { background: var(--raised); }
   .runopt .tick { color: var(--ink); display: flex; }
   .runopt .l1 { display: flex; gap: 8px; align-items: center; font: 500 12.5px/1.4 var(--mono); }
-  .runopt .l1 .when { margin-left: auto; color: var(--dim); font-weight: 400; }
-  .runopt .l1 .when.live { color: var(--ok); }
+  .runopt .l1 .when { margin-left: auto; }
   .runopt .l2 { color: var(--soft); font-size: 13px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .runopt .l2.none { color: var(--dim); font-style: italic; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
   .pastbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 10px 14px; color: var(--soft); }
   .pastbar > .ic { color: var(--run); }
   .pastbar b { color: var(--ink); font-weight: 600; }
   .pastbar .grow { flex: 1; }
-  .afk { font: 600 11px/1 var(--mono); letter-spacing: .06em; color: #0a0a0a; background: var(--you); border-radius: 4px; padding: 4px 6px; }
   .switch { display: inline-flex; align-items: center; gap: 10px; background: none; border: 0; padding: 4px 2px; color: var(--soft); font-size: 13px; font-weight: 500; cursor: pointer; }
   .switch .track { position: relative; width: 32px; height: 18px; border-radius: 999px; background: var(--line); transition: background .15s; flex: none; }
   .switch .knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--soft); transition: left .15s, background .15s; }
   .switch[aria-checked="true"] { color: var(--ink); }
   .switch[aria-checked="true"] .track { background: var(--ok); }
   .switch[aria-checked="true"] .knob { left: 16px; background: #0a0a0a; }
-  .pill.rec { color: var(--run); background: var(--run-bg); border-color: transparent; }
-  .st { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .st { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--mono); white-space: nowrap; }
   .st.ok { color: var(--ok); } .st.run { color: var(--run); } .st.bad { color: var(--bad); } .st.wait { color: var(--dim); }
-  .st.you { color: #0a0a0a; background: var(--you); border-radius: 999px; padding: 2px 10px 2px 7px; font-weight: 600; }
+  .st.you { color: var(--you); background: var(--you-bg); border-radius: 999px; padding: 4px 9px 4px 7px; }
   pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow-x: auto; font: 12.5px/1.55 var(--mono); color: var(--soft); margin: 0; white-space: pre-wrap; }
   .because { color: var(--dim); font-size: 13px; }
   .free { display: flex; gap: 6px; }
@@ -165,11 +164,11 @@
   <span class="brand">SHIP</span>
   <span class="bar"></span>
   <div class="runmenu" id="runMenu" hidden><button type="button" class="runbtn" id="runBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="Which run to show"></button><div class="runlist" id="runList" role="listbox" hidden></div></div>
-  <span class="afk" id="afk" title="Unattended run: the orchestrator decides what can be undone" hidden>AFK</span>
+  <span class="badge you" id="afk" title="Unattended run: the orchestrator decides what can be undone" hidden>AFK</span>
   <span class="grow"></span>
   <button type="button" class="switch" id="toasts" role="switch" aria-checked="true" hidden><span class="track"><span class="knob"></span></span><span>Pop-ups</span></button>
   <span class="where" id="where" hidden></span>
-  <span class="mono" id="live">connecting</span>
+  <span class="st wait" id="live">connecting</span>
 </header>
 <div class="cols">
   <aside class="col left" id="left"></aside>
@@ -206,6 +205,8 @@ const ICONS = {
   pr: '<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v7M18 15.5V10a3 3 0 0 0-3-3h-3"/>',
   pencil: '<path d="M4 20l1-4L16 5l3 3L8 19z"/>',
   back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  down: '<path d="M6 9l6 6 6-6"/>',
+  tick: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
   play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/>',
   steps: '<path d="M4 18h4v-4h4v-4h4V6h4"/>',
@@ -356,7 +357,7 @@ function questionCard(q, more) {
     el('div', { class: 'opts' }, q.options.map((o, i) => el('button', { type: 'button', class: 'opt' + (i === q.recommended ? ' rec' : ''), onclick: () => answer(o.label) },
       el('span', { class: 'key' }, String(i + 1)),
       el('span', { class: 'body' }, el('div', { class: 'name' }, o.label), o.detail ? el('div', { class: 'detail' }, o.detail) : ''),
-      i === q.recommended ? el('span', { class: 'pill rec' }, 'Recommended') : ''))),
+      i === q.recommended ? el('span', { class: 'badge run' }, 'Recommended') : ''))),
     q.example ? el('pre', {}, q.example) : '',
     q.because ? el('div', { class: 'because' }, 'Asked because: ' + q.because) : '',
     el('div', { class: 'free' }, box, el('button', { type: 'button', class: 'btn main', onclick: () => answer('') }, icon('up'), 'Send text')),
@@ -593,14 +594,15 @@ function renderRunMenu() {
   if (!cur) return
   const day = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   const name = (r) => (r.id === 'earlier' ? 'Earlier' : r.id)
-  $('runBtn').replaceChildren(cur.live ? el('span', { class: 'dot' }) : '', el('span', { class: 't' }, name(cur), cur.title ? ` — ${cur.title}` : ''), icon('order', 14))
+  const liveMark = () => el('span', { class: 'st ok' }, icon('pulse', 14), 'live')
+  $('runBtn').replaceChildren(el('span', { class: 't' }, el('span', { class: 'id' }, name(cur)), cur.title ? ` ${cur.title}` : ''), cur.live ? liveMark() : '', icon('down', 14))
   $('runList').replaceChildren(el('div', { class: 'head' }, `Runs · ${runs.length}`), ...runs.map((r) => el('button', {
     type: 'button', class: 'runopt', role: 'option', 'aria-selected': String(r === cur),
     onclick: () => { closeRunMenu(); if (key(r) !== ui.view) show(key(r)) },
   },
-    el('div', { class: 'l1' }, r.live ? el('span', { class: 'dot' }) : '', name(r),
-      el('span', { class: 'when' + (r.live ? ' live' : '') }, r.live ? 'live now' : r.startedAt ? day(r.startedAt) : ''),
-      r === cur ? el('span', { class: 'tick', 'aria-hidden': 'true' }, icon('check', 14)) : ''),
+    el('div', { class: 'l1' }, name(r),
+      el('span', { class: 'when' }, r.live ? liveMark() : el('span', { class: 'st wait' }, r.startedAt ? day(r.startedAt) : '')),
+      r === cur ? el('span', { class: 'tick', 'aria-hidden': 'true' }, icon('tick', 14)) : ''),
     el('div', { class: 'l2' + (r.title ? '' : ' none') }, r.title || (r.id === 'earlier' ? 'items that named no run' : 'no title recorded')))))
 }
 
@@ -620,7 +622,7 @@ async function show(view) {
 
 function connect() {
   const es = new EventSource('/api/events')
-  es.onopen = () => { $('live').replaceChildren(icon('pulse', 14), 'live'); $('live').className = 'mono with' }
+  es.onopen = () => { $('live').replaceChildren(icon('check', 14), 'connected'); $('live').className = 'st ok'; $('live').title = 'The page gets updates as they happen' }
   es.onmessage = (e) => {
     const first = !live
     const prevRun = live?.run?.id
@@ -631,7 +633,7 @@ function connect() {
     if (first) route()
     render()
   }
-  es.onerror = () => { $('live').replaceChildren(icon('alert', 14), 'not connected'); $('live').className = 'mono with off' }
+  es.onerror = () => { $('live').replaceChildren(icon('alert', 14), 'not connected'); $('live').className = 'st bad' }
 }
 connect()
 $('runBtn').addEventListener('click', () => {
