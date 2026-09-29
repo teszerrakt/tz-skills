@@ -111,6 +111,8 @@ Done when every prompt names its own paths, its own port and its own lock rule. 
 
 Poll `claude agents --json` and read only the sessions you named.
 
+**Where the config names `Status`, run the command center's `watch` too, in the background, and never write a watcher of your own.** `node ~/.claude/ship-ui/ship-ui.mjs watch` prints one line for each new thing to act on: `question <id> from <ticket>`, `resume <ticket>: <n> review threads open on #<pr>` or `resume <ticket>: CI failing on #<pr>`, and `<ticket> stopped: <reason>`. A `resume` line means a finished session's PR needs it again: resume that session to run `/ship` step 12. The command center reads the review bot and CI correctly, from the PR's status contexts as well as its check runs; a hand-written watcher on the pilot read check runs only, never saw CodeRabbit's review, and left a ticket idle for forty minutes.
+
 | `status` / `waitingFor` | Means | Disposition |
 |---|---|---|
 | `waiting` / `input needed` | the reconcile gate is asking | park, and collect the question |

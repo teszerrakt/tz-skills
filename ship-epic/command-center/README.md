@@ -14,6 +14,7 @@ Copy this folder to `~/.claude/ship-ui/`, then name its commands in the delivery
 | `ship-ui.mjs status` | a session | records its step, what it is doing, its model and its PR; prints `ok`, then one `revised:` line per answer the user changed |
 | `ship-ui.mjs run --file <json>` | the orchestrator | says what the run ships: `id`, `title`, `summary`, `repo`, `github`, `target`, `where`, and `tickets` as `{ticket, title, group, after, url}` |
 | `ship-ui.mjs followup` | the orchestrator | records one follow-up sentence and its anchor |
+| `ship-ui.mjs watch [--every 30]` | the orchestrator, in the background | runs until killed; prints one line per new thing to act on: an open question, a finished ticket whose PR has review threads open or CI failing (`resume …`), a worker that stopped for any reason other than done |
 | `ship-ui.mjs questions` | the orchestrator | prints each open question with its id and options, `*` on the recommended one |
 | `ship-ui.mjs answer --id <id> --choice <label> [--note ...] --as orchestrator` | the orchestrator, under `--afk` | answers one question as itself, recorded as a numbered unattended decision |
 | `ship-ui.mjs revise --decision D<n> --choice <label> [--note ...]` | the orchestrator | passes on a change the user typed in chat; the same flow as the page's Change button |

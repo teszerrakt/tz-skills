@@ -233,6 +233,29 @@ function readSessions() {
 }
 setInterval(readSessions, 60_000).unref()
 
+// What the orchestrator must act on now, each with a stable key so `ship-ui.mjs watch` prints it once.
+// A finished worker whose PR later gets review threads or red CI does not wake by itself.
+function attention() {
+  const out = []
+  for (const q of state.questions.filter((x) => !x.answer)) {
+    out.push({ key: `q:${q.id}`, line: `question ${q.id} from ${q.ticket}: ${q.question}` })
+  }
+  for (const [ticket, w] of Object.entries(state.workers)) {
+    const pr = state.prs[ticket]
+    const c = pr?.state === 'OPEN' ? pr.checks : null
+    if (w.stopped === 'done' && c?.threads) {
+      out.push({ key: `threads:${ticket}:${c.threads}`, line: `resume ${ticket}: ${c.threads} review thread${c.threads > 1 ? 's' : ''} open on #${pr.number}` })
+    }
+    if (w.stopped === 'done' && c?.ci === 'failing') {
+      out.push({ key: `ci:${ticket}:${c.failing.join(',')}`, line: `resume ${ticket}: CI failing on #${pr.number} (${c.failing.join(', ')})` })
+    }
+    if (w.stopped && w.stopped !== 'done' && w.stopped !== 'question') {
+      out.push({ key: `stopped:${ticket}:${w.stopped}:${w.at}`, line: `${ticket} stopped: ${w.stopped} (${w.doing || 'no detail'})` })
+    }
+  }
+  return out
+}
+
 function openBrowser(hash = '') {
   spawn('cmd.exe', ['/c', 'start', '', `${ORIGIN}/${hash ? '#' + hash : ''}`], { windowsHide: true, detached: true }).unref()
 }
@@ -397,6 +420,7 @@ async function route(req, res) {
     return res.end(fs.readFileSync(path.join(HERE, 'index.html')))
   }
   if (req.method === 'GET' && url.pathname === '/api/state') return send(res, 200, state)
+  if (req.method === 'GET' && url.pathname === '/api/attention') return send(res, 200, attention())
   if (req.method === 'GET' && url.pathname === '/api/runs') {
     fs.mkdirSync(RUNS_DIR, { recursive: true })
     const past = fs.readdirSync(RUNS_DIR).filter((f) => f.endsWith('.json')).map((f) => {

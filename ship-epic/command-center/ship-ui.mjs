@@ -9,6 +9,8 @@
 //            Prints "ok", then one "revised: ..." line per answer the human changed.
 //   run      --file run.json   What the run ships: id, title, summary, tickets.
 //   followup --ticket T --sentence "..." [--anchor path:line]
+//   watch    [--every 30]  Runs until killed. One line per new thing the orchestrator must act on:
+//            a question, a finished ticket whose PR has threads open or CI failing, a stopped worker.
 //   questions  Prints each open question: id, ticket, options (* marks the recommended one).
 //   answer   --id Q --choice LABEL [--note "..."] --as orchestrator
 //            The orchestrator's answer under --afk, labelled as its own.
@@ -109,6 +111,20 @@ try {
   } else if (cmd === 'followup') {
     await post('/api/followups', a)
     console.log('ok')
+  } else if (cmd === 'watch') {
+    // Runs until killed; one line per new thing to act on. Meant for a background monitor.
+    const seen = new Set()
+    for (;;) {
+      try {
+        await ensureServer()
+        for (const a of await (await fetch(`${BASE}/api/attention`)).json()) {
+          if (seen.has(a.key)) continue
+          seen.add(a.key)
+          console.log(a.line)
+        }
+      } catch {}
+      await sleep(Number(a.every || 30) * 1000)
+    }
   } else if (cmd === 'questions') {
     const state = await (await fetch(`${BASE}/api/state`)).json()
     for (const q of state.questions.filter((x) => !x.answer)) {
