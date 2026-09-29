@@ -72,6 +72,14 @@ Every delegate gets its brief in `$ARGUMENTS`: **the ticket id, the diff range, 
 
 **A phase that judges the code never runs in the author's context.** The author anchors on its own conversation and grades its own reading. Step 8 is a fresh subagent, step 9 a fresh session, and a disputed bot thread in step 12 gets a fresh second opinion.
 
+Fresh means three things, and each has its guard:
+
+- **No history.** Never a `fork` subagent, a skill with `context: fork`, `claude -p --continue` or `--resume`, or an agent continued with `SendMessage` from before it saw the diff. Each of those carries the author's conversation in.
+- **A clean brief.** A judge's brief is its template with the slots filled: ticket id, diff range, file paths, schema. Add no prose — no summary of what was built, no "this fixes", no reason the code is right. A brief is the one door into a fresh context, and a sentence of the author's framing through it is the anchoring the fresh context exists to avoid. The refusal re-check is the one exception: it carries the author's reason, labelled as the author's.
+- **The canary.** Step 0 puts a random word in the author's context, and every judge must echo whatever canary it can see. A fresh judge sees none.
+
+**The canary check.** The judge's answer carries a `canary` value: the rest of any line in its context that begins `CANARY:`, or `none`. The brief names the prefix, never the word. A missing value, or the word itself, voids that answer as an unparsed one is voided: re-run once with a new spawn, and a second leak fails the phase through that step's own abort. Never write the word to a file, a commit, the PR or any brief — anywhere a judge can read it, it proves nothing.
+
 ## Process
 
 **Every code-mutating phase finishes before anything verifies.** Steps 0–8 change code; steps 9–11 judge it and report. A verification run before the last edit judges a diff that no longer exists. Step 12 is the one exception: a bot comments only on a pushed PR, so its fixes land after verification — minimal, in scope, and re-checked before each push.
@@ -88,7 +96,13 @@ Write the worktree's own `settings.local.json` holding the per-worktree opt-outs
 
 Then install dependencies. Stop the run on a failed install: every later phase rests on it.
 
-Done when the install exits clean, every gitignored file either list names sits in the worktree, and the named opt-outs are in place.
+Plant the canary (see Briefs) by printing it into this context only:
+
+```bash
+echo "CANARY: $(head -c 6 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+```
+
+Done when the install exits clean, every gitignored file either list names sits in the worktree, the named opt-outs are in place, and the canary is printed.
 
 ### 1. Intake and reconcile — the gate
 
@@ -220,7 +234,7 @@ claude -p "/spec-review --driven <base>...<head> --rows <dir>/rows.json --ticket
   --add-dir <dir> --allowedTools "Read,Grep,Glob,Agent,Bash(git:*),Bash(awk:*),Bash(head:*),Bash(gh pr list:*)" > <dir>/spec-review.md
 ```
 
-A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. A `-p` session cannot ask for a tool, so the grant covers every command spec-review runs. **When the spawn is refused** — an auto-mode parent cannot always start a child with its own grant (`docs/ship-epic-design.md`) — give the same driven brief to a fresh read-only subagent instead, and capture its answer the same way. Fresh context is what this step needs; the session only buys spec-review its own two agents. Gate on the first line of that file, `VERDICT: <verdict>`, never on the exit code, as step 8 gates on parsed JSON. A missing verdict line — both spawns refused, a crash, or none printed — is a failed review, and so are `NEEDS_ROWS` and `NO_CONTRACT`: all abort 9. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
+A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. A `-p` session cannot ask for a tool, so the grant covers every command spec-review runs. **When the spawn is refused** — an auto-mode parent cannot always start a child with its own grant (`docs/ship-epic-design.md`) — give the same driven brief to a fresh read-only subagent instead, and capture its answer the same way. Fresh context is what this step needs; the session only buys spec-review its own two agents. Gate on the first line of that file, `VERDICT: <verdict>`, never on the exit code, as step 8 gates on parsed JSON, and on its second, `CANARY: none` (Briefs). A missing verdict line — both spawns refused, a crash, or none printed — or a leaked canary after the one re-run, is a failed review, and so are `NEEDS_ROWS` and `NO_CONTRACT`: all abort 9. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
 
 It runs **after** every code-mutating phase. Run before simplify, it computed its verdict against a diff that no longer existed: the anchors it cited could be deleted by the time the PR opened, and simplify's own edits were never audited by anything.
 

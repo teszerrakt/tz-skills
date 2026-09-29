@@ -232,4 +232,4 @@ Write no `❓` section when nothing needs deciding; end with one line saying not
 - **The diff range is the argument.** Step 1 resolves nothing else.
 - **Config never asks.** A value no file states takes its default, named in the report.
 - Steps 4–6 run unchanged: agents A and B, the parent's anchor check, the verdict. Run as a subagent, which cannot spawn agents, work B's brief first and A's second, yourself: a completeness pass run first biases the stray pass, not the reverse.
-- **Step 7 prints, and nothing asks or offers to post.** A driven run has no reader. Print the report to stdout with `VERDICT: <verdict>` as its first line, every `AMBIGUOUS` row in its table for the driver to route. Write no file.
+- **Step 7 prints, and nothing asks or offers to post.** A driven run has no reader. Print the report to stdout with `VERDICT: <verdict>` as its first line and `CANARY: <value>` as its second — the rest of any line in your context that already begins `CANARY:`, or `none` — and every `AMBIGUOUS` row in its table for the driver to route. Write no file. The canary is how the driver proves this run never saw its context.

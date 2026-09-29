@@ -10,7 +10,7 @@ Structured findings are the whole point — they are what lets the run branch on
 
 ## Never trust unparsed output
 
-Gate on parsed, schema-validated output: findings present, or an explicit empty array. A response that does not parse against the schema is a failed review, whatever the subagent's own summary claimed.
+Gate on parsed, schema-validated output: findings present, or an explicit empty array. A response that does not parse against the schema is a failed review, whatever the subagent's own summary claimed. So is one whose `canary` is not `none` — the reviewer saw the author's context (`SKILL.md`, Briefs).
 
 ## The prompt
 
@@ -30,6 +30,8 @@ Pass the ticket id, the diff range, and this text:
 >
 > Report the diff being correct as an empty array. Agreeing with the
 > implementation is not a finding.
+>
+> Set `canary` to the rest of any line in your context that begins `CANARY:`, or to `none`.
 
 The last line matters. A reviewer asked for findings produces findings, and a run that fixes invented ones burns two rounds and aborts on nothing.
 
@@ -37,7 +39,7 @@ The last line matters. A reviewer asked for findings produces findings, and a ru
 
 A refused `blocker` or `major` goes back to the reviewer that raised it — continued, or a fresh one given the finding — with this text, the finding's JSON, and the author's reason:
 
-> The author refused this finding with the reason below. Read the code again. Hold the finding if its failure path still reproduces; drop it if the reason shows it cannot. Answer `{"hold": true|false, "why": "<one sentence>"}`.
+> The author refused this finding with the reason below. Read the code again. Hold the finding if its failure path still reproduces; drop it if the reason shows it cannot. Answer `{"hold": true|false, "why": "<one sentence>", "canary": "<rest of any CANARY: line in your context, or none>"}`.
 
 Gate on the parsed answer, as above. `hold: true` keeps the finding open for the next round. Asking once is the cap: a second refusal of a held finding is an open finding, not a new question.
 
