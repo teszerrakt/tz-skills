@@ -322,6 +322,14 @@ function applyFinding(b) {
   return [200, f]
 }
 
+// A proxy such as `tailscale serve` reaches the page from another origin; list it, one per line, in DATA_DIR/origins.
+// A file, not an env var: whichever command starts the server first sets its env.
+function allowedOrigins() {
+  const file = path.join(DATA_DIR, 'origins')
+  const extra = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter(Boolean) : []
+  return [ORIGIN, `http://localhost:${PORT}`, ...extra]
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let raw = ''
@@ -351,7 +359,7 @@ async function route(req, res) {
   if (req.method === 'POST') {
     // A browser page on another site can post here; a worker's CLI sends no Origin.
     const origin = req.headers.origin
-    if (origin && origin !== ORIGIN && origin !== `http://localhost:${PORT}`) return send(res, 403, { error: 'origin' })
+    if (origin && !allowedOrigins().includes(origin)) return send(res, 403, { error: 'origin' })
     if (!String(req.headers['content-type'] || '').startsWith('application/json')) return send(res, 415, { error: 'json only' })
   }
 

@@ -34,4 +34,5 @@ PR and merge state, through `gh`, every two minutes and after each `status`. A P
 - Toasts are Windows only (`toast.ps1`, WPF). Elsewhere the page and the blocking `ask` still work; nothing pops up.
 - State is one JSON file, `~/.claude/orchestrate/ui/state.json`, holding one live run. When `run` names a new id, everything that belongs to another run moves to `runs/<id>.json` beside it; the header's picker shows those read only.
 - Each ticket shows its session's `claude attach <id>` and session id, read from `claude agents --json` by matching the session's name to the ticket; the orchestrator is the session whose name starts with the run id.
+- To open it from a phone, put it behind `tailscale serve --bg http://127.0.0.1:4777` and write the `https://<machine>.<tailnet>.ts.net` origin into `~/.claude/orchestrate/ui/origins`, one per line. Without that line the phone can read the page but not answer. Never list a public origin: anything listed there can answer for the user.
 - `SHIP_UI_PORT` moves it off 4777, `SHIP_UI_DATA` moves the state, `SHIP_UI_NO_PING` silences the toasts.
