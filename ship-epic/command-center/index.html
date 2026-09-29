@@ -105,7 +105,11 @@
   .dec .choice { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
   .dec .was { color: var(--dim); font-size: 12.5px; }
   .dec .why { color: var(--dim); font-size: 13px; }
-  .pill.away { color: var(--you); }
+  .dec .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font: 12px/1.5 var(--mono); color: var(--dim); margin-bottom: 4px; }
+  .dec .meta .away { color: var(--you); }
+  .dec .main .why, .dec .main .was { max-width: 78ch; }
+  .dec .row.decision { flex-wrap: wrap; }
+  .dec .row.decision .main { min-width: 260px; }
   .find { display: flex; gap: 12px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); }
   .find .fid { font-family: var(--mono); font-size: 12px; color: var(--dim); width: 34px; flex: none; }
   .find .main { flex: 1; min-width: 0; }
@@ -316,15 +320,16 @@ function decisionRow(d) {
   const finished = ['done', 'merged'].includes(state.workers[d.ticket]?.stopped)
   const last = (d.history || []).at(-1)
   const delivery = { 'sent': 'sent, the worker has not read it yet', 'read': `read by the worker at ${clock(d.readAt)}`, 'follow-up': 'saved as a follow-up' }[d.delivery]
-  const row = el('div', { class: 'row' },
-    el('div', { class: 'id mono' }, d.ticket, d.dn ? el('div', {}, d.dn) : ''),
+  const away = d.by === 'orchestrator'
+  const row = el('div', { class: 'row decision' },
     el('div', { class: 'main' },
-      d.by === 'orchestrator' ? el('div', {}, el('span', { class: 'pill away' }, 'decided while you were away')) : '',
+      el('div', { class: 'meta' }, el('span', { style: 'color: var(--ink)' }, d.ticket),
+        away ? el('span', { class: 'away' }, `${d.dn} · decided while you were away`) : el('span', {}, 'you decided'),
+        el('span', {}, clock(d.at))),
       el('div', { class: 'ask' }, d.question),
       el('div', { class: 'choice' }, d.choice),
       last ? el('div', { class: 'was' }, `changed ${clock(d.revisedAt)} · was "${last.choice}" · ${delivery}`) : '',
       d.note ? el('div', { class: 'why' }, d.note) : ''),
-    el('div', { class: 'mono', style: 'padding-top: 2px' }, clock(d.at)),
     !revising && !ui.view && d.options.length > 1 ? el('button', { type: 'button', class: 'btn', onclick: () => go({ revising: d.id, pick: '', note: '' }) }, icon('pencil', 14), 'Change') : '')
   if (!revising) return el('div', { class: 'dec', id: 'd-' + d.id }, row)
 
@@ -346,6 +351,18 @@ function decisionRow(d) {
           if (await post(`/api/decisions/${d.id}/revise`, { choice: ui.pick, note: ui.note.trim() })) go({ revising: '', pick: '', note: '' })
         } }, !ui.pick ? 'Pick a different answer first' : finished ? 'Save as a follow-up' : `Send to ${d.ticket}`),
         el('button', { type: 'button', class: 'btn quiet', onclick: () => go({ revising: '', pick: '', note: '' }) }, 'Keep my answer'))))
+}
+
+function decisionGroups() {
+  const all = [...state.decisions].reverse()
+  const away = all.filter((d) => d.by === 'orchestrator')
+  const yours = all.filter((d) => d.by !== 'orchestrator')
+  return [
+    away.length ? label('clock', `Decided while you were away · ${away.length} · change any you disagree with`) : '',
+    ...away.map(decisionRow),
+    yours.length ? label('user', `Your answers · ${yours.length}`, away.length ? 'padding-top: 12px' : '') : '',
+    ...yours.map(decisionRow),
+  ].filter(Boolean)
 }
 
 function story(t) {
@@ -472,7 +489,7 @@ function renderMid() {
     el('span', {}, 'Every worker can keep going. Your answers are under Decisions, and you can change them there.'))]
   else if (ui.tab === 'merge') body = mergeList()
   else if (ui.tab === 'findings') body = findingList()
-  else body = state.decisions.length ? [...state.decisions].reverse().map(decisionRow) : [el('div', { class: 'empty' }, el('b', {}, 'No decisions yet.'),
+  else body = state.decisions.length ? decisionGroups() : [el('div', { class: 'empty' }, el('b', {}, 'No decisions yet.'),
     el('span', {}, 'Each answer you give lands here.'))]
 
   $('mid').replaceChildren(tabs, ...body)
