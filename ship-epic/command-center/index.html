@@ -90,14 +90,16 @@
   .runlist .head { font: 12px/1 var(--mono); color: var(--dim); padding: 8px 10px 6px; }
   .runopt { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 6px; padding: 9px 10px; color: var(--ink); cursor: pointer; }
   .runopt:hover, .runopt:focus-visible { background: var(--hover); outline: none; }
-  .runopt[aria-selected="true"] { background: var(--raised); box-shadow: inset 2px 0 0 var(--ink); }
+  .runopt[aria-selected="true"] { background: var(--raised); }
+  .runopt .tick { color: var(--ink); display: flex; }
   .runopt .l1 { display: flex; gap: 8px; align-items: center; font: 500 12.5px/1.4 var(--mono); }
   .runopt .l1 .when { margin-left: auto; color: var(--dim); font-weight: 400; }
   .runopt .l1 .when.live { color: var(--ok); }
   .runopt .l2 { color: var(--soft); font-size: 13px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .runopt .l2.none { color: var(--dim); font-style: italic; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
-  .pastbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--run); border-radius: 8px; padding: 10px 12px 10px 16px; color: var(--soft); }
+  .pastbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 10px 14px; color: var(--soft); }
+  .pastbar > .ic { color: var(--run); }
   .pastbar b { color: var(--ink); font-weight: 600; }
   .pastbar .grow { flex: 1; }
   .afk { font: 600 11px/1 var(--mono); letter-spacing: .06em; color: #0a0a0a; background: var(--you); border-radius: 4px; padding: 4px 6px; }
@@ -597,7 +599,8 @@ function renderRunMenu() {
     onclick: () => { closeRunMenu(); if (key(r) !== ui.view) show(key(r)) },
   },
     el('div', { class: 'l1' }, r.live ? el('span', { class: 'dot' }) : '', name(r),
-      el('span', { class: 'when' + (r.live ? ' live' : '') }, r.live ? 'live now' : r.startedAt ? day(r.startedAt) : '')),
+      el('span', { class: 'when' + (r.live ? ' live' : '') }, r.live ? 'live now' : r.startedAt ? day(r.startedAt) : ''),
+      r === cur ? el('span', { class: 'tick', 'aria-hidden': 'true' }, icon('check', 14)) : ''),
     el('div', { class: 'l2' + (r.title ? '' : ' none') }, r.title || (r.id === 'earlier' ? 'items that named no run' : 'no title recorded')))))
 }
 
