@@ -42,6 +42,7 @@ Write no new config file. Read, in this order:
 | PR body sections | the allowed headings, in order, and the caps |
 | PR body write path | how to write a body, and how to prove it landed |
 | Spec-review BLOCK | `strict` or `lenient` — whether step 9 may fix a stray-only `BLOCK` once |
+| Finding | the command that shows a judge's finding to the user — Briefs |
 | Environment traps | the machine-specific gotchas a delegate must be told |
 
 **A phase whose config line is absent reports `SKIPPED`.** It never disappears from the report.
@@ -78,6 +79,10 @@ Fresh means three things, and each has its guard:
 - **A clean brief.** A judge's brief is its template with the slots filled: ticket id, diff range, file paths, schema. Add no prose — no summary of what was built, no "this fixes", no reason the code is right. A brief is the one door into a fresh context, and a sentence of the author's framing through it is the anchoring the fresh context exists to avoid. The refusal re-check is the one exception: it carries the author's reason, labelled as the author's.
 - **The canary.** Step 0 puts a random word in the author's context, and every judge must echo whatever canary it can see. A fresh judge sees none.
 
+**Every subagent judge is `tz-fresh-reviewer`** — step 1's row check, step 8, its refusal re-check, step 9's fallback, step 12's fallback reviewer, address-review's second opinion and ship-epic's reviewer. It has no shell, no write tool and no Skill tool, so it cannot change what it judges; a tool list naming a restricted shell still grants the whole shell. So before spawning it, save what it needs as files outside the worktree and name those paths in the brief: `git diff <range>` as `diff.patch`, and `git log <range>` as `log.txt` when commits carry decisions. A skill it must apply is passed as the path of that skill's `SKILL.md`, which sits beside this skill's own folder.
+
+**Every judge's findings reach the user, not only the author.** When `## Delivery` names a `Finding` command, run it as the config writes it, once per finding with its own `--id F<n>`, and again with the same id whenever its outcome changes — `open`, then `fixed`, `refused`, `held` or `withdrawn`. Run it once per review with `--verdict` too, for a verdict such as step 9's. A finding the author fixed silently is the same hidden judgement as one it refused silently.
+
 **The canary check.** The judge's answer carries a `canary` value: the rest of any line in its context that begins `CANARY:`, or `none`. The brief names the prefix, never the word. A missing value, or the word itself, voids that answer as an unparsed one is voided: re-run once with a new spawn, and a second leak fails the phase through that step's own abort. Never write the word to a file, a commit, the PR or any brief — anywhere a judge can read it, it proves nothing.
 
 ## Process
@@ -88,7 +93,7 @@ Fresh means three things, and each has its guard:
 
 A fresh worktree runs nothing past `implement` until it has its dependencies and every gitignored config the later phases read.
 
-**Derive that file list from `.claude/.gitignore` and the root `.worktreeinclude`.** Copy each file either one names that exists in the main checkout, is gitignored, and is missing in the worktree. `.worktreeinclude` is the list Claude Code itself copies into the worktrees it creates, so the app's env files are named once for both. A hardcoded list goes stale the first time a skill gains a config.
+**Derive that file list from `.claude/.gitignore` and the root `.worktreeinclude`.** Copy each file either one names that exists in the main checkout, is gitignored, and is missing in the worktree. Match against the main checkout's own tree only: a glob such as `**/.env` also reaches every other worktree under `.claude/worktrees/`, and those files belong to other runs. `.worktreeinclude` is the list Claude Code itself copies into the worktrees it creates, so the app's env files are named once for both. A hardcoded list goes stale the first time a skill gains a config.
 
 Name the branch by the repo's own convention. A tracker's suggested name embeds the username, which the convention does not.
 
@@ -139,7 +144,9 @@ Record every decision, rule-settled and asked alike, in the **commit message and
 
 The acceptance criteria stay exactly as written, wherever the record lands. `/spec-review` builds one ledger row per criterion and demands an anchor, so criteria edited to match what was built make every row pass by construction. A commit is append-only and is itself an anchor.
 
-**Write the ledger rows here, before any code exists**, in `/spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, then append a `## Decisions` section holding every answer and precedence ruling from this step — without it step 9 reads each one as a stray. Keep both outside the worktree: a file inside it is a stray to step 9. Run spec-review's driven row check on them now (its Driven mode lists it): step 9 rejects rows that fail it, and here a failure costs a rewrite, not a finished build. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
+**Write the ledger rows here, before any code exists**, in `/spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, then append a `## Decisions` section holding every answer and precedence ruling from this step — without it step 9 reads each one as a stray. **Give each decision its own row quoting it**: step 9's row check counts a decision's must and must-not sentences as requirements. Keep both outside the worktree: a file inside it is a stray to step 9. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
+
+Then run the row check now, where a failure costs a rewrite rather than a finished build. Spawn `tz-fresh-reviewer` with the paths of `rows.json` and `ticket.md`, the path of spec-review's `SKILL.md` naming its Driven-mode bullet "Check the rows against the ticket", and this answer shape: `{"pass": true|false, "failures": ["<row id or ticket line, and what is wrong>"], "canary": "<rest of any CANARY: line in your context, or none>"}`. Fix the rows until it passes, and gate on its canary as Briefs says.
 
 **A criterion the build departs from is reported, never quietly reconciled.** Say so in the PR body, in its own paragraph, naming the criterion and what replaced it — that is the one place a reviewer looks for it.
 
@@ -200,7 +207,7 @@ Done when the changed route loads and the console is clean.
 
 ### 7. Simplify
 
-Two agents in parallel, each restricted to reading:
+Two agents in parallel, each told to report and never edit (both hold a shell, so this is an instruction, not a guard; they only propose, and the author applies):
 
 | Agent | Looks for |
 |---|---|
@@ -234,7 +241,7 @@ claude -p "/spec-review --driven <base>...<head> --rows <dir>/rows.json --ticket
   --add-dir <dir> --allowedTools "Read,Grep,Glob,Agent,Bash(git:*),Bash(awk:*),Bash(head:*),Bash(gh pr list:*)" > <dir>/spec-review.md
 ```
 
-A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. A `-p` session cannot ask for a tool, so the grant covers every command spec-review runs. **When the spawn is refused** — an auto-mode parent cannot always start a child with its own grant (`docs/ship-epic-design.md`) — give the same driven brief to a fresh read-only subagent instead, and capture its answer the same way. Fresh context is what this step needs; the session only buys spec-review its own two agents. Gate on the first line of that file, `VERDICT: <verdict>`, never on the exit code, as step 8 gates on parsed JSON, and on its second, `CANARY: none` (Briefs). A missing verdict line — both spawns refused, a crash, or none printed — or a leaked canary after the one re-run, is a failed review, and so are `NEEDS_ROWS` and `NO_CONTRACT`: all abort 9. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
+A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. A `-p` session cannot ask for a tool, so the grant covers every command spec-review runs. **When the spawn is refused** — an auto-mode parent cannot always start a child with its own grant (`docs/ship-epic-design.md`) — give `tz-fresh-reviewer` the same driven arguments instead, plus the path of spec-review's `SKILL.md`, `log.txt`, and the diff saved three ways — `diff.patch`, `git diff --unified=0 <range>` as `diff-u0.patch`, and `git diff --name-only <range>` as `names.txt` — and capture its answer the same way. Fresh context is what this step needs; the session only buys spec-review its own two agents. Gate on the first line of that file, `VERDICT: <verdict>`, never on the exit code, as step 8 gates on parsed JSON, and on its second, `CANARY: none` (Briefs). A missing verdict line — both spawns refused, a crash, or none printed — or a leaked canary after the one re-run, is a failed review, and so are `NEEDS_ROWS` and `NO_CONTRACT`: all abort 9. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
 
 It runs **after** every code-mutating phase. Run before simplify, it computed its verdict against a diff that no longer existed: the anchors it cited could be deleted by the time the PR opened, and simplify's own edits were never audited by anything.
 
@@ -243,6 +250,8 @@ The two local reviews are the two a bot cannot do. The spec axis, because CodeRa
 A `BLOCK` verdict aborts the run. Opening a PR that carries a known `MISSING` row is the failure the gate in step 1 exists to prevent, arriving eight phases later.
 
 **`Spec-review BLOCK: lenient` buys one fix-and-rerun, for strays only.** When every row behind the `BLOCK` is a stray the ticket never asked for, delete those changes, re-run step 4's typecheck, lint and tests, then run step 9's command once more — never `/spec-review` in this session. A second `BLOCK` aborts. A `MISSING` criterion aborts at once, lenient or not: deleting code cannot supply a criterion. An absent key reads as `strict`. Name every deleted stray in the PR body, so the reviewer sees what the run took back out.
+
+**A `BLOCK` the user rules on resumes here.** Add the ruling to `ticket.md`'s `## Decisions` with its own row, and record it in an empty commit (`git commit --allow-empty`) whose message carries the ruling, since `ticket.md` lives outside the worktree. A ruling that only settles scope re-runs step 9's command at once. A ruling that asks for code goes back to step 3, and every step from there runs again. Rename the blocked report to `spec-review.run1.md` beside the new one: it is the run's record of what the gate caught. Remove the draft's abort line once the run resumes.
 
 ### 10. Shoot and assert — frontend track
 
@@ -283,7 +292,7 @@ Done when every claim the body will make has a step behind it, and every step is
 
 Write the body to the sections `## Delivery` allows, in that order, carrying the shots from step 10, any clip or backend proof table from step 10b, the step-1 decisions, the out-of-scope findings from step 8, every finding refused in steps 5, 7 and 8, and any `UNASSERTED` or `UNOBSERVED` state.
 
-**A refusal is one `Refused:` line**: the finding's claim word for word, then the reason in one clause. A refusal the reviewer of the PR never sees is the author's word closing its own finding. The markdown for a shot and for a clip is printed by the skill that produced it; paste what it gives you.
+**A refusal is one `Refused:` line**: the finding's claim word for word, then the reason in one clause. A refusal the reviewer of the PR never sees is the author's word closing its own finding. `Refused:` lines and `Considered, not proposed` lines go under the section `## Delivery` names for out-of-scope work, `Out of scope` when it names none. The markdown for a shot and for a clip is printed by the skill that produced it; paste what it gives you, reshaped only where `## Delivery`'s body rules forbid its form.
 
 **Every artifact offered as proof is uploaded, or it is not proof.** A file on a local branch, in a worktree, or at a path in a report is invisible to the person being asked to believe it — they cannot open it, so the claim it backs reverts to your word. This bites hardest on the artifact that cost the most to make: a recorded clip is the strongest evidence a run produces and the easiest to leave sitting on disk, because recording it feels like the finish line.
 
@@ -291,7 +300,7 @@ So the producing skill runs with its upload flag, and the returned URL goes in t
 
 Keeping the bundle off the remote is about **branches**, not evidence. Commit the flow module, the wire log and the frames wherever the config says, and upload the thing a reviewer has to see regardless.
 
-**Aim for 300 words, or 550 with a live-verification section.** A longer body is one nobody reads, and an unread body fails at the only thing it is for. Two measured bodies came in at 1016 and 808 words and lost nothing at 335 and 300.
+**Aim for 300 words, or 550 with a live-verification section**, counting prose only: an image or clip line and its one-line label add no words. A longer body is one nobody reads, and an unread body fails at the only thing it is for. Two measured bodies came in at 1016 and 808 words and lost nothing at 335 and 300.
 
 A recorded body runs longer for a reason that is not padding: each clip costs a caption, and the section costs a pointer to the wire log. One measured at 551 with nothing to cut. Trimming a caption to reach 300 makes the clip *less* likely to be played, which is the failure the aim exists to prevent.
 
@@ -366,7 +375,7 @@ Done when every proposed follow-up passes the admission bar above and names its 
 
 Runs only when no abort fired. `gh pr ready <n>`.
 
-**Wait on the `CodeRabbit` check's description, never its state.** The check reads `pass` for `Review completed` and for `Review rate limited` alike, and a rate-limited review posts no threads — read as clean, it passes a PR nothing looked at. Watch CI in the same wait (`gh pr checks <n> --watch`): CI takes about ten minutes, CodeRabbit about five.
+**Wait on the `CodeRabbit` check's description, never its state.** The check reads `pass` for `Review completed` and for `Review rate limited` alike, and a rate-limited review posts no threads — read as clean, it passes a PR nothing looked at. Watch CI in the same wait (`gh pr checks <n> --watch`): CI takes about ten minutes, CodeRabbit about five. `--watch` can exit while the `CodeRabbit` check still reads `Review in progress`, so keep polling that check's description (`gh pr checks <n> --json name,description`, once a minute) until it reads `Review completed` or `Review rate limited`.
 
 - `Review completed` — work the threads.
 - `Review rate limited` on a re-review, after the bot already completed one on this PR — ignore it. A push that only answers the bot's threads needs no second review.

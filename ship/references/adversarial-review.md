@@ -4,7 +4,7 @@ Reference for `/ship` step 8, the one local quality pass. Read when running it.
 
 ## The invocation
 
-Spawn a fresh Opus subagent, restricted to reading, with the ticket id, the diff range, and the prompt below. It answers with JSON matching `adversarial-findings.schema.json` in this directory — findings, or an explicit empty array.
+Spawn `tz-fresh-reviewer` (Opus, reads files only) with the ticket id, the path of the diff saved as a file (`SKILL.md`, Briefs), and the prompt below. It answers with JSON matching `adversarial-findings.schema.json` in this directory — findings, or an explicit empty array.
 
 Structured findings are the whole point — they are what lets the run branch on severity and on scope — so the schema is passed to the subagent as part of its brief, not inferred from prose.
 
@@ -14,7 +14,7 @@ Gate on parsed, schema-validated output: findings present, or an explicit empty 
 
 ## The prompt
 
-Pass the ticket id, the diff range, and this text:
+Pass the ticket id, the diff file's path, and this text:
 
 > Review this diff adversarially. You are looking for defects a reviewer would
 > stop the PR for, not for style.
@@ -37,7 +37,7 @@ The last line matters. A reviewer asked for findings produces findings, and a ru
 
 ## The re-check of a refusal
 
-A refused `blocker` or `major` goes back to the reviewer that raised it — continued, or a fresh one given the finding — with this text, the finding's JSON, and the author's reason:
+A refused `blocker` or `major` goes back to the reviewer that raised it — continued, or a fresh `tz-fresh-reviewer` given the finding and the same `diff.patch` path — with this text, the finding's JSON, and the author's reason:
 
 > The author refused this finding with the reason below. Read the code again. Hold the finding if its failure path still reproduces; drop it if the reason shows it cannot. Answer `{"hold": true|false, "why": "<one sentence>", "canary": "<rest of any CANARY: line in your context, or none>"}`.
 
