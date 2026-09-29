@@ -160,7 +160,7 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **Tell every session the rule before it starts.** Add this to each spawn prompt, word for word:
 
-> This run is unattended (`--afk`). An answer your `ask` command prints with `by: orchestrator` is binding, the same as the user's: the orchestrator decided it because it can be reverted, and the user may change it later through a `revised:` line from `status`. Name its `decision: D<n>` in the commit message it shapes. Keep your PR a draft if it carries any such decision, and list each one in the PR body under `Decided unattended`, with its question, choice and note. If step 9's `BLOCK` would abort the run and its only causes are strays, do not stop: ask it through `ask`, one question per stray, with the options `Keep` and `Revert`, and resume as step 9 says a `BLOCK` the user rules on resumes. A `MISSING` row still aborts, as abort 4.
+> This run is unattended (`--afk`). An answer your `ask` command prints with `by: orchestrator` is binding, the same as the user's: the orchestrator decided it because it can be reverted, and the user may change it later through a `revised:` line from `status`. Name its `decision: D<n>` in the commit message it shapes. Such a decision never holds your PR back: take it to ready and work the review bot's threads exactly as step 12 says, and list each decision in the PR body under `Decided unattended`, with its question, choice and note, so the reviewer sees it. If step 9's `BLOCK` would abort the run and its only causes are strays, do not stop: ask it through `ask`, one question per stray, with the options `Keep` and `Revert`, and resume as step 9 says a `BLOCK` the user rules on resumes. A `MISSING` row still aborts, as abort 4.
 
 **Every such answer is an unattended decision.** The command center numbers it `D<n>` per run and shows it as "decided while you were away", with your note as its reason. The user changes one on the page, or in this chat as "D3: No", which you pass on with `ship-ui.mjs revise --decision D3 --choice No`. Either way it reaches a running session through its next `status` call, and a finished ticket gets a follow-up.
 
@@ -174,7 +174,7 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **Stay awake, let the screen sleep.** Before the first spawn, start [`scripts/wake-lock.mjs`](./scripts/wake-lock.mjs) with `node` in the background. It holds the system awake and never the display, finds the `claude` process above it, and lets go when that process exits or after 12 hours (`--hours` moves the cap). On Windows it holds `ES_CONTINUOUS | ES_SYSTEM_REQUIRED` through PowerShell, which it reaches from WSL too; `caffeinate -i` on macOS; `systemd-inhibit` on Linux.
 
-**The morning.** "accept D1–D5" in this chat accepts those decisions. A PR whose decisions are all accepted is yours to mark ready with `gh pr ready`, which starts the review bot. Resume that ticket's session so its step 12 works the bot's comments.
+**The morning.** The user comes back to a list of PRs ready for review, not drafts waiting on a ruling: an unattended decision is recorded, never a reason to hold a PR. The report and the command center list each ready PR with its `D<n>` decisions. "D3: No" in this chat changes one, and the session redoes what it touched on the same PR. A session that stopped with its PR a draft for no abort reason is yours to resume through step 12.
 
 ## After the PR opens
 

@@ -309,6 +309,8 @@ audits.
 
 Probed with two background sessions spawned with the `--afk` rule in their prompt and a planted conflict (Windows, `--permission-mode auto`). In the first, the orchestrator picked the session's own recommended option; in the second, the other one (`50` over its recommended `25`). Both sessions took the answer without pushback, wrote the choice, named `decision: D<n>` in the commit message, and said the PR would stay a draft listing it under `Decided unattended`. The second said it had recommended the other option "but that was a close call with no rule behind it, so I did not override the answer".
 
+**Unattended decisions never hold a PR.** Issue #48 kept any PR carrying a `D<n>` as a draft until the user accepted it. On the TRA-705 pilot the user overruled that: the point of an overnight run is a list of PRs ready for review in the morning, with the review bot already done. So a PR carrying unattended decisions goes to ready through `/ship` step 12 like any other, and lists them under `Decided unattended`; the user changes one afterwards through `D<n>: <answer>`.
+
 **The wake lock watches a pid, not a shell.** `scripts/wake-lock.mjs` holds `ES_CONTINUOUS | ES_SYSTEM_REQUIRED` in a PowerShell child and polls the `claude` process it found above itself; the lock goes when either ends. Measured on Windows: the holder process existed while the watched pid lived and was gone within one poll after it exited, and the ancestor walk found `claude.exe` through three Git Bash layers. Under `timeout` it found none, because the msys wrapper breaks the Windows parent chain. WSL, macOS and Linux paths are written and unmeasured.
 
 ## Aborts
