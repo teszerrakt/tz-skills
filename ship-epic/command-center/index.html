@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ship</title>
+<link rel="icon" id="favicon" type="image/svg+xml" href="">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
   :root {
@@ -80,6 +81,7 @@
   .current span:first-child { flex: 1; }
   .pill { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 9px 2px; border: 1px solid currentColor; white-space: nowrap; }
   .runpick { appearance: none; -webkit-appearance: none; font: 500 12.5px/1 var(--mono); color: var(--ink); background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238f8f8f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; border: 1px solid var(--line); border-radius: 6px; padding: 8px 32px 8px 12px; cursor: pointer; max-width: min(340px, 60vw); text-overflow: ellipsis; }
+  .afk { font: 600 11px/1 var(--mono); letter-spacing: .06em; color: #0a0a0a; background: var(--you); border-radius: 4px; padding: 4px 6px; }
   .runpick:hover { border-color: var(--dim); }
   .runpick option { background: var(--panel); color: var(--ink); }
   .switch { display: inline-flex; align-items: center; gap: 10px; background: none; border: 0; padding: 4px 2px; color: var(--soft); font-size: 13px; font-weight: 500; cursor: pointer; }
@@ -144,6 +146,7 @@
   <span class="brand">SHIP</span>
   <span class="bar"></span>
   <select class="runpick" id="runPick" aria-label="Which run to show"></select>
+  <span class="afk" id="afk" title="Unattended run: the orchestrator decides what can be undone" hidden>AFK</span>
   <span class="mono" id="runId" style="color: var(--you)"></span>
   <span class="grow"></span>
   <button type="button" class="switch" id="toasts" role="switch" aria-checked="true" hidden><span class="track"><span class="knob"></span></span><span>Pop-ups</span></button>
@@ -265,6 +268,15 @@ function segs(t, tall) {
   const done = t.key === 'done' || t.key === 'merged'
   return el('div', { class: 'segs' + (tall ? ' tall' : ''), 'aria-hidden': 'true' },
     Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done || i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })))
+}
+
+// A sailboat; an orange dot while a question waits.
+function favicon(waiting) {
+  const dot = waiting ? "<circle cx='25' cy='7' r='5.5' fill='%23f5a623' stroke='%23000' stroke-width='1.5'/>" : ''
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230a0a0a'/>"
+    + "<path d='M15 6v15H7z' fill='%23ededed'/><path d='M17 9l7 12h-7z' fill='%2352a8ff'/><path d='M5 23h22l-3.5 4h-15z' fill='%23ededed'/>" + dot + '</svg>'
+  const href = 'data:image/svg+xml,' + svg
+  if ($('favicon').getAttribute('href') !== href) $('favicon').setAttribute('href', href)
 }
 
 function renderToasts() {
@@ -489,7 +501,10 @@ function renderMid() {
   const open = state.questions.filter((q) => !q.answer)
   const stopped = new Set(open.map((q) => q.ticket)).size
   const t = ui.ticket && tickets().find((x) => x.ticket === ui.ticket)
-  document.title = (open.length ? `(${open.length}) ` : '') + 'Ship'
+  const run = state.run
+  document.title = (open.length ? `(${open.length}) ` : '') + [run?.id, run?.afk && 'AFK', ui.view && 'past run', 'Ship'].filter(Boolean).join(' · ')
+  $('afk').hidden = !run?.afk
+  favicon(open.length > 0)
 
   const active = document.activeElement
   const draft = active?.dataset?.draft
