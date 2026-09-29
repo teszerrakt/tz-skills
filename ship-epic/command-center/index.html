@@ -509,7 +509,7 @@ function route() {
 }
 
 async function loadRuns() {
-  try { ui.runs = await (await fetch('/api/runs')).json() } catch { ui.runs = [] }
+  try { const r = await (await fetch('/api/runs')).json(); ui.runs = Array.isArray(r) ? r : [] } catch { ui.runs = [] }
   const pick = $('runPick')
   pick.replaceChildren(...ui.runs.map((r) => el('option', { value: r.live ? '' : r.id, selected: (r.live ? '' : r.id) === ui.view },
     `${r.id}${r.live ? ' · live' : ''}${r.startedAt ? ' · ' + new Date(r.startedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}`)))
