@@ -18,8 +18,12 @@ Design and the probe evidence behind every claim here: [`docs/ship-epic-design.m
 Spawn each ticket as its own background session, and run as one yourself:
 
 ```bash
-claude --bg -n TRA-424 "/ship TRA-424 …"
+claude --bg -n TRA-424 --settings '{"disableAllHooks":true,"agentPushNotifEnabled":false}' "/ship TRA-424 …"
 ```
+
+**Spawn it with hooks and push notifications off.** Hooks from the user's settings and every plugin fire in every session, so a spawned session that waits or finishes triggers them on its own, bypassing the alarm rule under *Human contact*. The flag turns off every hook, the repo's own included, and `agentPushNotifEnabled` turns off the built-in push notification a session can send on its own. Run the spawn from bash (Git Bash on Windows): Windows PowerShell 5.1 strips the JSON's inner quotes. If the classifier refuses the flag, report an allowlist gap; never spawn without it.
+
+Step 0's per-worktree opt-outs are written after the session enters its worktree, and a `settings.local.json` written then was never read (probes `wt` and `wt2` in the design doc). The flag covers hooks regardless, but whether step 0's `enabledPlugins` opt-out takes effect was not probed and is still open.
 
 Never a subagent. A subagent's grant carries no `ListAgents`, no `SendMessage` and no `AskUserQuestion` — even one declared `Tools: *` — so it can neither coordinate nor ask, and `/ship`'s reconcile gate exists to ask. A session holds all three.
 
