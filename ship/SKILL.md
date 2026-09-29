@@ -125,7 +125,7 @@ Record every decision, rule-settled and asked alike, in the **commit message and
 
 The acceptance criteria stay exactly as written, wherever the record lands. `/spec-review` builds one ledger row per criterion and demands an anchor, so criteria edited to match what was built make every row pass by construction. A commit is append-only and is itself an anchor.
 
-**Write the ledger rows here, before any code exists**, in `/spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, outside the worktree: a file inside it is a stray to step 9. Step 9's reviewer rejects rows whose quotes are not in `ticket.md` word for word, and a ticket criterion no row quotes. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
+**Write the ledger rows here, before any code exists**, in `/spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, then append a `## Decisions` section holding every answer and precedence ruling from this step — without it step 9 reads each one as a stray. Keep both outside the worktree: a file inside it is a stray to step 9. Run spec-review's driven row check on them now (its Driven mode lists it): step 9 rejects rows that fail it, and here a failure costs a rewrite, not a finished build. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
 
 **A criterion the build departs from is reported, never quietly reconciled.** Say so in the PR body, in its own paragraph, naming the criterion and what replaced it — that is the one place a reviewer looks for it.
 
@@ -355,9 +355,10 @@ Runs only when no abort fired. `gh pr ready <n>`.
 **Wait on the `CodeRabbit` check's description, never its state.** The check reads `pass` for `Review completed` and for `Review rate limited` alike, and a rate-limited review posts no threads — read as clean, it passes a PR nothing looked at. Watch CI in the same wait (`gh pr checks <n> --watch`): CI takes about ten minutes, CodeRabbit about five.
 
 - `Review completed` — work the threads.
-- `Review rate limited` — wait the time the bot's own comment names, then post `@coderabbitai review` once. Still limited: report `RATE_LIMITED`, a third state beside reviewed and clean, and run the fallback reviewer below.
+- `Review rate limited` on a re-review, after the bot already completed one on this PR — ignore it. A push that only answers the bot's threads needs no second review.
+- `Review rate limited` before the bot ever completed one — wait the time the bot's own comment names, then post `@coderabbitai review` once. Still limited: report `RATE_LIMITED`, a third state beside reviewed and clean, and run the fallback reviewer below.
 
-**A PR the bot never reviewed gets step 8's reviewer instead.** Run it once against the final head, with the same prompt, schema and scope rule, and work its findings exactly as step 8 does: fix in scope under this step's push rules, send a refused `blocker` or `major` back for the re-check, and add each refusal to the body as a `Refused:` line, then read the body back. A `blocker` the reviewer still holds is abort 10. The PR stays ready, and the run report asks the user to post `@coderabbitai review` once the limit lifts: the bot never re-tries on its own, and a session that re-asks only spends the shared limit. The run reports it as **waiting on CodeRabbit**, never as ready for review: a PR is ready for review only once the bot has finished and every thread it opened is answered.
+**A PR the bot never reviewed gets step 8's reviewer instead.** Run it against the final head, with the same prompt, schema and scope rule, and work its findings exactly as step 8 does, two rounds included: fix in scope under this step's push rules, send a refused `blocker` or `major` back for the re-check, and add each refusal to the body as a `Refused:` line, then read the body back. A `blocker` or `major` still open after the second round is abort 10. The PR stays ready, and the run report asks the user to post `@coderabbitai review` once the limit lifts: the bot never re-tries on its own, and a session that re-asks only spends the shared limit. The run reports it as **waiting on CodeRabbit**, never as ready for review: a PR is ready for review only once the bot has finished and every thread it opened is answered.
 
 Work the threads through `/address-review --driven <n>`: one pass, no question per thread, the fix committed and pushed by you, replies carrying the real SHA, nothing resolved. The brief carries the diff range and step 8's scope rule — a fix lands only in files the diff already touches, and anything else becomes a reply plus, only if it passes 11b's admission bar, a `Follow-ups` line in 11b's shape.
 
@@ -386,6 +387,6 @@ Each stops the run with a report. Aborts 1–2 fire before step 4b and leave **n
 | 7 | CI still red after two self-fix attempts in step 12 |
 | 8 | The backend's live target never came up — `backend-track.md`, Live target |
 | 9 | Step 9 printed no verdict line, or `NEEDS_ROWS` or `NO_CONTRACT` |
-| 10 | Step 12's fallback reviewer holds a `blocker` after the re-check |
+| 10 | Step 12's fallback reviewer has a `blocker` or `major` open after two rounds |
 
 Token spend is not an abort condition. The phase list fixes the cost, and a running orchestrator cannot measure its own spend.

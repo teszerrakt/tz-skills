@@ -171,6 +171,8 @@ A ready PR passed every phase. A draft one did not, and its body says which.
 | 3 | `/spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
 | 4 | An assert `FAIL` that survives the expectation re-check |
 | 5 | Two adversarial-review rounds with findings still open |
+| 5b | `/spec-review` printed no verdict, or `NEEDS_ROWS` / `NO_CONTRACT` — `/ship` abort 9 |
+| 5c | The rate-limit fallback reviewer holds a `blocker` or `major` — `/ship` abort 10, PR back to draft |
 | 6 | A denied command — session stopped, the exact command reported |
 | 7 | A backend live target that never came up |
 

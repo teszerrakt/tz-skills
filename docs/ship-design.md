@@ -146,7 +146,7 @@ table below is the order that shipped.
 | 6 | Smoke the changed route | config-named skill | a dirty console |
 | 7 | Simplify | two agents, below | — |
 | 8 | Adversarial review | Opus subagent, read-only | two rounds with findings open |
-| 9 | Spec review | `/spec-review --driven`, fresh `claude -p` session, rows from step 1 | verdict `BLOCK`; `NEEDS_ROWS` parks |
+| 9 | Spec review | `/spec-review --driven`, fresh `claude -p` session, rows from step 1 | verdict `BLOCK`; no verdict, `NEEDS_ROWS` or `NO_CONTRACT` |
 | 10 | Shots + assert | config-named skill | assert `FAIL` |
 | 10b | Verify live | config-named skill | step `FAIL`, or a claim with no wire line |
 | 11 | Draft PR | `/ship` (main) | — |

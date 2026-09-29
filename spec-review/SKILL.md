@@ -156,6 +156,7 @@ Then take one verdict:
 | `PASS_WITH_NOTES` | Every row `MET`, `PARTIAL` with an anchor, or `DEFERRED`; every unasked change `IMPLIED` or `AMBIGUOUS`. |
 | `PASS` | Every row `MET`, no unasked change. |
 | `NO_CONTRACT` | No ticket resolves. Report the PR body's own claimed intent, say no contract exists, and stop. |
+| `NEEDS_ROWS` | Driven mode only: the given rows fail the check against the ticket. See Driven mode. |
 
 With several tickets, take the worst verdict across the ledgers.
 
@@ -223,8 +224,11 @@ Write no `❓` section when nothing needs deciding; end with one line saying not
 `/spec-review --driven <base>...<head> --rows <rows.json> --ticket <ticket.md>` is for a driver such as `/ship` step 9. The driver starts it in a fresh session, because its own context is the author's, and an author reads its own diff as meeting the rows.
 
 - **The rows arrive confirmed.** Skip step 3: the driver extracted them before any code existed and asked about the doubtful ones then. Never extract rows here: nobody is left to confirm them, and the paraphrase would be the grader's own.
-- **Check the rows against the ticket before grading.** Every row's quote must appear in `--ticket` word for word, and every acceptance criterion or numbered scope line in it must be quoted by some row. The author wrote the rows unwatched, so a row it dropped or reworded would pass silently. Return `NEEDS_ROWS` naming each failing row and each unquoted line — also when `--rows` is absent, empty, or not valid JSON.
-- **The contract is `--ticket`.** Step 2 reads that file in place of the tracker. Everything else in step 2 still applies.
+- **Check the rows against the ticket before grading.** The author wrote the rows unwatched, so a row it dropped, narrowed or reworded would pass silently. Return `NEEDS_ROWS` naming each failure — also when `--rows` is absent, empty, or not valid JSON:
+  - a quote not in `--ticket`, comparing with whitespace and markdown ignored, and each side of a `...` matched on its own
+  - a row that says less than its quote
+  - a requirement no row quotes: every acceptance criterion and numbered scope line, or on a ticket with neither, every sentence that says what must or must not happen
+- **The contract is `--ticket`.** Step 2 reads that file in place of the tracker. Its `## Decisions` section, the driver's rulings from before the build, counts as ticket comments do: a change it settles is not a stray. Everything else in step 2 still applies.
 - **The diff range is the argument.** Step 1 resolves nothing else.
 - **Config never asks.** A value no file states takes its default, named in the report.
 - Steps 4–6 run unchanged: agents A and B, the parent's anchor check, the verdict. Run as a subagent, which cannot spawn agents, work B's brief first and A's second, yourself: a completeness pass run first biases the stray pass, not the reverse.
