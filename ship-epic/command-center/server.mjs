@@ -29,7 +29,7 @@ const SEVERITIES = ['blocker', 'major', 'minor', 'note']
 const OUTCOMES = ['open', 'fixed', 'refused', 'withdrawn', 'held']
 
 fs.mkdirSync(DATA_DIR, { recursive: true })
-let state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [] }
+let state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {} }
 if (fs.existsSync(STATE_FILE)) state = { ...state, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }
 
 const streams = new Set()
@@ -46,6 +46,61 @@ function save() {
   fs.writeFileSync(tmp, JSON.stringify(state, null, 2))
   fs.renameSync(tmp, STATE_FILE)
   for (const res of streams) res.write(`data: ${JSON.stringify(state)}\n\n`)
+}
+
+// The page lists every worker it holds, so a new run must not inherit the last one's.
+// What belongs to another run moves to runs/<id>.json; an unanswered question stays, since its worker still waits.
+function archiveOtherRuns(prev) {
+  const id = state.run?.id
+  if (!id) return false
+  const mine = new Set([...(state.run.tickets || []).map((t) => t.ticket), ...Object.values(state.workers).filter((w) => w.run === id).map((w) => w.ticket)])
+  const keep = (ticket) => mine.has(ticket)
+  const out = {}
+  const split = (key, test) => {
+    const all = state[key]
+    if (Array.isArray(all)) {
+      out[key] = all.filter((x) => !test(x))
+      state[key] = all.filter(test)
+    } else {
+      out[key] = Object.fromEntries(Object.entries(all).filter(([k, v]) => !test(v, k)))
+      state[key] = Object.fromEntries(Object.entries(all).filter(([k, v]) => test(v, k)))
+    }
+  }
+  split('workers', (w, k) => keep(k))
+  split('prs', (p, k) => keep(k))
+  split('events', (e, k) => keep(k))
+  split('outbox', (o, k) => keep(k))
+  split('followUps', (f) => keep(f.ticket))
+  split('questions', (q) => !q.answer || q.run === id || (!q.run && keep(q.ticket)))
+  split('decisions', (d) => d.run === id || (!d.run && keep(d.ticket)))
+  split('findings', (f) => f.run === id || (!f.run && keep(f.ticket)))
+  split('reviews', (r) => r.run === id || (!r.run && keep(r.ticket)))
+  const moved = Object.values(out).reduce((n, v) => n + (Array.isArray(v) ? v.length : Object.keys(v).length), 0)
+  if (!moved) return false
+  // Each item goes to the run it names, else its ticket's worker's run, else the run being replaced.
+  const byRun = {}
+  for (const [key, v] of Object.entries(out)) {
+    for (const [k, item] of Array.isArray(v) ? v.map((x) => [x.ticket, x]) : Object.entries(v)) {
+      const run = item.run || out.workers[k]?.run || prev?.id || 'earlier'
+      const part = ((byRun[run] ||= {})[key] ||= Array.isArray(v) ? [] : {})
+      if (Array.isArray(part)) part.push(item)
+      else part[k] = item
+    }
+  }
+  for (const [run, part] of Object.entries(byRun)) {
+    const old = readRun(run) || {}
+    const merged = { ...old, run: prev?.id === run ? prev : old.run || { id: run, title: '' } }
+    for (const [key, v] of Object.entries(part)) merged[key] = Array.isArray(v) ? [...(old[key] || []), ...v] : { ...(old[key] || {}), ...v }
+    fs.writeFileSync(runFile(run), JSON.stringify(merged, null, 2))
+  }
+  return true
+}
+
+const RUNS_DIR = path.join(DATA_DIR, 'runs')
+const runFile = (id) => path.join(RUNS_DIR, `${id.replace(/[^\w.-]/g, '_')}.json`)
+function readRun(id) {
+  fs.mkdirSync(RUNS_DIR, { recursive: true })
+  return fs.existsSync(runFile(id)) ? JSON.parse(fs.readFileSync(runFile(id), 'utf8')) : null
 }
 
 function log(ticket, kind, text, detail = '') {
@@ -132,6 +187,30 @@ async function refreshPrs() {
   if (changed) save()
 }
 setInterval(refreshPrs, 120_000).unref()
+
+// Sessions are named after their ticket (ship-epic's spawn line); the orchestrator's name starts with the run id.
+function readSessions() {
+  const run = state.run
+  if (!run?.id) return
+  execFile('claude', ['agents', '--json'], { windowsHide: true, timeout: 20_000 }, (err, out) => {
+    if (err) return
+    let agents
+    try { agents = JSON.parse(out) } catch { return }
+    const tickets = new Set([...(run.tickets || []).map((t) => t.ticket), ...Object.keys(state.workers)])
+    const next = { ...(state.sessions || {}) }
+    for (const key of Object.keys(next)) next[key] = { ...next[key], status: 'gone' }
+    for (const a of agents) {
+      const name = String(a.name || '')
+      const key = [...tickets].find((t) => t.toLowerCase() === name.toLowerCase())
+        || (name.toLowerCase().startsWith(run.id.toLowerCase()) ? 'orchestrator' : '')
+      if (key) next[key] = { id: a.id, sessionId: a.sessionId, name, status: a.status || '', cwd: a.cwd || '' }
+    }
+    if (JSON.stringify(next) === JSON.stringify(state.sessions || {})) return
+    state.sessions = next
+    save()
+  })
+}
+setInterval(readSessions, 60_000).unref()
 
 function openBrowser(hash = '') {
   spawn('cmd.exe', ['/c', 'start', '', `${ORIGIN}/${hash ? '#' + hash : ''}`], { windowsHide: true, detached: true }).unref()
@@ -281,6 +360,21 @@ async function route(req, res) {
     return res.end(fs.readFileSync(path.join(HERE, 'index.html')))
   }
   if (req.method === 'GET' && url.pathname === '/api/state') return send(res, 200, state)
+  if (req.method === 'GET' && url.pathname === '/api/runs') {
+    fs.mkdirSync(RUNS_DIR, { recursive: true })
+    const past = fs.readdirSync(RUNS_DIR).filter((f) => f.endsWith('.json')).map((f) => {
+      try { return JSON.parse(fs.readFileSync(path.join(RUNS_DIR, f), 'utf8')).run } catch { return null }
+    }).filter((r) => r?.id && r.id !== state.run?.id)
+    const all = [...(state.run ? [{ ...state.run, live: true }] : []), ...past]
+    return send(res, 200, all.map((r) => ({ id: r.id, title: r.title, startedAt: r.startedAt || '', live: !!r.live }))
+      .sort((a, b) => (b.live - a.live) || String(b.startedAt).localeCompare(String(a.startedAt))))
+  }
+  if (req.method === 'GET' && parts[0] === 'api' && parts[1] === 'runs' && parts[2]) {
+    const id = decodeURIComponent(parts[2])
+    if (id === state.run?.id) return send(res, 200, state)
+    const r = readRun(id)
+    return r ? send(res, 200, r) : send(res, 404, { error: 'no such run' })
+  }
   if (req.method === 'GET' && url.pathname === '/api/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive' })
     res.write(`data: ${JSON.stringify(state)}\n\n`)
@@ -291,6 +385,7 @@ async function route(req, res) {
   if (req.method === 'POST' && url.pathname === '/api/run') {
     const b = await readBody(req)
     if (!text(b.id, 40)) return send(res, 400, { error: 'id is required' })
+    const prev = state.run
     state.run = {
       id: text(b.id, 40), title: text(b.title, 200), summary: text(b.summary, 600), repo: text(b.repo, 80),
       target: text(b.target, 80), where: text(b.where, 120), github: text(b.github, 120), startedAt: text(b.startedAt, 40) || now(),
@@ -299,7 +394,10 @@ async function route(req, res) {
         after: text(t.after, 40), url: text(t.url, 300),
       })).filter((t) => t.ticket),
     }
+    if (prev?.id !== state.run.id) state.sessions = {}
+    archiveOtherRuns(prev)
     save()
+    readSessions()
     refreshPrs()
     return send(res, 200, state.run)
   }
@@ -443,6 +541,7 @@ async function route(req, res) {
     save()
     pump()
     if (b.pr || stopped) refreshPrs()
+    if (!state.sessions?.[ticket]) readSessions()
     return send(res, 200, { ok: true, revisions })
   }
 
@@ -458,6 +557,8 @@ server.on('error', (e) => {
 })
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`ship-ui on ${ORIGIN}`)
+  if (archiveOtherRuns()) save()
+  readSessions()
   pump()
   refreshPrs()
 })

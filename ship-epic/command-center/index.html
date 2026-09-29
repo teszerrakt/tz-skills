@@ -130,7 +130,8 @@
 <header>
   <span class="brand">SHIP</span>
   <span class="bar"></span>
-  <span class="mono" id="runId" style="color: var(--soft)"></span>
+  <select class="mono" id="runPick" aria-label="Which run to show" style="background: var(--bg); color: var(--soft); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px"></select>
+  <span class="mono" id="runId" style="color: var(--you)"></span>
   <span class="grow"></span>
   <span class="where" id="where" hidden></span>
   <span class="mono" id="live">connecting</span>
@@ -187,6 +188,7 @@ function icon(name, size = 16) {
 }
 const ui = { tab: 'inbox', ticket: '', revising: '', pick: '', note: '', drafts: {} }
 let state = null
+let live = null
 const $ = (id) => document.getElementById(id)
 
 function el(tag, attrs = {}, ...kids) {
@@ -232,6 +234,18 @@ function tickets() {
 const label = (name, text, style) => el('div', { class: 'label', style }, icon(name, 15), text)
 const stat = (t) => el('span', { class: 'st ' + t.tone }, icon(TONE_ICON[t.tone], 14), t.word)
 const brain = (t) => t.w?.model || ''
+const sess = (key) => state.sessions?.[key]
+function attachLine(key) {
+  const x = sess(key)
+  if (!x?.id) return ''
+  const cmd = `claude attach ${x.id}`
+  const btn = el('button', { type: 'button', class: 'btn quiet', style: 'min-height: 28px; padding: 0 8px', onclick: async (e) => {
+    e.stopPropagation()
+    try { await navigator.clipboard.writeText(cmd); btn.textContent = 'copied' } catch { btn.textContent = 'copy failed' }
+  } }, 'copy')
+  return el('div', { class: 'mono with', title: `session ${x.sessionId || x.id}${x.cwd ? ' in ' + x.cwd : ''}` },
+    icon('link', 13), cmd, x.status === 'gone' ? ' · session ended' : '', btn)
+}
 
 function segs(t, tall) {
   const done = t.key === 'done' || t.key === 'merged'
@@ -244,7 +258,7 @@ function renderLeft() {
   const all = tickets().filter((t) => !run || t.group > 0)
   const merged = all.filter((t) => t.key === 'merged').length
   const groups = [...new Set(all.map((t) => t.group))].sort((a, b) => a - b)
-  $('runId').textContent = run ? `${run.id} run` : 'no run set'
+  $('runId').textContent = ui.view ? 'past run · read only' : run ? '' : 'no run set'
   $('where').hidden = !run?.where
   $('where').replaceChildren(...String(run?.where || '').split('·').map((part, i) => el('span', {}, icon(i === 0 ? 'monitor' : 'user', 15), part.trim())))
   $('left').replaceChildren(
@@ -252,6 +266,7 @@ function renderLeft() {
       label('box', 'What this run ships'),
       el('h1', {}, run?.title || 'No run is set yet'),
       run?.summary ? el('div', { class: 'summary' }, run.summary) : '',
+      run && sess('orchestrator') ? el('div', { class: 'stack', style: 'gap: 2px' }, el('div', { class: 'mono' }, 'Orchestrator'), attachLine('orchestrator')) : '',
       run ? el('div', { class: 'mono' }, [run.repo, run.target && `PRs target ${run.target}`, `started ${clock(run.startedAt)}`].filter(Boolean).join(' · '))
           : el('div', { class: 'summary' }, 'The orchestrator sets this when a run starts.')),
     all.length ? el('div', { class: 'stack' },
@@ -310,7 +325,7 @@ function decisionRow(d) {
       last ? el('div', { class: 'was' }, `changed ${clock(d.revisedAt)} · was "${last.choice}" · ${delivery}`) : '',
       d.note ? el('div', { class: 'why' }, d.note) : ''),
     el('div', { class: 'mono', style: 'padding-top: 2px' }, clock(d.at)),
-    !revising && d.options.length > 1 ? el('button', { type: 'button', class: 'btn', onclick: () => go({ revising: d.id, pick: '', note: '' }) }, icon('pencil', 14), 'Change') : '')
+    !revising && !ui.view && d.options.length > 1 ? el('button', { type: 'button', class: 'btn', onclick: () => go({ revising: d.id, pick: '', note: '' }) }, icon('pencil', 14), 'Change') : '')
   if (!revising) return el('div', { class: 'dec', id: 'd-' + d.id }, row)
 
   const note = el('textarea', { rows: 1, placeholder: 'Why the change? The worker reads this.', 'aria-label': 'Why you changed it', 'data-draft': 'rev' })
@@ -346,6 +361,8 @@ function story(t) {
       t.pr || t.w?.pr ? el('a', { class: 'with', href: t.pr?.url || t.w.pr, target: '_blank', rel: 'noopener' }, icon('pr', 13), t.pr ? 'PR #' + t.pr.number : 'PR') : '',
       t.url ? el('a', { class: 'with', href: t.url, target: '_blank', rel: 'noopener' }, icon('link', 13), 'Ticket') : ''),
     brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 14), brain(t)) : '',
+    attachLine(t.ticket),
+    sess(t.ticket)?.sessionId ? el('div', { class: 'mono' }, `session ${sess(t.ticket).sessionId}`) : '',
     el('div', { class: 'stack', style: 'gap: 8px' }, label('steps', t.at ? `Step ${t.at} of ${t.of}` : 'Steps'), segs(t, true)),
     found.length || reviews(t.ticket).length ? el('div', {}, label('alert', `Findings · ${found.filter((f) => f.outcome === 'open' || f.outcome === 'held').length} open`, 'padding-bottom: 10px'),
       reviewLine(t.ticket), found.map(findingRow)) : '',
@@ -475,7 +492,8 @@ function renderRight() {
       el('div', { class: 'doing' }, (t.key === 'merged' && !t.w ? t.title : t.w?.doing) || t.title || (t.after ? `Starts when ${t.after} is merged.` : '')),
       segs(t),
       t.at ? el('div', { class: 'mono' }, `step ${t.at} of ${t.of}`) : '',
-      brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 13), brain(t)) : ''))
+      brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 13), brain(t)) : '',
+      sess(t.ticket)?.id ? el('div', { class: 'mono' }, `attach ${sess(t.ticket).id}${sess(t.ticket).status === 'gone' ? ' · ended' : ''}`) : ''))
     : [el('div', { class: 'summary', style: 'padding-top: 14px' }, 'No worker has reported yet.')]))
 }
 
@@ -490,18 +508,38 @@ function route() {
   else if (hash) Object.assign(ui, { ticket: '', tab: state?.decisions.some((d) => d.id === hash && !state.questions.some((q) => q.id === hash && !q.answer)) ? 'decisions' : 'inbox' })
 }
 
+async function loadRuns() {
+  try { ui.runs = await (await fetch('/api/runs')).json() } catch { ui.runs = [] }
+  const pick = $('runPick')
+  pick.replaceChildren(...ui.runs.map((r) => el('option', { value: r.live ? '' : r.id, selected: (r.live ? '' : r.id) === ui.view },
+    `${r.id}${r.live ? ' · live' : ''}${r.startedAt ? ' · ' + new Date(r.startedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}`)))
+  pick.hidden = !ui.runs.length
+}
+const EMPTY = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {} }
+async function show(view) {
+  ui.view = view
+  ui.ticket = ''
+  state = view ? { ...EMPTY, ...(await (await fetch('/api/runs/' + encodeURIComponent(view))).json()) } : live
+  render()
+}
+
 function connect() {
   const es = new EventSource('/api/events')
   es.onopen = () => { $('live').replaceChildren(icon('pulse', 14), 'live'); $('live').className = 'mono with' }
   es.onmessage = (e) => {
-    const first = !state
-    state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], ...JSON.parse(e.data) }
+    const first = !live
+    const prevRun = live?.run?.id
+    live = { ...EMPTY, ...JSON.parse(e.data) }
+    if (live.run?.id !== prevRun) loadRuns()
+    if (ui.view) return
+    state = live
     if (first) route()
     render()
   }
   es.onerror = () => { $('live').replaceChildren(icon('alert', 14), 'not connected'); $('live').className = 'mono with off' }
 }
 connect()
+$('runPick').addEventListener('change', (e) => show(e.target.value))
 window.addEventListener('hashchange', () => { route(); render() })
 setInterval(() => { if (state && !document.activeElement?.dataset?.draft) render() }, 60000)
 </script>
