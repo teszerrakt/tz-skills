@@ -125,7 +125,7 @@ Record every decision, rule-settled and asked alike, in the **commit message and
 
 The acceptance criteria stay exactly as written, wherever the record lands. `/spec-review` builds one ledger row per criterion and demands an anchor, so criteria edited to match what was built make every row pass by construction. A commit is append-only and is itself an anchor.
 
-**Write the ledger rows here, before any code exists**, in `/spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md`, outside the worktree: a file inside it is a stray to step 9. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
+**Write the ledger rows here, before any code exists**, in `/spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, outside the worktree: a file inside it is a stray to step 9. Step 9's reviewer rejects rows whose quotes are not in `ticket.md` word for word, and a ticket criterion no row quotes. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
 
 **A criterion the build departs from is reported, never quietly reconciled.** Say so in the PR body, in its own paragraph, naming the criterion and what replaced it — that is the one place a reviewer looks for it.
 
@@ -217,10 +217,10 @@ Run `/spec-review` in driven mode, in a fresh headless session, with the rows st
 
 ```bash
 claude -p "/spec-review --driven <base>...<head> --rows <dir>/rows.json --ticket <dir>/ticket.md" \
-  --add-dir <dir> --allowedTools "Read,Grep,Glob,Bash(git:*),Agent" > <dir>/spec-review.md
+  --add-dir <dir> --allowedTools "Read,Grep,Glob,Agent,Bash(git:*),Bash(awk:*),Bash(head:*),Bash(gh pr list:*)" > <dir>/spec-review.md
 ```
 
-A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. Gate on the verdict line parsed from that file, never on the exit code, as step 8 gates on parsed JSON. No verdict line is a failed review. `NEEDS_ROWS` means step 1 wrote no rows, which parks the run as abort 1. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
+A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. A `-p` session cannot ask for a tool, so the grant covers every command spec-review runs. **When the spawn is refused** — an auto-mode parent cannot always start a child with its own grant (`docs/ship-epic-design.md`) — give the same driven brief to a fresh read-only subagent instead, and capture its answer the same way. Fresh context is what this step needs; the session only buys spec-review its own two agents. Gate on the first line of that file, `VERDICT: <verdict>`, never on the exit code, as step 8 gates on parsed JSON. A missing verdict line — both spawns refused, a crash, or none printed — is a failed review, and so are `NEEDS_ROWS` and `NO_CONTRACT`: all abort 9. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
 
 It runs **after** every code-mutating phase. Run before simplify, it computed its verdict against a diff that no longer existed: the anchors it cited could be deleted by the time the PR opened, and simplify's own edits were never audited by anything.
 
@@ -228,7 +228,7 @@ The two local reviews are the two a bot cannot do. The spec axis, because CodeRa
 
 A `BLOCK` verdict aborts the run. Opening a PR that carries a known `MISSING` row is the failure the gate in step 1 exists to prevent, arriving eight phases later.
 
-**`Spec-review BLOCK: lenient` buys one fix-and-rerun, for strays only.** When every row behind the `BLOCK` is a stray the ticket never asked for, delete those changes, re-run step 4's typecheck, lint and tests, then run `/spec-review` once more. A second `BLOCK` aborts. A `MISSING` criterion aborts at once, lenient or not: deleting code cannot supply a criterion. An absent key reads as `strict`. Name every deleted stray in the PR body, so the reviewer sees what the run took back out.
+**`Spec-review BLOCK: lenient` buys one fix-and-rerun, for strays only.** When every row behind the `BLOCK` is a stray the ticket never asked for, delete those changes, re-run step 4's typecheck, lint and tests, then run step 9's command once more — never `/spec-review` in this session. A second `BLOCK` aborts. A `MISSING` criterion aborts at once, lenient or not: deleting code cannot supply a criterion. An absent key reads as `strict`. Name every deleted stray in the PR body, so the reviewer sees what the run took back out.
 
 ### 10. Shoot and assert — frontend track
 
@@ -357,7 +357,7 @@ Runs only when no abort fired. `gh pr ready <n>`.
 - `Review completed` — work the threads.
 - `Review rate limited` — wait the time the bot's own comment names, then post `@coderabbitai review` once. Still limited: report `RATE_LIMITED`, a third state beside reviewed and clean, and run the fallback reviewer below.
 
-**A PR the bot never reviewed gets step 8's reviewer instead.** Run it once against the final head, with the same prompt, schema and scope rule, and fix the confirmed in-scope findings under this step's push rules. The PR stays ready, which is what lets the bot review it once the limit lifts. The run reports it as **waiting on CodeRabbit**, never as ready for review: a PR is ready for review only once the bot has finished and every thread it opened is answered.
+**A PR the bot never reviewed gets step 8's reviewer instead.** Run it once against the final head, with the same prompt, schema and scope rule, and work its findings exactly as step 8 does: fix in scope under this step's push rules, send a refused `blocker` or `major` back for the re-check, and add each refusal to the body as a `Refused:` line, then read the body back. A `blocker` the reviewer still holds is abort 10. The PR stays ready, and the run report asks the user to post `@coderabbitai review` once the limit lifts: the bot never re-tries on its own, and a session that re-asks only spends the shared limit. The run reports it as **waiting on CodeRabbit**, never as ready for review: a PR is ready for review only once the bot has finished and every thread it opened is answered.
 
 Work the threads through `/address-review --driven <n>`: one pass, no question per thread, the fix committed and pushed by you, replies carrying the real SHA, nothing resolved. The brief carries the diff range and step 8's scope rule — a fix lands only in files the diff already touches, and anything else becomes a reply plus, only if it passes 11b's admission bar, a `Follow-ups` line in 11b's shape.
 
@@ -373,12 +373,11 @@ Done when CI is green and either the `CodeRabbit` check reads `Review completed`
 
 ## Aborts
 
-Each stops the run with a report. Aborts 1–2 fire before step 4b and leave **no PR**. Every later abort leaves the draft with one line in the body saying why; abort 7 fires after promotion, so the PR first goes back to draft (`gh pr ready
-<n> --undo`). A ready PR always means every phase passed. It does not mean reviewed: only `Review completed` with every thread answered does.
+Each stops the run with a report. Aborts 1–2 fire before step 4b and leave **no PR**. Every later abort leaves the draft with one line in the body saying why; aborts 7 and 10 fire after promotion, so the PR first goes back to draft (`gh pr ready <n> --undo`). A ready PR always means every phase passed. It does not mean reviewed: only `Review completed` with every thread answered does.
 
 | # | Condition |
 |---|---|
-| 1 | Residue from step 1 unanswered, or `/spec-review` returns `NEEDS_ROWS` — park the run |
+| 1 | Residue from step 1 unanswered — park the run |
 | 2 | Typecheck, lint or tests still failing after two self-fix attempts |
 | 3 | Two adversarial rounds with findings still open |
 | 4 | `/spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
@@ -386,5 +385,7 @@ Each stops the run with a report. Aborts 1–2 fire before step 4b and leave **n
 | 6 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
 | 7 | CI still red after two self-fix attempts in step 12 |
 | 8 | The backend's live target never came up — `backend-track.md`, Live target |
+| 9 | Step 9 printed no verdict line, or `NEEDS_ROWS` or `NO_CONTRACT` |
+| 10 | Step 12's fallback reviewer holds a `blocker` after the re-check |
 
 Token spend is not an abort condition. The phase list fixes the cost, and a running orchestrator cannot measure its own spend.

@@ -222,8 +222,10 @@ Write no `❓` section when nothing needs deciding; end with one line saying not
 
 `/spec-review --driven <base>...<head> --rows <rows.json> --ticket <ticket.md>` is for a driver such as `/ship` step 9. The driver starts it in a fresh session, because its own context is the author's, and an author reads its own diff as meeting the rows.
 
-- **The rows arrive confirmed.** Skip step 3: the driver extracted them before any code existed and asked about the doubtful ones then. With no `--rows`, return the verdict `NEEDS_ROWS` and stop. Never extract rows here: nobody is left to confirm them, and the paraphrase would be the grader's own.
+- **The rows arrive confirmed.** Skip step 3: the driver extracted them before any code existed and asked about the doubtful ones then. Never extract rows here: nobody is left to confirm them, and the paraphrase would be the grader's own.
+- **Check the rows against the ticket before grading.** Every row's quote must appear in `--ticket` word for word, and every acceptance criterion or numbered scope line in it must be quoted by some row. The author wrote the rows unwatched, so a row it dropped or reworded would pass silently. Return `NEEDS_ROWS` naming each failing row and each unquoted line — also when `--rows` is absent, empty, or not valid JSON.
 - **The contract is `--ticket`.** Step 2 reads that file in place of the tracker. Everything else in step 2 still applies.
 - **The diff range is the argument.** Step 1 resolves nothing else.
-- Steps 4–7 run unchanged: agents A and B, the parent's anchor check, the verdict, the report.
-- **No questions section and no offer to post.** A driven run has no reader. Return the report with its verdict as the first line, `VERDICT: <verdict>`, and every `AMBIGUOUS` row in its table for the driver to route.
+- **Config never asks.** A value no file states takes its default, named in the report.
+- Steps 4–6 run unchanged: agents A and B, the parent's anchor check, the verdict. Run as a subagent, which cannot spawn agents, work B's brief first and A's second, yourself: a completeness pass run first biases the stray pass, not the reverse.
+- **Step 7 prints, and nothing asks or offers to post.** A driven run has no reader. Print the report to stdout with `VERDICT: <verdict>` as its first line, every `AMBIGUOUS` row in its table for the driver to route. Write no file.
