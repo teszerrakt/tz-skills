@@ -14,6 +14,7 @@
     --mono: "Geist Mono", Consolas, ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Geist", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; }
   a { color: var(--run); text-decoration: none; } a:hover { text-decoration: underline; }
@@ -23,7 +24,7 @@
   .label { font-size: 13px; font-weight: 500; color: var(--dim); display: flex; align-items: center; gap: 8px; }
   svg.ic { flex: none; }
   .with { display: inline-flex; align-items: center; gap: 5px; }
-  header { display: flex; align-items: center; gap: 16px; padding: 14px 32px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header { position: relative; z-index: 10; display: flex; align-items: center; gap: 16px; padding: 14px 32px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
   header .brand { font-family: var(--mono); font-weight: 500; font-size: 14px; letter-spacing: .04em; }
   header .bar { width: 1px; height: 18px; background: var(--line); }
   header .grow { flex: 1; }
@@ -80,10 +81,26 @@
   .current { min-height: 46px; border: 1px dashed var(--line); border-radius: 6px; padding: 8px 14px; color: var(--dim); display: flex; align-items: center; gap: 12px; }
   .current span:first-child { flex: 1; }
   .pill { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 9px 2px; border: 1px solid currentColor; white-space: nowrap; }
-  .runpick { appearance: none; -webkit-appearance: none; font: 500 12.5px/1 var(--mono); color: var(--ink); background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238f8f8f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; border: 1px solid var(--line); border-radius: 6px; padding: 8px 32px 8px 12px; cursor: pointer; max-width: min(340px, 60vw); text-overflow: ellipsis; }
+  .runmenu { position: relative; }
+  .runbtn { display: inline-flex; align-items: center; gap: 8px; max-width: min(360px, 60vw); font: 500 12.5px/1 var(--mono); color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px 8px 12px; cursor: pointer; }
+  .runbtn .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .runbtn .ic { color: var(--dim); }
+  .runbtn:hover, .runbtn[aria-expanded="true"] { border-color: var(--dim); }
+  .runlist { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: 380px; max-width: 90vw; max-height: 60vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, .6); }
+  .runlist .head { font: 12px/1 var(--mono); color: var(--dim); padding: 8px 10px 6px; }
+  .runopt { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 6px; padding: 9px 10px; color: var(--ink); cursor: pointer; }
+  .runopt:hover, .runopt:focus-visible { background: var(--hover); outline: none; }
+  .runopt[aria-selected="true"] { background: var(--raised); box-shadow: inset 2px 0 0 var(--ink); }
+  .runopt .l1 { display: flex; gap: 8px; align-items: center; font: 500 12.5px/1.4 var(--mono); }
+  .runopt .l1 .when { margin-left: auto; color: var(--dim); font-weight: 400; }
+  .runopt .l1 .when.live { color: var(--ok); }
+  .runopt .l2 { color: var(--soft); font-size: 13px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .runopt .l2.none { color: var(--dim); font-style: italic; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+  .pastbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--run); border-radius: 8px; padding: 10px 12px 10px 16px; color: var(--soft); }
+  .pastbar b { color: var(--ink); font-weight: 600; }
+  .pastbar .grow { flex: 1; }
   .afk { font: 600 11px/1 var(--mono); letter-spacing: .06em; color: #0a0a0a; background: var(--you); border-radius: 4px; padding: 4px 6px; }
-  .runpick:hover { border-color: var(--dim); }
-  .runpick option { background: var(--panel); color: var(--ink); }
   .switch { display: inline-flex; align-items: center; gap: 10px; background: none; border: 0; padding: 4px 2px; color: var(--soft); font-size: 13px; font-weight: 500; cursor: pointer; }
   .switch .track { position: relative; width: 32px; height: 18px; border-radius: 999px; background: var(--line); transition: background .15s; flex: none; }
   .switch .knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--soft); transition: left .15s, background .15s; }
@@ -145,9 +162,8 @@
 <header>
   <span class="brand">SHIP</span>
   <span class="bar"></span>
-  <select class="runpick" id="runPick" aria-label="Which run to show"></select>
+  <div class="runmenu" id="runMenu" hidden><button type="button" class="runbtn" id="runBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="Which run to show"></button><div class="runlist" id="runList" role="listbox" hidden></div></div>
   <span class="afk" id="afk" title="Unattended run: the orchestrator decides what can be undone" hidden>AFK</span>
-  <span class="mono" id="runId" style="color: var(--you)"></span>
   <span class="grow"></span>
   <button type="button" class="switch" id="toasts" role="switch" aria-checked="true" hidden><span class="track"><span class="knob"></span></span><span>Pop-ups</span></button>
   <span class="where" id="where" hidden></span>
@@ -294,16 +310,15 @@ function renderLeft() {
   const all = tickets().filter((t) => !run || t.group > 0)
   const merged = all.filter((t) => t.key === 'merged').length
   const groups = [...new Set(all.map((t) => t.group))].sort((a, b) => a - b)
-  $('runId').textContent = ui.view ? 'past run · read only' : run ? '' : 'no run set'
   $('where').hidden = !run?.where
   $('where').replaceChildren(...String(run?.where || '').split('·').map((part, i) => el('span', {}, icon(i === 0 ? 'monitor' : 'user', 15), part.trim())))
   $('left').replaceChildren(
     el('div', { class: 'stack' },
       label('box', 'What this run ships'),
-      el('h1', {}, run?.title || 'No run is set yet'),
+      el('h1', {}, run?.title || (run?.id === 'earlier' ? 'Earlier, unnamed' : run?.id) || 'No run is set yet'),
       run?.summary ? el('div', { class: 'summary' }, run.summary) : '',
       run && sess('orchestrator') ? el('div', { class: 'stack', style: 'gap: 2px' }, el('div', { class: 'mono' }, 'Orchestrator'), attachLine('orchestrator')) : '',
-      run ? el('div', { class: 'mono' }, [run.repo, run.target && `PRs target ${run.target}`, `started ${clock(run.startedAt)}`].filter(Boolean).join(' · '))
+      run ? el('div', { class: 'mono' }, [run.repo, run.target && `PRs target ${run.target}`, run.startedAt && `started ${clock(run.startedAt)}`].filter(Boolean).join(' · '))
           : el('div', { class: 'summary' }, 'The orchestrator sets this when a run starts.')),
     all.length ? el('div', { class: 'stack' },
       el('div', { class: 'big' }, el('b', {}, String(merged)), el('span', { class: 'summary' }, `of ${all.length} tickets merged`)),
@@ -527,7 +542,10 @@ function renderMid() {
   else body = state.decisions.length ? decisionGroups() : [el('div', { class: 'empty' }, el('b', {}, 'No decisions yet.'),
     el('span', {}, 'Each answer you give lands here.'))]
 
-  $('mid').replaceChildren(tabs, ...body)
+  const past = ui.view ? el('div', { class: 'pastbar' }, icon('clock', 15),
+    el('span', {}, 'You are looking at ', el('b', {}, state.run?.id || ui.view), ', a past run. Nothing here can be changed.'), el('span', { class: 'grow' }),
+    el('button', { type: 'button', class: 'btn', style: 'min-height: 32px', onclick: () => show('') }, icon('back', 14), 'Back to live run')) : ''
+  $('mid').replaceChildren(...[past, tabs, ...body].filter(Boolean))
   if (draft) {
     const box = document.querySelector(`[data-draft="${draft}"]`)
     if (box) { box.focus(); box.setSelectionRange(caret, caret) }
@@ -562,16 +580,38 @@ function route() {
 
 async function loadRuns() {
   try { const r = await (await fetch('/api/runs')).json(); ui.runs = Array.isArray(r) ? r : [] } catch { ui.runs = [] }
-  const pick = $('runPick')
-  pick.replaceChildren(...ui.runs.map((r) => el('option', { value: r.live ? '' : r.id, selected: (r.live ? '' : r.id) === ui.view },
-    [r.live ? '● ' : '', r.id, r.title ? ` — ${r.title.length > 38 ? r.title.slice(0, 37) + '…' : r.title}` : '', r.live ? ' · live' : r.startedAt ? ' · ' + new Date(r.startedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''].join(''))))
-  pick.hidden = !ui.runs.length
+  renderRunMenu()
+}
+
+function renderRunMenu() {
+  const runs = ui.runs || []
+  $('runMenu').hidden = !runs.length
+  const key = (r) => (r.live ? '' : r.id)
+  const cur = runs.find((r) => key(r) === ui.view) || runs[0]
+  if (!cur) return
+  const day = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  const name = (r) => (r.id === 'earlier' ? 'Earlier' : r.id)
+  $('runBtn').replaceChildren(cur.live ? el('span', { class: 'dot' }) : '', el('span', { class: 't' }, name(cur), cur.title ? ` — ${cur.title}` : ''), icon('order', 14))
+  $('runList').replaceChildren(el('div', { class: 'head' }, `Runs · ${runs.length}`), ...runs.map((r) => el('button', {
+    type: 'button', class: 'runopt', role: 'option', 'aria-selected': String(r === cur),
+    onclick: () => { closeRunMenu(); if (key(r) !== ui.view) show(key(r)) },
+  },
+    el('div', { class: 'l1' }, r.live ? el('span', { class: 'dot' }) : '', name(r),
+      el('span', { class: 'when' + (r.live ? ' live' : '') }, r.live ? 'live now' : r.startedAt ? day(r.startedAt) : '')),
+    el('div', { class: 'l2' + (r.title ? '' : ' none') }, r.title || (r.id === 'earlier' ? 'items that named no run' : 'no title recorded')))))
+}
+
+function closeRunMenu() {
+  $('runList').hidden = true
+  $('runBtn').setAttribute('aria-expanded', 'false')
 }
 const EMPTY = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {} }
 async function show(view) {
   ui.view = view
   ui.ticket = ''
+  ui.tab = view ? 'decisions' : 'inbox'
   state = view ? { ...EMPTY, ...(await (await fetch('/api/runs/' + encodeURIComponent(view))).json()) } : live
+  renderRunMenu()
   render()
 }
 
@@ -591,7 +631,14 @@ function connect() {
   es.onerror = () => { $('live').replaceChildren(icon('alert', 14), 'not connected'); $('live').className = 'mono with off' }
 }
 connect()
-$('runPick').addEventListener('change', (e) => show(e.target.value))
+$('runBtn').addEventListener('click', () => {
+  const open = $('runList').hidden
+  $('runList').hidden = !open
+  $('runBtn').setAttribute('aria-expanded', String(open))
+  if (open) $('runList').querySelector('[aria-selected="true"]')?.focus()
+})
+document.addEventListener('click', (e) => { if (!$('runMenu').contains(e.target)) closeRunMenu() })
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('runList').hidden) { closeRunMenu(); $('runBtn').focus() } })
 window.addEventListener('hashchange', () => { route(); render() })
 setInterval(() => { if (state && !document.activeElement?.dataset?.draft) render() }, 60000)
 </script>
