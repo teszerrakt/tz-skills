@@ -105,6 +105,12 @@
   .dec .choice { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
   .dec .was { color: var(--dim); font-size: 12.5px; }
   .dec .why { color: var(--dim); font-size: 13px; }
+  .pill.away { color: var(--you); }
+  .find { display: flex; gap: 12px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); }
+  .find .fid { font-family: var(--mono); font-size: 12px; color: var(--dim); width: 34px; flex: none; }
+  .find .main { flex: 1; min-width: 0; }
+  .sev { font-family: var(--mono); font-size: 11px; width: 56px; flex: none; }
+  .sev.blocker { color: var(--bad); } .sev.major { color: var(--you); } .sev.minor, .sev.note { color: var(--dim); }
   .revise { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 12px; }
   .happens { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
   .actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -170,7 +176,8 @@ const ICONS = {
   link: '<path d="M14 5h5v5M19 5l-8 8M17 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4"/>',
 }
 const TONE_ICON = { ok: 'check', run: 'pulse', you: 'ask', wait: 'pause', bad: 'alert' }
-const EVENT_ICON = { asked: 'ask', decided: 'ask', changed: 'pencil', read: 'check', step: 'pulse', 'usage-limit': 'alert', 'gate-failed': 'alert', done: 'check', merged: 'pr' }
+const EVENT_ICON = { asked: 'ask', decided: 'ask', changed: 'pencil', read: 'check', step: 'pulse', 'usage-limit': 'alert', 'gate-failed': 'alert', done: 'check', merged: 'pr', finding: 'alert', review: 'list' }
+const OUTCOME = { open: ['open', 'you'], fixed: ['fixed', 'ok'], refused: ['not fixed, with a reason', 'bad'], withdrawn: ['withdrawn', 'wait'], held: ['still open after a second look', 'bad'] }
 function icon(name, size = 16) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   for (const [k, v] of Object.entries({ class: 'ic', width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
@@ -295,8 +302,9 @@ function decisionRow(d) {
   const last = (d.history || []).at(-1)
   const delivery = { 'sent': 'sent, the worker has not read it yet', 'read': `read by the worker at ${clock(d.readAt)}`, 'follow-up': 'saved as a follow-up' }[d.delivery]
   const row = el('div', { class: 'row' },
-    el('div', { class: 'id mono' }, d.ticket),
+    el('div', { class: 'id mono' }, d.ticket, d.dn ? el('div', {}, d.dn) : ''),
     el('div', { class: 'main' },
+      d.by === 'orchestrator' ? el('div', {}, el('span', { class: 'pill away' }, 'decided while you were away')) : '',
       el('div', { class: 'ask' }, d.question),
       el('div', { class: 'choice' }, d.choice),
       last ? el('div', { class: 'was' }, `changed ${clock(d.revisedAt)} · was "${last.choice}" · ${delivery}`) : '',
@@ -327,7 +335,8 @@ function decisionRow(d) {
 
 function story(t) {
   const events = state.events[t.ticket] || []
-  const tone = { asked: 'you', decided: 'you', changed: 'you', 'usage-limit': 'bad', 'gate-failed': 'bad', done: 'ok', merged: 'ok' }
+  const tone = { asked: 'you', decided: 'you', changed: 'you', 'usage-limit': 'bad', 'gate-failed': 'bad', done: 'ok', merged: 'ok', finding: 'you' }
+  const found = findings(t.ticket)
   return el('div', { class: 'card story' },
     el('div', { class: 'top' }, el('button', { type: 'button', class: 'btn quiet', style: 'margin-left: -16px', onclick: () => go({ ticket: '' }) }, icon('back', 15), 'Back'),
       el('span', { class: 'grow' }), stat(t)),
@@ -338,11 +347,40 @@ function story(t) {
       t.url ? el('a', { class: 'with', href: t.url, target: '_blank', rel: 'noopener' }, icon('link', 13), 'Ticket') : ''),
     brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 14), brain(t)) : '',
     el('div', { class: 'stack', style: 'gap: 8px' }, label('steps', t.at ? `Step ${t.at} of ${t.of}` : 'Steps'), segs(t, true)),
+    found.length || reviews(t.ticket).length ? el('div', {}, label('alert', `Findings · ${found.filter((f) => f.outcome === 'open' || f.outcome === 'held').length} open`, 'padding-bottom: 10px'),
+      reviewLine(t.ticket), found.map(findingRow)) : '',
     el('div', {}, label('clock', 'What happened', 'padding-bottom: 10px'),
       events.length ? events.map((e) => el('div', { class: 'ev' }, el('div', { class: 't mono tone-' + (tone[e.kind] || '') }, clock(e.at)),
         el('div', { class: 'ei tone-' + (tone[e.kind] || '') }, icon(EVENT_ICON[e.kind] || 'pulse', 16)),
         el('div', {}, el('b', {}, e.text), e.detail ? el('span', {}, e.detail) : '')))
       : el('div', { class: 'summary' }, 'Nothing recorded yet.')))
+}
+
+const findings = (ticket) => (state.findings || []).filter((f) => f.ticket === ticket)
+const reviews = (ticket) => (state.reviews || []).filter((r) => r.ticket === ticket)
+const reviewLine = (ticket) => reviews(ticket).length
+  ? el('div', { class: 'mono', style: 'padding-bottom: 6px' }, reviews(ticket).map((r) => `${r.by || 'review'}: ${r.verdict}`).join(' · ')) : ''
+
+function findingRow(f) {
+  const [word, tone] = OUTCOME[f.outcome] || [f.outcome, 'wait']
+  const was = (f.history || []).map((h) => h.outcome).join(' → ')
+  return el('div', { class: 'find' },
+    el('span', { class: 'fid' }, f.id),
+    el('span', { class: 'sev ' + f.severity }, f.severity),
+    el('div', { class: 'main' }, el('div', {}, f.claim),
+      el('div', { class: 'mono' }, [f.by && `found by ${f.by}`, f.anchor, was && `was ${was}`].filter(Boolean).join(' · '))),
+    el('span', { class: 'st ' + tone }, icon(TONE_ICON[tone], 14), word))
+}
+
+function findingList() {
+  const all = state.findings || []
+  if (!all.length && !(state.reviews || []).length) return [el('div', { class: 'empty' }, el('b', {}, 'No findings yet.'),
+    el('span', {}, 'Each reviewer finding lands here, with who found it and what happened to it.'))]
+  const byTicket = [...new Set([...all, ...(state.reviews || [])].map((f) => f.ticket))]
+  const rank = { blocker: 0, major: 1, minor: 2, note: 3 }
+  return byTicket.map((ticket) => el('div', { class: 'dec' },
+    el('div', { class: 'top' }, el('span', { class: 'wid mono', style: 'color: var(--ink)' }, ticket), el('span', { class: 'grow' }), reviewLine(ticket)),
+    [...findings(ticket)].sort((a, b) => (rank[a.severity] ?? 9) - (rank[b.severity] ?? 9)).map(findingRow)))
 }
 
 function mergeList() {
@@ -406,6 +444,7 @@ function renderMid() {
   const tabs = el('div', { class: 'tabs', role: 'tablist' },
     el('button', { type: 'button', class: 'tab', role: 'tab', 'aria-selected': String(!t && ui.tab === 'inbox'), onclick: () => go({ tab: 'inbox', ticket: '' }) }, icon('inbox'), `Needs you · ${open.length}`),
     el('button', { type: 'button', class: 'tab', role: 'tab', 'aria-selected': String(!t && ui.tab === 'decisions'), onclick: () => go({ tab: 'decisions', ticket: '' }) }, icon('list'), `Decisions · ${state.decisions.length}`),
+    el('button', { type: 'button', class: 'tab', role: 'tab', 'aria-selected': String(!t && ui.tab === 'findings'), onclick: () => go({ tab: 'findings', ticket: '' }) }, icon('alert'), `Findings · ${(state.findings || []).filter((f) => f.outcome === 'open' || f.outcome === 'held').length} open`),
     el('button', { type: 'button', class: 'tab', role: 'tab', 'aria-selected': String(!t && ui.tab === 'merge'), onclick: () => go({ tab: 'merge', ticket: '' }) }, icon('pr'), `Merge order · ${tickets().filter((x) => x.pr).length}`),
     el('span', { class: 'grow' }),
     el('span', { class: 'mono' }, stopped ? `${stopped} worker${stopped > 1 ? 's' : ''} stopped until you answer` : 'no worker is stopped'))
@@ -415,6 +454,7 @@ function renderMid() {
   else if (ui.tab === 'inbox') body = open.length ? open.map((q) => questionCard(q)) : [el('div', { class: 'empty' }, el('b', {}, 'Nothing needs you.'),
     el('span', {}, 'Every worker can keep going. Your answers are under Decisions, and you can change them there.'))]
   else if (ui.tab === 'merge') body = mergeList()
+  else if (ui.tab === 'findings') body = findingList()
   else body = state.decisions.length ? [...state.decisions].reverse().map(decisionRow) : [el('div', { class: 'empty' }, el('b', {}, 'No decisions yet.'),
     el('span', {}, 'Each answer you give lands here.'))]
 
@@ -455,7 +495,7 @@ function connect() {
   es.onopen = () => { $('live').replaceChildren(icon('pulse', 14), 'live'); $('live').className = 'mono with' }
   es.onmessage = (e) => {
     const first = !state
-    state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, ...JSON.parse(e.data) }
+    state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], ...JSON.parse(e.data) }
     if (first) route()
     render()
   }

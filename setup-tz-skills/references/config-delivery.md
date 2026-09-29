@@ -122,4 +122,7 @@ guessing.
   center on.
 - **Run context:** {{command}} — `node ~/.claude/ship-ui/ship-ui.mjs run --file
   <json>`, once, before the first spawn.
+- **Finding:** {{command}} — `node ~/.claude/ship-ui/ship-ui.mjs finding …`. Run
+  after every judge, once per finding and again when its outcome changes.
+  `/ship-epic --afk` requires it.
 ```

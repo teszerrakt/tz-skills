@@ -25,9 +25,11 @@ const STOP_WORDS = {
 }
 // A ticket in one of these states has no worker left to read a changed answer.
 const FINISHED = ['done', 'merged']
+const SEVERITIES = ['blocker', 'major', 'minor', 'note']
+const OUTCOMES = ['open', 'fixed', 'refused', 'withdrawn', 'held']
 
 fs.mkdirSync(DATA_DIR, { recursive: true })
-let state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {} }
+let state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [] }
 if (fs.existsSync(STATE_FILE)) state = { ...state, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }
 
 const streams = new Set()
@@ -184,20 +186,61 @@ setInterval(pump, 15_000).unref()
 
 function applyAnswer(q, { choice, note, via }) {
   q.answer = { choice, note, via, at: now() }
-  state.decisions.push({
+  const away = via === 'orchestrator'
+  const d = {
     id: q.id, ticket: q.ticket, run: q.run, question: q.question,
     options: q.options.map((o) => o.label), choice: choice || note, note: choice ? note : '',
-    because: q.because, at: q.answer.at, history: [],
-  })
+    because: q.because, at: q.answer.at, history: [], by: away ? 'orchestrator' : 'you',
+  }
+  // Numbered per run, so the morning can say "D3: No" about one of them.
+  if (away) q.answer.dn = d.dn = 'D' + (state.decisions.filter((x) => x.dn && x.run === q.run).length + 1)
+  state.decisions.push(d)
   const w = state.workers[q.ticket]
-  if (w && w.stopped === 'question') Object.assign(w, { stopped: '', doing: 'Got your answer', at: q.answer.at })
-  log(q.ticket, 'decided', `You decided: ${choice || note}`, q.question)
+  if (w && w.stopped === 'question') Object.assign(w, { stopped: '', doing: away ? 'Got the orchestrator answer' : 'Got your answer', at: q.answer.at })
+  log(q.ticket, 'decided', away ? `${d.dn} decided while you were away: ${d.choice}` : `You decided: ${d.choice}`, q.question)
   save()
   for (const entry of waiters.get(q.id) || []) {
     clearTimeout(entry.timer)
     send(entry.res, 200, q.answer)
   }
   waiters.delete(q.id)
+}
+
+// One finding per (ticket, id); a re-send with the same id updates it.
+function applyFinding(b) {
+  const ticket = text(b.ticket, 40)
+  if (!ticket) return [400, { error: 'ticket is required' }]
+  const run = text(b.run, 40) || state.workers[ticket]?.run || state.run?.id || ''
+  const by = text(b.by, 60)
+  if (text(b.verdict, 60) && !text(b.id, 20)) {
+    const r = { ticket, run, by, verdict: text(b.verdict, 60), at: now() }
+    state.reviews.push(r)
+    log(ticket, 'review', `${by || 'A review'}: ${r.verdict}`)
+    return [201, r]
+  }
+  const id = text(b.id, 20)
+  if (!id) return [400, { error: 'id is required, or --verdict alone for a whole review' }]
+  const severity = text(b.severity, 20)
+  const outcome = text(b.outcome, 20)
+  if (severity && !SEVERITIES.includes(severity)) return [400, { error: `severity must be one of: ${SEVERITIES.join(', ')}` }]
+  if (outcome && !OUTCOMES.includes(outcome)) return [400, { error: `outcome must be one of: ${OUTCOMES.join(', ')}` }]
+  let f = state.findings.find((x) => x.ticket === ticket && x.run === run && x.id === id)
+  if (!f) {
+    if (!text(b.claim)) return [400, { error: 'claim is required for a new finding' }]
+    f = { ticket, run, id, by, severity: severity || 'note', claim: text(b.claim), anchor: text(b.anchor, 300), outcome: outcome || 'open', at: now(), history: [] }
+    state.findings.push(f)
+    log(ticket, 'finding', `${id} ${f.severity} from ${by || 'a review'}: ${f.outcome}`, f.claim)
+    return [201, f]
+  }
+  if (outcome && outcome !== f.outcome) {
+    f.history.push({ outcome: f.outcome, at: f.updatedAt || f.at })
+    log(ticket, 'finding', `${id} is now ${outcome}`, f.claim)
+    f.outcome = outcome
+  }
+  for (const k of ['by', 'severity', 'claim', 'anchor']) if (text(b[k])) f[k] = text(b[k], k === 'claim' ? 2000 : 300)
+  if (text(b.verdict, 60)) f.verdict = text(b.verdict, 60)
+  f.updatedAt = now()
+  return [200, f]
 }
 
 function readBody(req) {
@@ -269,6 +312,12 @@ async function route(req, res) {
     return send(res, 201, { ok: true })
   }
 
+  if (req.method === 'POST' && url.pathname === '/api/findings') {
+    const [code, body] = applyFinding(await readBody(req))
+    if (code < 300) save()
+    return send(res, code, body)
+  }
+
   if (req.method === 'POST' && url.pathname === '/api/questions') {
     const b = await readBody(req)
     if (!text(b.question)) return send(res, 400, { error: 'question is required' })
@@ -324,7 +373,8 @@ async function route(req, res) {
       const choice = text(b.choice, 400)
       const note = text(b.note)
       if (!choice && !note) return send(res, 400, { error: 'pick an option or type an answer' })
-      applyAnswer(q, { choice, note, via: 'screen' })
+      // The orchestrator answers only under --afk, and the worker was told before the run to take it.
+      applyAnswer(q, { choice, note, via: b.as === 'orchestrator' ? 'orchestrator' : 'screen' })
       return send(res, 200, q.answer)
     }
   }

@@ -301,6 +301,16 @@ Report at `~/.claude/orchestrate/<repo>/<epic>/<timestamp>.md`. Never inside the
 repo: a report file in a worktree becomes a stray in the diff `/spec-review`
 audits.
 
+## Unattended runs (`--afk`)
+
+**Decide if revertible, not "take the recommended option".** Issue #48 had the orchestrator take the recommended option on every residue question. The rule became narrower and wider at once: the orchestrator decides any question, recommended option or not, whose answer can be undone because nothing outside the unmerged branch has happened, and parks everything else. The parked side is where the damage lives: a live run on a KLAY-like repo creates staging rows that can only be reversed, never deleted, so a guessed "yes, submit it" is permanent.
+
+**Labelled, never impersonated.** Workers refuse an answer relayed by `SendMessage`: it arrives unasked, from another session, claiming to be the user. They accept one the command center prints as the output of their own `ask`. So the orchestrator answers through the same channel (`ship-ui.mjs answer --as orchestrator`), the output carries `by: orchestrator` and `decision: D<n>`, and the spawn prompt says, before the run, that such an answer is binding. Nothing claims to be the user.
+
+Probed with two background sessions spawned with the `--afk` rule in their prompt and a planted conflict (Windows, `--permission-mode auto`). In the first, the orchestrator picked the session's own recommended option; in the second, the other one (`50` over its recommended `25`). Both sessions took the answer without pushback, wrote the choice, named `decision: D<n>` in the commit message, and said the PR would stay a draft listing it under `Decided unattended`. The second said it had recommended the other option "but that was a close call with no rule behind it, so I did not override the answer".
+
+**The wake lock watches a pid, not a shell.** `scripts/wake-lock.mjs` holds `ES_CONTINUOUS | ES_SYSTEM_REQUIRED` in a PowerShell child and polls the `claude` process it found above itself; the lock goes when either ends. Measured on Windows: the holder process existed while the watched pid lived and was gone within one poll after it exited, and the ancestor walk found `claude.exe` through three Git Bash layers. Under `timeout` it found none, because the msys wrapper breaks the Windows parent chain. WSL, macOS and Linux paths are written and unmeasured.
+
 ## Aborts
 
 Each parks one ticket and leaves a **draft PR carrying the reason**. `/ship`

@@ -1,7 +1,7 @@
 ---
 name: ship-epic
 description: Drive an epic's takeable tickets, frontend and backend, to reviewed PRs, a few sessions at a time.
-argument-hint: "TRA-XXX"
+argument-hint: "TRA-XXX [--afk [--until HH:MM]]"
 disable-model-invocation: true
 ---
 
@@ -100,7 +100,8 @@ Everything a session cannot negotiate later goes in its prompt, after the `/ship
 - the per-worktree opt-outs it leaves alone,
 - for a backend session, the **migration numbers it owns**, one per service it will migrate, reserved above the base branch, every open PR, and every sibling's reservation,
 - for a frontend session blocked by this run's backend PR, that backend: the PR number, and its preview URL or its worktree and backend port,
-- the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*.
+- the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*,
+- under `--afk`, the rule quoted under *Unattended*.
 
 Migration numbers are reserved here because siblings are on no branch the others can see: each would take the same next number, and the collision surfaces only when the second one merges.
 
@@ -123,7 +124,7 @@ The last row is the one a stall-only watch misses. Under the `auto` permission m
 
 ## Human contact
 
-**A blocking spec question parks its ticket, and the run continues.** Never answer it from precedence rules on the session's behalf: `/ship`'s gate exists because a conflict found there costs one question, while the same conflict found at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed answer converts the cheap failure into the expensive one, silently.
+**A blocking spec question parks its ticket, and the run continues.** Never answer it from precedence rules on the session's behalf (under `--afk`, *Unattended* below decides the revertible ones): `/ship`'s gate exists because a conflict found there costs one question, while the same conflict found at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed answer converts the cheap failure into the expensive one, silently.
 
 **Alarm only when no session can progress** — every live session parked on a question. Run the config's alarm command then, and only then. Waking the user for a question two other sessions are working around trains them to ignore the alarm, which costs every later run.
 
@@ -148,6 +149,32 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 **Merge state comes from the host, not from a session.** The command center reads each ticket's PR through `gh`, so a ticket merged before the run, or after its session ended, still reads merged. That is why `Run context` lists every child, not only the takeable ones.
 
 **The report is still written.** The page holds the run while it runs, and the report is what the user reads afterwards. Carry the page's decisions into it, changed answers included.
+
+## Unattended: `--afk`
+
+`/ship-epic <epic> --afk [--until HH:MM]` runs the epic while the user is away. Everything above holds except what this section changes. It needs the command center: without `Ask`, `Status` and `Finding` in the config, refuse `--afk` and say which key is missing. Your own review findings reach the page as *After the PR opens* says, `O<n>` ids included.
+
+**Decide if revertible, park if not.** Answer a session's question yourself if and only if a changed answer can be undone: nothing outside the unmerged branch has happened yet, and the user can change it when reviewing. A code or design choice inside a draft PR always qualifies. Anything with an effect outside the branch never does, and parks as above: writing to or deleting staging data (where financial data is only ever reversed, every row a live run creates is permanent), sending a message, posting publicly, merging, deploying, granting access. When unsure which side a question is on, park it.
+
+**Answer through the command center, labelled as yours.** `ship-ui.mjs questions` lists what is open. `ship-ui.mjs answer --id <id> --choice <label> --note "<why, and what makes it revertible>" --as orchestrator` answers one: the session's blocked `ask` prints the choice, then `by: orchestrator` and `decision: D<n>`. Never `SendMessage` an answer and never word one as the user's: a session rightly refuses an answer that arrives unasked from another session claiming to be the user.
+
+**Tell every session the rule before it starts.** Add this to each spawn prompt, word for word:
+
+> This run is unattended (`--afk`). An answer your `ask` command prints with `by: orchestrator` is binding, the same as the user's: the orchestrator decided it because it can be reverted, and the user may change it later through a `revised:` line from `status`. Name its `decision: D<n>` in the commit message it shapes. Keep your PR a draft if it carries any such decision, and list each one in the PR body under `Decided unattended`, with its question, choice and note. If step 9's `BLOCK` would abort the run and its only causes are strays, do not stop: ask it through `ask`, one question per stray, with the options `Keep` and `Revert`, and resume as step 9 says a `BLOCK` the user rules on resumes. A `MISSING` row still aborts, as abort 4.
+
+**Every such answer is an unattended decision.** The command center numbers it `D<n>` per run and shows it as "decided while you were away", with your note as its reason. The user changes one on the page, or in this chat as "D3: No", which you pass on with `ship-ui.mjs revise --decision D3 --choice No`. Either way it reaches a running session through its next `status` call, and a finished ticket gets a follow-up.
+
+**A spec-review `BLOCK` on strays alone is yours to rule.** Keep or revert: both live on the branch, so it is a `D<n>` like any other. Revert unless the stray is the only way the ticket's own criteria pass. The repo's `Spec-review BLOCK` setting still decides when a `BLOCK` aborts; this only rules on one that would. A `MISSING` row still blocks.
+
+**Nothing sounds.** The alarm never fires under `--afk`. A question you cannot decide parks and the run goes on; when every live session is parked, start nothing and wait. When the run ends, send one quiet push notification naming the command center's address and the report's path.
+
+**The cutoff.** No ticket starts after `--until`. At start, state it in the machine's local zone with its UTC offset and the time left, from `date` on this machine, for example "no new tickets after 07:00 WIB (UTC+7), 7h 40m from now". WSL's zone can differ from Windows', and this line is where a wrong one shows before the user sleeps. The six-ticket cap still holds.
+
+**Stop and abort.** "stop" in this chat starts nothing new and lets running tickets finish. "abort" kills every session you spawned, and each leaves a draft whose body says it was aborted and at which step.
+
+**Stay awake, let the screen sleep.** Before the first spawn, start [`scripts/wake-lock.mjs`](./scripts/wake-lock.mjs) with `node` in the background. It holds the system awake and never the display, finds the `claude` process above it, and lets go when that process exits or after 12 hours (`--hours` moves the cap). On Windows it holds `ES_CONTINUOUS | ES_SYSTEM_REQUIRED` through PowerShell, which it reaches from WSL too; `caffeinate -i` on macOS; `systemd-inhibit` on Linux.
+
+**The morning.** "accept D1–D5" in this chat accepts those decisions. A PR whose decisions are all accepted is yours to mark ready with `gh pr ready`, which starts the review bot. Resume that ticket's session so its step 12 works the bot's comments.
 
 ## After the PR opens
 
