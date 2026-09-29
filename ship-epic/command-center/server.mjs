@@ -26,7 +26,7 @@ const STOP_WORDS = {
 // A ticket in one of these states has no worker left to read a changed answer.
 const FINISHED = ['done', 'merged']
 const SEVERITIES = ['blocker', 'major', 'minor', 'note']
-const OUTCOMES = ['open', 'fixed', 'refused', 'withdrawn', 'held']
+const OUTCOMES = ['open', 'fixed', 'refused', 'withdrawn', 'held', 'accepted']
 
 fs.mkdirSync(DATA_DIR, { recursive: true })
 let state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {}, toasts: true }
@@ -248,6 +248,9 @@ function attention() {
     }
     if (w.stopped === 'done' && c?.ci === 'failing') {
       out.push({ key: `ci:${ticket}:${c.failing.join(',')}`, line: `resume ${ticket}: CI failing on #${pr.number} (${c.failing.join(', ')})` })
+    }
+    for (const f of state.findings.filter((x) => x.ticket === ticket && x.fixAsked && !['fixed', 'accepted', 'withdrawn'].includes(x.outcome))) {
+      out.push({ key: `fix:${ticket}:${f.id}:${f.fixAsked}`, line: `resume ${ticket}: the user asked to fix ${f.id}: ${f.claim}${f.fixNote ? ` (note: ${f.fixNote})` : ''}` })
     }
     if (w.stopped && w.stopped !== 'done' && w.stopped !== 'question') {
       out.push({ key: `stopped:${ticket}:${w.stopped}:${w.at}`, line: `${ticket} stopped: ${w.stopped} (${w.doing || 'no detail'})` })
@@ -483,6 +486,26 @@ async function route(req, res) {
     state.followUps.push({ id: randomUUID().slice(0, 8), ticket: text(b.ticket, 40), sentence: text(b.sentence, 600), anchor: text(b.anchor, 300), at: now() })
     save()
     return send(res, 201, { ok: true })
+  }
+
+  // The user's ruling on a finding a reviewer left open: accept it as a known gap, or send it back to be fixed.
+  if (req.method === 'POST' && url.pathname === '/api/findings/rule') {
+    const b = await readBody(req)
+    const f = state.findings.find((x) => x.ticket === text(b.ticket, 40) && x.id === text(b.id, 20) && (!b.run || x.run === b.run))
+    if (!f) return send(res, 404, { error: 'no such finding' })
+    const at = now()
+    const note = text(b.note, 600)
+    if (b.choice === 'accept') {
+      f.history.push({ outcome: f.outcome, at: f.updatedAt || f.at })
+      Object.assign(f, { outcome: 'accepted', updatedAt: at, ruling: note })
+      state.followUps.push({ id: randomUUID().slice(0, 8), ticket: f.ticket, at, anchor: f.anchor, fromFinding: f.id, sentence: `${f.claim}${note ? ' ' + note : ''}` })
+      log(f.ticket, 'finding', `You accepted ${f.id} for now`, f.claim)
+    } else if (b.choice === 'fix') {
+      Object.assign(f, { fixAsked: at, fixNote: note, updatedAt: at })
+      log(f.ticket, 'finding', `You sent ${f.id} back to be fixed`, f.claim)
+    } else return send(res, 400, { error: 'choice must be accept or fix' })
+    save()
+    return send(res, 200, f)
   }
 
   if (req.method === 'POST' && url.pathname === '/api/findings') {
