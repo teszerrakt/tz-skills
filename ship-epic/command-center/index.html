@@ -58,6 +58,7 @@
   .seg.run::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent); transform: translateX(-100%); animation: sweep 1.6s ease-in-out infinite; animation-delay: var(--phase, 0ms); }
   @keyframes sweep { to { transform: translateX(100%); } }
   @media (prefers-reduced-motion: reduce) { .seg.run::after { display: none; } }
+  .seg.wait { background: repeating-linear-gradient(135deg, var(--dim) 0 2px, var(--line) 2px 5px); }
   .seg.ok { background: var(--ok); } .seg.run { background: var(--run); } .seg.you { background: var(--you); } .seg.bad { background: var(--bad); }
   .order-row { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px; color: var(--soft); }
   .order-row .id { font-family: var(--mono); font-size: 12px; width: 66px; flex: none; color: var(--dim); }
@@ -321,8 +322,10 @@ function attachLine(key) {
 
 function segs(t, tall) {
   const done = t.key === 'done' || t.key === 'merged'
+  // Step 12 is not done while its PR still waits on CI, the bot or a thread: it takes that state's tone.
+  const tail = t.key === 'done' && t.merge && t.merge[1] !== 'ok' ? t.merge[1] : ''
   return el('div', { class: 'segs' + (tall ? ' tall' : ''), 'aria-hidden': 'true' },
-    Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done || i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })),
+    Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done ? (tail && i === t.of - 1 ? tail : 'ok') : i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })),
     t.review ? el('div', { class: 'seg review ' + (t.review.running ? 'run' : 'ok') }) : '')
 }
 const stepText = (t) => [t.at ? `step ${t.at} of ${t.of}` : '', t.review ? (t.review.running ? `${t.review.by} running` : `${t.review.by}: ${t.review.verdict}`) : ''].filter(Boolean).join(' · ')
