@@ -97,6 +97,10 @@
   .runbtn:hover, .runbtn[aria-expanded="true"] { border-color: var(--dim); }
   .runlist { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: 380px; max-width: 90vw; max-height: 60vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, .6); }
   .runlist .head { font: 12px/1 var(--mono); color: var(--dim); padding: 8px 10px 6px; }
+  .profbox { left: auto; right: 0; padding: 14px; font-size: 13px; }
+  .profbox:not([hidden]) { display: flex; flex-direction: column; gap: 10px; }
+  .profbox textarea { font: 12.5px/1.5 var(--mono); flex: none; }
+  .profbox .btn { justify-content: center; }
   .runopt { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 6px; padding: 9px 10px; color: var(--ink); cursor: pointer; }
   .runopt:hover, .runopt:focus-visible { background: var(--hover); outline: none; }
   .runopt[aria-selected="true"] { background: var(--raised); }
@@ -182,6 +186,11 @@
   <span class="badge you" id="afk" title="Unattended run: the orchestrator decides what can be undone" hidden>AFK</span>
   <span class="grow"></span>
   <button type="button" class="switch" id="toasts" role="switch" aria-checked="true" hidden><span class="track"><span class="knob"></span></span><span>Pop-ups</span></button>
+  <div class="runmenu" id="profMenu" hidden><button type="button" class="runbtn" id="profBtn" aria-haspopup="dialog" aria-expanded="false"></button><div class="runlist profbox" id="profBox" role="dialog" aria-label="Claude profiles" hidden>
+    <div class="summary">Claude config folders to read sessions from, one per line. Leave it empty to read only the profile this page's server started under.</div>
+    <textarea id="profText" rows="3" spellcheck="false" placeholder="~/.claude&#10;~/.claude-work" aria-label="Profile folders, one per line" data-draft="profiles"></textarea>
+    <button type="button" class="btn main" id="profSave">Save</button>
+  </div></div>
   <span class="where" id="where" hidden></span>
   <span class="st wait" id="live">connecting</span>
 </header>
@@ -329,7 +338,7 @@ const sess = (key) => state.sessions?.[key]
 function attachLine(key) {
   const x = sess(key)
   if (!x?.id) return ''
-  const cmd = `claude attach ${x.id}`
+  const cmd = `${x.profile ? `CLAUDE_CONFIG_DIR=${x.profile} ` : ''}claude attach ${x.id}`
   const btn = el('button', { type: 'button', class: 'btn quiet', style: 'min-height: 28px; padding: 0 8px', onclick: async (e) => {
     e.stopPropagation()
     try { await navigator.clipboard.writeText(cmd); btn.textContent = 'copied' } catch { btn.textContent = 'copy failed' }
@@ -365,6 +374,19 @@ function renderToasts() {
   b.setAttribute('aria-checked', String(on))
   b.title = on ? 'Questions also pop up at the corner of the screen. Click to stop them.' : 'Questions wait here only. Click to pop them up again.'
   b.onclick = () => post('/api/settings', { toasts: !on })
+}
+
+function renderProfiles() {
+  $('profMenu').hidden = !!ui.view || !live
+  if ($('profMenu').hidden) return
+  const n = (live.profiles || []).length
+  $('profBtn').replaceChildren(icon('user', 14), n ? `Profiles · ${n}` : 'Profiles', icon('down', 14))
+  $('profBtn').title = n ? 'Sessions are read from: ' + live.profiles.join(', ') : 'Sessions are read from one Claude profile. Click to add more.'
+}
+
+function closeProfiles() {
+  $('profBox').hidden = true
+  $('profBtn').setAttribute('aria-expanded', 'false')
 }
 
 function renderLeft() {
@@ -678,7 +700,7 @@ function renderRight() {
 
 function render() {
   if (!state) return
-  renderToasts(); renderLeft(); renderMid(); renderRight()
+  renderToasts(); renderProfiles(); renderLeft(); renderMid(); renderRight()
   // Every redraw rebuilds the bars; a phase from the clock keeps the sweep from restarting mid-stroke.
   const phase = `-${Date.now() % 1600}ms`
   for (const seg of document.querySelectorAll('.seg.run')) seg.style.setProperty('--phase', phase)
@@ -751,8 +773,28 @@ $('runBtn').addEventListener('click', () => {
   $('runBtn').setAttribute('aria-expanded', String(open))
   if (open) $('runList').querySelector('[aria-selected="true"]')?.focus()
 })
-document.addEventListener('click', (e) => { if (!$('runMenu').contains(e.target)) closeRunMenu() })
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('runList').hidden) { closeRunMenu(); $('runBtn').focus() } })
+$('profBtn').addEventListener('click', () => {
+  const open = $('profBox').hidden
+  if (!open) return closeProfiles()
+  // Filled on open only, so an update from the server never replaces what is being typed.
+  $('profText').value = (live?.profiles || []).join('\n')
+  $('profBox').hidden = false
+  $('profBtn').setAttribute('aria-expanded', 'true')
+  $('profText').focus()
+})
+$('profSave').addEventListener('click', async () => {
+  const profiles = $('profText').value.split('\n').map((l) => l.trim()).filter(Boolean)
+  if (await post('/api/settings', { profiles })) closeProfiles()
+})
+document.addEventListener('click', (e) => {
+  if (!$('runMenu').contains(e.target)) closeRunMenu()
+  if (!$('profMenu').contains(e.target)) closeProfiles()
+})
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return
+  if (!$('runList').hidden) { closeRunMenu(); $('runBtn').focus() }
+  if (!$('profBox').hidden) { closeProfiles(); $('profBtn').focus() }
+})
 window.addEventListener('hashchange', () => { route(); render() })
 setInterval(() => { if (state && !document.activeElement?.dataset?.draft) render() }, 60000)
 </script>

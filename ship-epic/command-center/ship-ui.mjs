@@ -20,6 +20,8 @@
 //            --claim "..." [--anchor path:line] --outcome open|fixed|refused|withdrawn|held
 //            A re-send with the same id updates that finding.
 //   finding  --ticket T --by "spec review" --verdict PASS_WITH_NOTES   A whole review's result.
+//   profiles [--set "~/.claude,~/.claude-work"]   Prints, or sets, the Claude config folders sessions are
+//            read from. --set "" goes back to the server's own profile. The page's Profiles button does the same.
 //   open     Opens the command center in the browser.
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
@@ -148,6 +150,10 @@ try {
   } else if (cmd === 'finding') {
     await post('/api/findings', a)
     console.log('ok')
+  } else if (cmd === 'profiles') {
+    if (a.set !== undefined) await post('/api/settings', { profiles: a.set.split(',') })
+    const { profiles } = await (await fetch(`${BASE}/api/state`)).json()
+    console.log(profiles?.length ? profiles.join('\n') : 'none set: sessions are read from the profile the server started under')
   } else if (cmd === 'open') {
     const wsl = process.platform === 'linux' && /microsoft/i.test(os.release())
     if (process.platform === 'win32' || wsl) {
@@ -155,7 +161,7 @@ try {
     }
     console.log(BASE)
   } else {
-    console.error('usage: ship-ui.mjs ask|status|run|followup|questions|answer|revise|finding|open [--flags]')
+    console.error('usage: ship-ui.mjs ask|status|run|followup|questions|answer|revise|finding|profiles|open [--flags]')
     process.exitCode = 2
   }
 } catch (e) {
