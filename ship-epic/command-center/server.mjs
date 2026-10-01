@@ -17,6 +17,8 @@ const TOASTS_ON = process.platform === 'win32' && !process.env.SHIP_UI_NO_PING &
 const ORIGIN = `http://127.0.0.1:${PORT}`
 const WAIT_MS = 25_000
 const SNOOZE_MS = { later: 5 * 60_000, open: 5 * 60_000, timeout: 60_000 }
+// The pilot's longest healthy silence was 27 minutes; its hidden stalls ran 29 and up.
+const QUIET_MS = Number(process.env.SHIP_UI_QUIET_MIN || 30) * 60_000
 
 const STOP_REASONS = ['question', 'waiting-slot', 'usage-limit', 'blocked-by-ticket', 'gate-failed', 'done', 'merged']
 const STOP_WORDS = {
@@ -117,6 +119,7 @@ function gh(args) {
 
 const PR_QUERY = `query($owner: String!, $name: String!, $n: Int!) {
   repository(owner: $owner, name: $name) { pullRequest(number: $n) {
+    mergeable headRefOid
     commits(last: 1) { nodes { commit { statusCheckRollup { contexts(first: 60) { nodes {
       __typename
       ... on CheckRun { name status conclusion }
@@ -154,6 +157,9 @@ async function prChecks(repo, number) {
     rabbit,
     threads: pr.reviewThreads.nodes.filter((t) => !t.isResolved).length,
     items: pr.reviewThreads.nodes.map(reviewItem),
+    // GitHub answers UNKNOWN while it recomputes after the base moves; null lets refreshPrs keep the last answer.
+    conflict: pr.mergeable === 'UNKNOWN' ? null : pr.mergeable === 'CONFLICTING',
+    head: String(pr.headRefOid || '').slice(0, 8),
   }
 }
 
@@ -197,6 +203,7 @@ async function refreshPrs() {
       const next = { number: pick.number, title: pick.title, url: pick.url, state: pick.state, draft: pick.isDraft, mergedAt: pick.mergedAt || '', branch: pick.headRefName }
       if (pick.state === 'OPEN') next.checks = await prChecks(repo, pick.number)
       const prev = state.prs[ticket]
+      if (next.checks?.conflict === null) next.checks.conflict = prev?.checks?.head === next.checks.head && prev.checks.conflict === true
       if (JSON.stringify(prev) === JSON.stringify(next)) continue
       if (next.state === 'MERGED' && prev?.state !== 'MERGED') log(ticket, 'merged', 'Merged', '#' + next.number)
       state.prs[ticket] = next
@@ -234,7 +241,7 @@ function readSessions() {
 setInterval(readSessions, 60_000).unref()
 
 // What the orchestrator must act on now, each with a stable key so `ship-ui.mjs watch` prints it once.
-// A finished worker whose PR later gets review threads or red CI does not wake by itself.
+// A finished worker whose PR later gets review threads, red CI or a conflict does not wake by itself.
 function attention() {
   const out = []
   for (const q of state.questions.filter((x) => !x.answer)) {
@@ -249,11 +256,19 @@ function attention() {
     if (w.stopped === 'done' && c?.ci === 'failing') {
       out.push({ key: `ci:${ticket}:${c.failing.join(',')}`, line: `resume ${ticket}: CI failing on #${pr.number} (${c.failing.join(', ')})` })
     }
+    if (w.stopped === 'done' && c?.conflict) {
+      out.push({ key: `conflict:${ticket}:${c.head}`, line: `resume ${ticket}: #${pr.number} conflicts with ${state.run?.target || 'its base branch'}` })
+    }
     for (const f of state.findings.filter((x) => x.ticket === ticket && x.fixAsked && !['fixed', 'accepted', 'withdrawn'].includes(x.outcome))) {
       out.push({ key: `fix:${ticket}:${f.id}:${f.fixAsked}`, line: `resume ${ticket}: the user asked to fix ${f.id}: ${f.claim}${f.fixNote ? ` (note: ${f.fixNote})` : ''}` })
     }
     if (w.stopped && w.stopped !== 'done' && w.stopped !== 'question') {
       out.push({ key: `stopped:${ticket}:${w.stopped}:${w.at}`, line: `${ticket} stopped: ${w.stopped} (${w.doing || 'no detail'})` })
+    }
+    // Never a `resume` line: the session may be mid-step, and resuming a live session starts a copy of it.
+    const quiet = Date.now() - Date.parse(w.at)
+    if (!w.stopped && pr?.state !== 'MERGED' && quiet > QUIET_MS) {
+      out.push({ key: `quiet:${ticket}:${w.at}`, line: `quiet ${ticket}: no update for ${Math.round(quiet / 60_000)} min at step ${w.step || '?'} (${w.doing || 'no detail'})` })
     }
   }
   return out

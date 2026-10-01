@@ -14,7 +14,7 @@ Copy this folder to `~/.claude/ship-ui/`, then name its commands in the delivery
 | `ship-ui.mjs status` | a session | records its step, what it is doing, its model and its PR; prints `ok`, then one `revised:` line per answer the user changed |
 | `ship-ui.mjs run --file <json>` | the orchestrator | says what the run ships: `id`, `title`, `summary`, `repo`, `github`, `target`, `where`, and `tickets` as `{ticket, title, group, after, url}` |
 | `ship-ui.mjs followup` | the orchestrator | records one follow-up sentence and its anchor |
-| `ship-ui.mjs watch [--every 30]` | the orchestrator, in the background | runs until killed; prints one line per new thing to act on: an open question, a finished ticket whose PR has review threads open or CI failing (`resume …`), a worker that stopped for any reason other than done |
+| `ship-ui.mjs watch [--every 30]` | the orchestrator, in the background | runs until killed; prints one line per new thing to act on: an open question, a finished ticket whose PR has review threads open, CI failing or a conflict with its base (`resume …`), a worker that stopped for any reason other than done, a worker that posted no status for 30 minutes (`quiet …`) |
 | page: Needs you | the user | a finding a reviewer left open on a finished ticket gets **Accept for now** (saved as a follow-up) or **Send back to fix** (`watch` prints `resume <ticket>: the user asked to fix <id>`) |
 | `ship-ui.mjs questions` | the orchestrator | prints each open question with its id and options, `*` on the recommended one |
 | `ship-ui.mjs answer --id <id> --choice <label> [--note ...] --as orchestrator` | the orchestrator, under `--afk` | answers one question as itself, recorded as a numbered unattended decision |
@@ -29,7 +29,7 @@ Copy this folder to `~/.claude/ship-ui/`, then name its commands in the delivery
 
 ## What it reads for itself
 
-PR and merge state, through `gh`, every two minutes and after each `status`. A PR reads `can merge now` only when the ticket it waits for is merged, it is not a draft, its session finished, CI is green, no review thread is open, and the bot either reviewed it or was rate limited. CodeRabbit's own check is left out of CI, because it reads green on a PR it never reviewed.
+PR and merge state, through `gh`, every two minutes and after each `status`. A PR reads `can merge now` only when the ticket it waits for is merged, it is not a draft, its session finished, it has no conflict, CI is green, no review thread is open, and the bot either reviewed it or was rate limited. CodeRabbit's own check is left out of CI, because it reads green on a PR it never reviewed.
 
 ## Limits
 
@@ -38,4 +38,4 @@ PR and merge state, through `gh`, every two minutes and after each `status`. A P
 - State is one JSON file, `~/.claude/orchestrate/ui/state.json`, holding one live run. When `run` names a new id, everything that belongs to another run moves to `runs/<id>.json` beside it; the header's picker shows those read only.
 - Each ticket shows its session's `claude attach <id>` and session id, read from `claude agents --json` by matching the session's name to the ticket; the orchestrator is the session whose name starts with the run id.
 - To open it from a phone, put it behind `tailscale serve --bg --https=8443 http://127.0.0.1:4777` and write the `https://<machine>.<tailnet>.ts.net:8443` origin into `~/.claude/orchestrate/ui/origins`, one per line. Without that line the phone can read the page but not answer. Never list a public origin: anything listed there can answer for the user. Give it a port of its own: a phone that once opened another app at the bare address keeps that app's cached copy there.
-- `SHIP_UI_PORT` moves it off 4777, `SHIP_UI_DATA` moves the state, `SHIP_UI_NO_PING` silences the toasts.
+- `SHIP_UI_PORT` moves it off 4777, `SHIP_UI_DATA` moves the state, `SHIP_UI_NO_PING` silences the toasts, `SHIP_UI_QUIET_MIN` moves the `quiet` line off 30 minutes.

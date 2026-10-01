@@ -306,6 +306,7 @@ function prState(t, byId) {
   if (t.w && t.key !== 'done') return ['worker is still on it', 'run']
   const c = t.pr.checks
   if (!c) return ['could not read its checks', 'wait']
+  if (c.conflict) return [`conflicts with ${state.run?.target || 'its base'}`, 'bad']
   if (c.ci === 'failing') return ['CI is failing', 'bad']
   if (c.ci === 'running') return ['CI is running', 'run']
   if (t.review?.running) return ['being reviewed', 'run']
@@ -603,7 +604,8 @@ function mergeList() {
           { green: 'CI green', running: 'CI running', failing: 'CI failing: ' + t.pr.checks.failing.join(', '), none: 'no CI' }[t.pr.checks.ci],
           { reviewed: 'CodeRabbit reviewed', limited: 'CodeRabbit rate limited, not reviewed yet', skipped: 'CodeRabbit skipped it', waiting: 'CodeRabbit not done' }[t.pr.checks.rabbit],
           `${t.pr.checks.threads} thread${t.pr.checks.threads === 1 ? '' : 's'} open`,
-        ].join(' · ') : '')),
+          t.pr.checks.conflict ? 'conflicts' : '',
+        ].filter(Boolean).join(' · ') : '')),
     el('span', { class: 'st ' + tone }, icon(TONE_ICON[tone], 14), words)))
   let n = 0
   return [

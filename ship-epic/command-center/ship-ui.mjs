@@ -10,7 +10,8 @@
 //   run      --file run.json   What the run ships: id, title, summary, tickets.
 //   followup --ticket T --sentence "..." [--anchor path:line]
 //   watch    [--every 30]  Runs until killed. One line per new thing the orchestrator must act on:
-//            a question, a finished ticket whose PR has threads open or CI failing, a stopped worker.
+//            a question, a finished ticket whose PR has threads open, CI failing or a conflict,
+//            a stopped worker, a worker with no update for 30 minutes.
 //   questions  Prints each open question: id, ticket, options (* marks the recommended one).
 //   answer   --id Q --choice LABEL [--note "..."] --as orchestrator
 //            The orchestrator's answer under --afk, labelled as its own.
