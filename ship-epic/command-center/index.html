@@ -4,15 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ship</title>
+<link rel="icon" id="favicon" type="image/svg+xml" href="">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
   :root {
     --bg: #000; --panel: #0a0a0a; --raised: #111; --hover: #1a1a1a; --line: #2a2a2a;
     --ink: #ededed; --soft: #a1a1a1; --dim: #8f8f8f;
-    --you: #f5a623; --bad: #ff6166; --ok: #45d483; --run: #52a8ff; --run-bg: #0a1f38;
+    --you: #f5a623; --bad: #ff6166; --ok: #45d483; --run: #52a8ff;
+    --you-bg: #2b1d06; --bad-bg: #2d1012; --ok-bg: #0b2616; --run-bg: #0a1f38;
+    --control: 32px;
     --mono: "Geist Mono", Consolas, ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Geist", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; }
   a { color: var(--run); text-decoration: none; } a:hover { text-decoration: underline; }
@@ -22,15 +26,13 @@
   .label { font-size: 13px; font-weight: 500; color: var(--dim); display: flex; align-items: center; gap: 8px; }
   svg.ic { flex: none; }
   .with { display: inline-flex; align-items: center; gap: 5px; }
-  header { display: flex; align-items: center; gap: 16px; padding: 14px 32px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header { position: relative; z-index: 10; display: flex; align-items: center; gap: 16px; padding: 14px 32px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
   header .brand { font-family: var(--mono); font-weight: 500; font-size: 14px; letter-spacing: .04em; }
   header .bar { width: 1px; height: 18px; background: var(--line); }
   header .grow { flex: 1; }
   .where { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; color: var(--soft); }
-  .where span { display: flex; align-items: center; gap: 7px; padding: 5px 12px; }
+  .where span { display: flex; align-items: center; gap: 7px; height: calc(var(--control) - 2px); padding: 0 12px; }
   .where span + span { border-left: 1px solid var(--line); }
-  #live { display: flex; align-items: center; gap: 8px; color: var(--ok); }
-  #live.off { color: var(--bad); }
   .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 340px minmax(0, 1fr) 380px; }
   .col { padding: 28px; overflow: auto; display: flex; flex-direction: column; gap: 28px; }
   .col.left { border-right: 1px solid var(--line); padding-left: 32px; }
@@ -51,6 +53,12 @@
   .segs { display: flex; gap: 3px; }
   .seg { flex: 1; height: 6px; border-radius: 2px; background: var(--line); }
   .segs.tall .seg { height: 8px; }
+  .seg.review { flex: 0 0 18%; margin-left: 8px; }
+  .seg.run { position: relative; overflow: hidden; }
+  .seg.run::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent); transform: translateX(-100%); animation: sweep 1.6s ease-in-out infinite; animation-delay: var(--phase, 0ms); }
+  @keyframes sweep { to { transform: translateX(100%); } }
+  @media (prefers-reduced-motion: reduce) { .seg.run::after { display: none; } }
+  .seg.wait { background: repeating-linear-gradient(135deg, var(--dim) 0 2px, var(--line) 2px 5px); }
   .seg.ok { background: var(--ok); } .seg.run { background: var(--run); } .seg.you { background: var(--you); } .seg.bad { background: var(--bad); }
   .order-row { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px; color: var(--soft); }
   .order-row .id { font-family: var(--mono); font-size: 12px; width: 66px; flex: none; color: var(--dim); }
@@ -78,11 +86,38 @@
   .opt .detail { color: var(--soft); font-size: 13px; }
   .current { min-height: 46px; border: 1px dashed var(--line); border-radius: 6px; padding: 8px 14px; color: var(--dim); display: flex; align-items: center; gap: 12px; }
   .current span:first-child { flex: 1; }
-  .pill { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 9px 2px; border: 1px solid currentColor; white-space: nowrap; }
-  .pill.rec { color: var(--run); background: var(--run-bg); border-color: transparent; }
-  .st { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font: 600 11px/1 var(--mono); letter-spacing: .04em; border-radius: 999px; padding: 5px 9px; white-space: nowrap; }
+  .badge.you { color: var(--you); background: var(--you-bg); } .badge.run { color: var(--run); background: var(--run-bg); }
+  .badge.ok { color: var(--ok); background: var(--ok-bg); } .badge.bad { color: var(--bad); background: var(--bad-bg); }
+  .runmenu { position: relative; }
+  .runbtn { display: inline-flex; align-items: center; gap: 10px; height: var(--control); max-width: min(420px, 60vw); font-size: 13px; font-weight: 500; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px 0 12px; cursor: pointer; }
+  .runbtn .id { font: 500 12.5px/1 var(--mono); }
+  .runbtn .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .runbtn > .ic { color: var(--dim); }
+  .runbtn:hover, .runbtn[aria-expanded="true"] { border-color: var(--dim); }
+  .runlist { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: 380px; max-width: 90vw; max-height: 60vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, .6); }
+  .runlist .head { font: 12px/1 var(--mono); color: var(--dim); padding: 8px 10px 6px; }
+  .runopt { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 6px; padding: 9px 10px; color: var(--ink); cursor: pointer; }
+  .runopt:hover, .runopt:focus-visible { background: var(--hover); outline: none; }
+  .runopt[aria-selected="true"] { background: var(--raised); }
+  .runopt .tick { color: var(--ink); display: flex; }
+  .runopt .l1 { display: flex; gap: 8px; align-items: center; font: 500 12.5px/1.4 var(--mono); }
+  .runopt .l1 .when { margin-left: auto; }
+  .runopt .l2 { color: var(--soft); font-size: 13px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .runopt .l2.none { color: var(--dim); font-style: italic; }
+  .pastbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 10px 14px; color: var(--soft); }
+  .pastbar > .ic { color: var(--run); }
+  .pastbar b { color: var(--ink); font-weight: 600; }
+  .pastbar .grow { flex: 1; }
+  .switch { display: inline-flex; align-items: center; gap: 10px; background: none; border: 0; padding: 4px 2px; color: var(--soft); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .switch .track { position: relative; width: 32px; height: 18px; border-radius: 999px; background: var(--line); transition: background .15s; flex: none; }
+  .switch .knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--soft); transition: left .15s, background .15s; }
+  .switch[aria-checked="true"] { color: var(--ink); }
+  .switch[aria-checked="true"] .track { background: var(--ok); }
+  .switch[aria-checked="true"] .knob { left: 16px; background: #0a0a0a; }
+  .st { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--mono); white-space: nowrap; }
   .st.ok { color: var(--ok); } .st.run { color: var(--run); } .st.bad { color: var(--bad); } .st.wait { color: var(--dim); }
-  .st.you { color: #0a0a0a; background: var(--you); border-radius: 999px; padding: 2px 10px 2px 7px; font-weight: 600; }
+  .st.you { color: var(--you); background: var(--you-bg); border-radius: 999px; padding: 4px 9px 4px 7px; }
   pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow-x: auto; font: 12.5px/1.55 var(--mono); color: var(--soft); margin: 0; white-space: pre-wrap; }
   .because { color: var(--dim); font-size: 13px; }
   .free { display: flex; gap: 6px; }
@@ -105,6 +140,25 @@
   .dec .choice { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
   .dec .was { color: var(--dim); font-size: 12.5px; }
   .dec .why { color: var(--dim); font-size: 13px; }
+  .dec .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font: 12px/1.5 var(--mono); color: var(--dim); margin-bottom: 4px; }
+  .dec .meta .away { color: var(--you); }
+  .dec .main .why, .dec .main .was { max-width: 78ch; }
+  .dec .row.decision, .dec .row.merge { flex-wrap: wrap; }
+  .dec .row.merge .main { min-width: 220px; }
+  .dec .row.merge > .st { margin-left: auto; }
+  .dec .row.decision .main { min-width: 260px; }
+  .judge { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 16px 0 6px; }
+  .judge:first-child { padding-top: 4px; }
+  .judge b { font-weight: 600; }
+  .judge .v { font: 12px/1.4 var(--mono); color: var(--dim); }
+  .find { display: flex; gap: 12px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); }
+  .find .fid { font-family: var(--mono); font-size: 12px; color: var(--dim); width: 34px; flex: none; }
+  .find { flex-wrap: wrap; }
+  .find .main { flex: 1; min-width: 180px; }
+  .find .main .mono { overflow-wrap: anywhere; }
+  .find > .st { margin-left: auto; }
+  .sev { font-family: var(--mono); font-size: 11px; width: 56px; flex: none; }
+  .sev.blocker { color: var(--bad); } .sev.major { color: var(--you); } .sev.minor, .sev.note { color: var(--dim); }
   .revise { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 12px; }
   .happens { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
   .actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -124,10 +178,12 @@
 <header>
   <span class="brand">SHIP</span>
   <span class="bar"></span>
-  <span class="mono" id="runId" style="color: var(--soft)"></span>
+  <div class="runmenu" id="runMenu" hidden><button type="button" class="runbtn" id="runBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="Which run to show"></button><div class="runlist" id="runList" role="listbox" hidden></div></div>
+  <span class="badge you" id="afk" title="Unattended run: the orchestrator decides what can be undone" hidden>AFK</span>
   <span class="grow"></span>
+  <button type="button" class="switch" id="toasts" role="switch" aria-checked="true" hidden><span class="track"><span class="knob"></span></span><span>Pop-ups</span></button>
   <span class="where" id="where" hidden></span>
-  <span class="mono" id="live">connecting</span>
+  <span class="st wait" id="live">connecting</span>
 </header>
 <div class="cols">
   <aside class="col left" id="left"></aside>
@@ -164,13 +220,16 @@ const ICONS = {
   pr: '<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v7M18 15.5V10a3 3 0 0 0-3-3h-3"/>',
   pencil: '<path d="M4 20l1-4L16 5l3 3L8 19z"/>',
   back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  down: '<path d="M6 9l6 6 6-6"/>',
+  tick: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
   play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/>',
   steps: '<path d="M4 18h4v-4h4v-4h4V6h4"/>',
   link: '<path d="M14 5h5v5M19 5l-8 8M17 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4"/>',
 }
 const TONE_ICON = { ok: 'check', run: 'pulse', you: 'ask', wait: 'pause', bad: 'alert' }
-const EVENT_ICON = { asked: 'ask', decided: 'ask', changed: 'pencil', read: 'check', step: 'pulse', 'usage-limit': 'alert', 'gate-failed': 'alert', done: 'check', merged: 'pr' }
+const EVENT_ICON = { asked: 'ask', decided: 'ask', changed: 'pencil', read: 'check', step: 'pulse', 'usage-limit': 'alert', 'gate-failed': 'alert', done: 'check', merged: 'pr', finding: 'alert', review: 'list' }
+const OUTCOME = { sentback: ['sent back to fix', 'run'], accepted: ['accepted for now', 'wait'], working: ['being worked on', 'run'], open: ['open', 'you'], fixed: ['fixed', 'ok'], refused: ['not fixed, with a reason', 'bad'], withdrawn: ['withdrawn', 'wait'], held: ['still open after a second look', 'bad'] }
 function icon(name, size = 16) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   for (const [k, v] of Object.entries({ class: 'ic', width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
@@ -180,6 +239,7 @@ function icon(name, size = 16) {
 }
 const ui = { tab: 'inbox', ticket: '', revising: '', pick: '', note: '', drafts: {} }
 let state = null
+let live = null
 const $ = (id) => document.getElementById(id)
 
 function el(tag, attrs = {}, ...kids) {
@@ -212,7 +272,7 @@ function tickets() {
   const planned = state.run?.tickets || []
   const seen = new Set(planned.map((t) => t.ticket))
   const extra = Object.keys(state.workers).filter((t) => !seen.has(t)).map((ticket) => ({ ticket, title: '', group: 0, after: '' }))
-  return [...planned, ...extra].map((t) => {
+  const list = [...planned, ...extra].map((t) => {
     const w = state.workers[t.ticket]
     const pr = state.prs[t.ticket]
     const key = pr?.state === 'MERGED' ? 'merged' : w ? (w.stopped || '') : 'queued'
@@ -220,16 +280,91 @@ function tickets() {
     const [at, of] = String(w?.step || '').split('/').map(Number)
     return { ...t, w, pr, key, word, tone, at: at || 0, of: of || 12 }
   })
+  // A finished ticket reads its PR's merge state, so the Workers list and Merge order never disagree.
+  const byId = Object.fromEntries(list.map((t) => [t.ticket, t]))
+  for (const t of list) {
+    // A review run after the worker finished (the orchestrator's) is one more step on the ticket.
+    // After the first finish: the worker may be resumed to fix what the review found, and finish again.
+    const doneAt = (state.events[t.ticket] || []).find((e) => e.kind === 'done')?.at
+    const last = t.key === 'done' && doneAt ? (state.reviews || []).filter((r) => r.ticket === t.ticket && r.at > doneAt).at(-1) : null
+    if (last) {
+      const open = (state.findings || []).filter((f) => f.ticket === t.ticket && f.by === last.by && isOpen(f)).length
+      const running = /^running/i.test(last.verdict)
+      t.review = { by: last.by || 'review', running, verdict: last.verdict, open,
+        tone: running ? 'run' : open ? 'you' : /BLOCK|FAIL/i.test(last.verdict) ? 'bad' : 'ok' }
+    }
+    if (t.key !== 'merged' && t.pr?.state === 'OPEN') t.merge = prState(t, byId)
+    if (t.key === 'done' && t.merge) [t.word, t.tone] = t.merge
+  }
+  return list
+}
+
+function prState(t, byId) {
+  const parent = t.after && byId[t.after]
+  if (parent && parent.key !== 'merged') return [`merge ${parent.pr ? '#' + parent.pr.number : parent.ticket} first`, 'wait']
+  if (t.pr.draft) return ['still a draft', 'run']
+  if (t.w && t.key !== 'done') return ['worker is still on it', 'run']
+  const c = t.pr.checks
+  if (!c) return ['could not read its checks', 'wait']
+  if (c.conflict) return [`conflicts with ${state.run?.target || 'its base'}`, 'bad']
+  if (c.ci === 'failing') return ['CI is failing', 'bad']
+  if (c.ci === 'running') return ['CI is running', 'run']
+  if (t.review?.running) return ['being reviewed', 'run']
+  if (c.threads) return [`${c.threads} review thread${c.threads > 1 ? 's' : ''} open`, 'you']
+  const open = (state.findings || []).filter((f) => f.ticket === t.ticket && isOpen(f)).length
+  if (open) return [`${open} open, needs you`, 'you']
+  // A clean fallback review stands in for a rate-limited bot (the user's rule).
+  const backup = t.review && /fallback|orchestrator/i.test(t.review.by)
+  if (c.rabbit !== 'reviewed' && c.rabbit !== 'skipped' && backup) return ['ready · backup-reviewed', 'ok']
+  if (c.rabbit === 'waiting') return ['waiting on CodeRabbit', 'wait']
+  if (c.rabbit === 'limited') return ['waiting on CodeRabbit, rate limited', 'wait']
+  if (c.rabbit === 'skipped') return ['ready, CodeRabbit skipped it', 'ok']
+  return ['ready to merge', 'ok']
 }
 
 const label = (name, text, style) => el('div', { class: 'label', style }, icon(name, 15), text)
 const stat = (t) => el('span', { class: 'st ' + t.tone }, icon(TONE_ICON[t.tone], 14), t.word)
 const brain = (t) => t.w?.model || ''
+const sess = (key) => state.sessions?.[key]
+function attachLine(key) {
+  const x = sess(key)
+  if (!x?.id) return ''
+  const cmd = `claude attach ${x.id}`
+  const btn = el('button', { type: 'button', class: 'btn quiet', style: 'min-height: 28px; padding: 0 8px', onclick: async (e) => {
+    e.stopPropagation()
+    try { await navigator.clipboard.writeText(cmd); btn.textContent = 'copied' } catch { btn.textContent = 'copy failed' }
+  } }, 'copy')
+  return el('div', { class: 'mono with', title: `session ${x.sessionId || x.id}${x.cwd ? ' in ' + x.cwd : ''}` },
+    icon('link', 13), cmd, x.status === 'gone' ? ' · session ended' : '', btn)
+}
 
 function segs(t, tall) {
   const done = t.key === 'done' || t.key === 'merged'
+  // Step 12 is not done while its PR still waits on CI, the bot or a thread: it takes that state's tone.
+  const tail = t.key === 'done' && t.merge && t.merge[1] !== 'ok' ? t.merge[1] : ''
   return el('div', { class: 'segs' + (tall ? ' tall' : ''), 'aria-hidden': 'true' },
-    Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done || i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })))
+    Array.from({ length: t.of }, (_, i) => el('div', { class: 'seg ' + (done ? (tail && i === t.of - 1 ? tail : 'ok') : i + 1 < t.at ? 'ok' : i + 1 === t.at ? t.tone : '') })),
+    t.review ? el('div', { class: 'seg review ' + t.review.tone }) : '')
+}
+const stepText = (t) => [t.at ? `step ${t.at} of ${t.of}` : '', t.review ? (t.review.running ? `${t.review.by} running` : `${t.review.by}: ${t.review.verdict}${t.review.open ? ` · ${t.review.open} open` : ''}`) : ''].filter(Boolean).join(' · ')
+
+// A sailboat; an orange dot while a question waits.
+function favicon(waiting) {
+  const dot = waiting ? "<circle cx='25' cy='7' r='5.5' fill='%23f5a623' stroke='%23000' stroke-width='1.5'/>" : ''
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230a0a0a'/>"
+    + "<path d='M15 6v15H7z' fill='%23ededed'/><path d='M17 9l7 12h-7z' fill='%2352a8ff'/><path d='M5 23h22l-3.5 4h-15z' fill='%23ededed'/>" + dot + '</svg>'
+  const href = 'data:image/svg+xml,' + svg
+  if ($('favicon').getAttribute('href') !== href) $('favicon').setAttribute('href', href)
+}
+
+function renderToasts() {
+  const b = $('toasts')
+  b.hidden = !!ui.view || !live
+  if (b.hidden) return
+  const on = live.toasts !== false
+  b.setAttribute('aria-checked', String(on))
+  b.title = on ? 'Questions also pop up at the corner of the screen. Click to stop them.' : 'Questions wait here only. Click to pop them up again.'
+  b.onclick = () => post('/api/settings', { toasts: !on })
 }
 
 function renderLeft() {
@@ -237,15 +372,15 @@ function renderLeft() {
   const all = tickets().filter((t) => !run || t.group > 0)
   const merged = all.filter((t) => t.key === 'merged').length
   const groups = [...new Set(all.map((t) => t.group))].sort((a, b) => a - b)
-  $('runId').textContent = run ? `${run.id} run` : 'no run set'
   $('where').hidden = !run?.where
   $('where').replaceChildren(...String(run?.where || '').split('·').map((part, i) => el('span', {}, icon(i === 0 ? 'monitor' : 'user', 15), part.trim())))
   $('left').replaceChildren(
     el('div', { class: 'stack' },
       label('box', 'What this run ships'),
-      el('h1', {}, run?.title || 'No run is set yet'),
+      el('h1', {}, run?.title || (run?.id === 'earlier' ? 'Earlier, unnamed' : run?.id) || 'No run is set yet'),
       run?.summary ? el('div', { class: 'summary' }, run.summary) : '',
-      run ? el('div', { class: 'mono' }, [run.repo, run.target && `PRs target ${run.target}`, `started ${clock(run.startedAt)}`].filter(Boolean).join(' · '))
+      run && sess('orchestrator') ? el('div', { class: 'stack', style: 'gap: 2px' }, el('div', { class: 'mono' }, 'Orchestrator'), attachLine('orchestrator')) : '',
+      run ? el('div', { class: 'mono' }, [run.repo, run.target && `PRs target ${run.target}`, run.startedAt && `started ${clock(run.startedAt)}`].filter(Boolean).join(' · '))
           : el('div', { class: 'summary' }, 'The orchestrator sets this when a run starts.')),
     all.length ? el('div', { class: 'stack' },
       el('div', { class: 'big' }, el('b', {}, String(merged)), el('span', { class: 'summary' }, `of ${all.length} tickets merged`)),
@@ -275,34 +410,37 @@ function questionCard(q, more) {
   const t = tickets().find((x) => x.ticket === q.ticket)
   const behind = tickets().filter((x) => x.after === q.ticket).map((x) => x.ticket)
   return el('div', { class: 'card you' + (location.hash === '#' + q.id ? ' focus' : ''), id: q.id },
-    el('div', { class: 'top mono' }, el('span', { class: 'ask-ic' }, icon('ask', 16)), el('span', { style: 'color: var(--ink)' }, q.ticket),
+    el('div', { class: 'top mono' }, el('span', { class: 'ask-ic' }, icon('ask', 16)), el('span', { style: 'color: var(--ink)' }, who(q.ticket)),
       el('span', {}, t?.title || ''), el('span', { class: 'grow' }), el('span', {}, `asked ${clock(q.askedAt)} · waiting ${ago(q.askedAt)}`)),
     el('div', { class: 'q' }, q.question),
     el('div', { class: 'opts' }, q.options.map((o, i) => el('button', { type: 'button', class: 'opt' + (i === q.recommended ? ' rec' : ''), onclick: () => answer(o.label) },
       el('span', { class: 'key' }, String(i + 1)),
       el('span', { class: 'body' }, el('div', { class: 'name' }, o.label), o.detail ? el('div', { class: 'detail' }, o.detail) : ''),
-      i === q.recommended ? el('span', { class: 'pill rec' }, 'Recommended') : ''))),
+      i === q.recommended ? el('span', { class: 'badge run' }, 'Recommended') : ''))),
     q.example ? el('pre', {}, q.example) : '',
     q.because ? el('div', { class: 'because' }, 'Asked because: ' + q.because) : '',
     el('div', { class: 'free' }, box, el('button', { type: 'button', class: 'btn main', onclick: () => answer('') }, icon('up'), 'Send text')),
-    el('div', { class: 'mono' }, [`Stops ${q.ticket}${t?.w?.step ? ` at step ${t.w.step.replace('/', ' of ')}` : ''}.`,
-      behind.length ? `${behind.join(', ')} waits behind it.` : 'Nothing else waits on it.'].join(' ')))
+    el('div', { class: 'mono' }, q.ticket === 'RUN' ? 'Asked by the orchestrator about the whole run. It waits for your answer.'
+      : [`Stops ${q.ticket}${t?.w?.step ? ` at step ${t.w.step.replace('/', ' of ')}` : ''}.`,
+        behind.length ? `${behind.join(', ')} waits behind it.` : 'Nothing else waits on it.'].join(' ')))
 }
 
 function decisionRow(d) {
   const revising = ui.revising === d.id
-  const finished = ['done', 'merged'].includes(state.workers[d.ticket]?.stopped)
+  const finished = d.ticket === 'RUN' || ['done', 'merged'].includes(state.workers[d.ticket]?.stopped)
   const last = (d.history || []).at(-1)
   const delivery = { 'sent': 'sent, the worker has not read it yet', 'read': `read by the worker at ${clock(d.readAt)}`, 'follow-up': 'saved as a follow-up' }[d.delivery]
-  const row = el('div', { class: 'row' },
-    el('div', { class: 'id mono' }, d.ticket),
+  const away = d.by === 'orchestrator'
+  const row = el('div', { class: 'row decision' },
     el('div', { class: 'main' },
+      el('div', { class: 'meta' }, el('span', { style: 'color: var(--ink)' }, who(d.ticket)),
+        away ? el('span', { class: 'away' }, `${d.dn} · decided while you were away`) : el('span', {}, 'you decided'),
+        el('span', {}, clock(d.at))),
       el('div', { class: 'ask' }, d.question),
       el('div', { class: 'choice' }, d.choice),
       last ? el('div', { class: 'was' }, `changed ${clock(d.revisedAt)} · was "${last.choice}" · ${delivery}`) : '',
       d.note ? el('div', { class: 'why' }, d.note) : ''),
-    el('div', { class: 'mono', style: 'padding-top: 2px' }, clock(d.at)),
-    !revising && d.options.length > 1 ? el('button', { type: 'button', class: 'btn', onclick: () => go({ revising: d.id, pick: '', note: '' }) }, icon('pencil', 14), 'Change') : '')
+    !revising && !ui.view && d.options.length > 1 ? el('button', { type: 'button', class: 'btn', onclick: () => go({ revising: d.id, pick: '', note: '' }) }, icon('pencil', 14), 'Change') : '')
   if (!revising) return el('div', { class: 'dec', id: 'd-' + d.id }, row)
 
   const note = el('textarea', { rows: 1, placeholder: 'Why the change? The worker reads this.', 'aria-label': 'Why you changed it', 'data-draft': 'rev' })
@@ -325,9 +463,22 @@ function decisionRow(d) {
         el('button', { type: 'button', class: 'btn quiet', onclick: () => go({ revising: '', pick: '', note: '' }) }, 'Keep my answer'))))
 }
 
+function decisionGroups() {
+  const all = [...state.decisions].reverse()
+  const away = all.filter((d) => d.by === 'orchestrator')
+  const yours = all.filter((d) => d.by !== 'orchestrator')
+  return [
+    away.length ? label('clock', `Decided while you were away · ${away.length} · change any you disagree with`) : '',
+    ...away.map(decisionRow),
+    yours.length ? label('user', `Your answers · ${yours.length}`, away.length ? 'padding-top: 12px' : '') : '',
+    ...yours.map(decisionRow),
+  ].filter(Boolean)
+}
+
 function story(t) {
   const events = state.events[t.ticket] || []
-  const tone = { asked: 'you', decided: 'you', changed: 'you', 'usage-limit': 'bad', 'gate-failed': 'bad', done: 'ok', merged: 'ok' }
+  const tone = { asked: 'you', decided: 'you', changed: 'you', 'usage-limit': 'bad', 'gate-failed': 'bad', done: 'ok', merged: 'ok', finding: 'you' }
+  const found = findings(t.ticket)
   return el('div', { class: 'card story' },
     el('div', { class: 'top' }, el('button', { type: 'button', class: 'btn quiet', style: 'margin-left: -16px', onclick: () => go({ ticket: '' }) }, icon('back', 15), 'Back'),
       el('span', { class: 'grow' }), stat(t)),
@@ -337,12 +488,99 @@ function story(t) {
       t.pr || t.w?.pr ? el('a', { class: 'with', href: t.pr?.url || t.w.pr, target: '_blank', rel: 'noopener' }, icon('pr', 13), t.pr ? 'PR #' + t.pr.number : 'PR') : '',
       t.url ? el('a', { class: 'with', href: t.url, target: '_blank', rel: 'noopener' }, icon('link', 13), 'Ticket') : ''),
     brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 14), brain(t)) : '',
-    el('div', { class: 'stack', style: 'gap: 8px' }, label('steps', t.at ? `Step ${t.at} of ${t.of}` : 'Steps'), segs(t, true)),
+    attachLine(t.ticket),
+    sess(t.ticket)?.sessionId ? el('div', { class: 'mono' }, `session ${sess(t.ticket).sessionId}`) : '',
+    el('div', { class: 'stack', style: 'gap: 8px' }, label('steps', stepText(t) || 'Steps'), segs(t, true),
+      t.review ? el('button', { type: 'button', class: 'btn quiet', style: 'min-height: 28px; padding: 0; align-self: flex-start', onclick: () => document.getElementById(judgeId(t.ticket, t.review.by))?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+        icon('alert', 14), `See what ${t.review.by} found`) : ''),
+    found.length || reviews(t.ticket).length ? el('div', {}, label('alert', `Findings · ${found.filter(isOpen).length} open`, 'padding-bottom: 4px'),
+      judgeGroups(t.ticket)) : '',
     el('div', {}, label('clock', 'What happened', 'padding-bottom: 10px'),
       events.length ? events.map((e) => el('div', { class: 'ev' }, el('div', { class: 't mono tone-' + (tone[e.kind] || '') }, clock(e.at)),
         el('div', { class: 'ei tone-' + (tone[e.kind] || '') }, icon(EVENT_ICON[e.kind] || 'pulse', 16)),
         el('div', {}, el('b', {}, e.text), e.detail ? el('span', {}, e.detail) : '')))
       : el('div', { class: 'summary' }, 'Nothing recorded yet.')))
+}
+
+const who = (ticket) => (ticket === 'RUN' ? 'Orchestrator' : ticket)
+const isOpen = (f) => ['open', 'held', 'working', 'sentback'].includes(f.outcome)
+// Judges' findings plus the PR's review threads. While the ticket's worker is active, its open items are being worked on.
+const findings = (ticket) => {
+  const w = state.workers[ticket]
+  const active = w && !w.stopped
+  const threads = (state.prs[ticket]?.checks?.items || []).map((x) => ({ ...x, ticket }))
+  return [...(state.findings || []).filter((f) => f.ticket === ticket), ...threads]
+    .map((f) => (active && (f.outcome === 'open' || f.fixAsked) && f.outcome !== 'fixed' ? { ...f, outcome: 'working' }
+      : f.fixAsked && ['open', 'held'].includes(f.outcome) ? { ...f, outcome: 'sentback' } : f))
+}
+const judgeId = (ticket, by) => `j-${ticket}-${String(by || 'review').replace(/[^a-z0-9]+/gi, '-')}`
+const RANK = { blocker: 0, major: 1, minor: 2, note: 3 }
+
+// One group per judge, in the order they first spoke: its latest verdict, its open count, open findings first.
+function judgeGroups(ticket) {
+  const found = findings(ticket)
+  const revs = reviews(ticket)
+  const judges = [...new Set([...revs, ...found].sort((a, b) => String(a.at).localeCompare(String(b.at))).map((x) => x.by || 'review'))]
+  return judges.map((by) => {
+    const mine = found.filter((f) => (f.by || 'review') === by)
+      .sort((a, b) => isOpen(b) - isOpen(a) || (RANK[a.severity] ?? 9) - (RANK[b.severity] ?? 9))
+    const verdict = revs.filter((r) => (r.by || 'review') === by).at(-1)?.verdict
+    const open = mine.filter(isOpen).length
+    return el('div', { id: judgeId(ticket, by) },
+      el('div', { class: 'judge' }, el('b', {}, by), verdict ? el('span', { class: 'v' }, verdict) : '',
+        open ? el('span', { class: 'badge you' }, `${open} open`) : mine.length ? el('span', { class: 'st ok' }, icon('check', 14), 'all closed') : ''),
+      mine.map(findingRow))
+  })
+}
+const reviews = (ticket) => (state.reviews || []).filter((r) => r.ticket === ticket)
+function findingRow(f) {
+  const [word, tone] = OUTCOME[f.outcome] || [f.outcome, 'wait']
+  const was = (f.history || []).map((h) => h.outcome).join(' → ')
+  return el('div', { class: 'find' },
+    el('span', { class: 'fid' }, f.id),
+    el('span', { class: 'sev ' + f.severity }, f.severity),
+    el('div', { class: 'main' }, el('div', {}, f.claim),
+      el('div', { class: 'mono' }, [f.by && `found by ${f.author || f.by}`, f.anchor, was && `was ${was}`].filter(Boolean).join(' · '),
+        f.url ? [' · ', el('a', { href: f.url, target: '_blank', rel: 'noopener' }, 'open thread')] : '')),
+    el('span', { class: 'st ' + tone }, icon(TONE_ICON[tone], 14), word))
+}
+
+// Open or held findings on a ticket whose worker has stopped: nobody works them unless the user rules.
+function toRule() {
+  if (ui.view) return []
+  return (state.findings || []).filter((f) => (f.outcome === 'open' || f.outcome === 'held') && !f.fixAsked
+    && state.workers[f.ticket]?.stopped === 'done' && state.prs[f.ticket]?.state !== 'MERGED')
+    .sort((a, b) => (RANK[a.severity] ?? 9) - (RANK[b.severity] ?? 9))
+}
+
+function rulingCard(f) {
+  const box = el('textarea', { rows: 1, placeholder: 'A note for the worker or the follow-up (optional)', 'aria-label': 'Note', 'data-draft': 'rule-' + f.ticket + f.id })
+  box.value = ui.drafts['rule-' + f.ticket + f.id] || ''
+  box.addEventListener('input', () => (ui.drafts['rule-' + f.ticket + f.id] = box.value))
+  const rule = async (choice) => {
+    if (await post('/api/findings/rule', { ticket: f.ticket, id: f.id, run: f.run, choice, note: box.value.trim() })) delete ui.drafts['rule-' + f.ticket + f.id]
+  }
+  return el('div', { class: 'card you' },
+    el('div', { class: 'top mono' }, el('span', { style: 'color: var(--ink)' }, f.ticket), el('span', {}, `${f.id} · ${f.severity} · found by ${f.by}`),
+      el('span', { class: 'grow' }), el('span', { class: 'st you' }, icon('alert', 14), f.outcome === 'held' ? 'held after a second look' : 'open')),
+    el('div', { class: 'q', style: 'font-size: 17px' }, f.claim),
+    f.anchor ? el('div', { class: 'mono' }, f.anchor) : '',
+    box,
+    el('div', { class: 'actions' },
+      el('button', { type: 'button', class: 'btn', onclick: () => rule('accept') }, icon('clock', 14), 'Accept for now'),
+      el('button', { type: 'button', class: 'btn main', onclick: () => rule('fix') }, icon('pencil', 14), 'Send back to fix')),
+    el('div', { class: 'mono' }, 'Accept saves it under Left for later. Send back resumes the worker to fix it.'))
+}
+
+function findingList() {
+  const all = state.findings || []
+  if (!all.length && !(state.reviews || []).length) return [el('div', { class: 'empty' }, el('b', {}, 'No findings yet.'),
+    el('span', {}, 'Each reviewer finding lands here, with who found it and what happened to it.'))]
+  const byTicket = [...new Set([...all, ...(state.reviews || [])].map((f) => f.ticket))]
+  return byTicket.map((ticket) => el('div', { class: 'dec' },
+    el('div', { class: 'top' }, el('span', { class: 'wid mono', style: 'color: var(--ink)' }, ticket), el('span', { class: 'grow' }),
+      findings(ticket).filter(isOpen).length ? el('span', { class: 'badge you' }, `${findings(ticket).filter(isOpen).length} open`) : ''),
+    judgeGroups(ticket)))
 }
 
 function mergeList() {
@@ -355,21 +593,7 @@ function mergeList() {
   const none = all.filter((t) => t.key !== 'merged' && !(t.pr && t.pr.state === 'OPEN'))
   if (!all.some((t) => t.pr)) return [el('div', { class: 'empty' }, el('b', {}, 'No PR yet.'), el('span', {}, 'PRs show up here once a worker opens one. The order follows which ticket waits for which.'))]
 
-  const note = (t) => {
-    const parent = t.after && byId[t.after]
-    if (parent && parent.key !== 'merged') return [`wait: merge ${parent.pr ? '#' + parent.pr.number : parent.ticket} first`, 'wait']
-if (t.pr.draft) return ['still a draft', 'run']
-    if (t.w && t.key !== 'done') return ['worker is still on it', 'run']
-    const c = t.pr.checks
-    if (!c) return ['could not read its checks', 'wait']
-    if (c.ci === 'failing') return ['CI is failing', 'bad']
-    if (c.ci === 'running') return ['CI is running', 'run']
-    if (c.threads) return [`${c.threads} review thread${c.threads > 1 ? 's' : ''} open`, 'you']
-    if (c.rabbit === 'waiting') return ['waiting on CodeRabbit', 'wait']
-    if (c.rabbit === 'limited') return ['can merge now, CodeRabbit skipped it', 'ok']
-    return ['can merge now', 'ok']
-  }
-  const row = (n, t, words, tone) => el('div', { class: 'dec' }, el('div', { class: 'row' },
+  const row = (n, t, words, tone) => el('div', { class: 'dec' }, el('div', { class: 'row merge' },
     el('div', { class: 'mono', style: 'width: 24px; flex: none; padding-top: 2px' }, n),
     el('div', { class: 'id mono' }, t.ticket),
     el('div', { class: 'main' },
@@ -378,16 +602,17 @@ if (t.pr.draft) return ['still a draft', 'run']
         t.pr ? el('a', { class: 'with', href: t.pr.url, target: '_blank', rel: 'noopener' }, icon('pr', 13), '#' + t.pr.number) : '',
         t.pr?.checks ? [
           { green: 'CI green', running: 'CI running', failing: 'CI failing: ' + t.pr.checks.failing.join(', '), none: 'no CI' }[t.pr.checks.ci],
-          { reviewed: 'CodeRabbit reviewed', limited: 'CodeRabbit rate limited, did not review', waiting: 'CodeRabbit not done' }[t.pr.checks.rabbit],
+          { reviewed: 'CodeRabbit reviewed', limited: 'CodeRabbit rate limited, not reviewed yet', skipped: 'CodeRabbit skipped it', waiting: 'CodeRabbit not done' }[t.pr.checks.rabbit],
           `${t.pr.checks.threads} thread${t.pr.checks.threads === 1 ? '' : 's'} open`,
-        ].join(' · ') : '')),
+          t.pr.checks.conflict ? 'conflicts' : '',
+        ].filter(Boolean).join(' · ') : '')),
     el('span', { class: 'st ' + tone }, icon(TONE_ICON[tone], 14), words)))
   let n = 0
   return [
     merged.length ? label('check', `Merged · ${merged.length}`) : '',
     ...merged.map((t) => row(String(++n), t, t.pr?.mergedAt ? `merged ${clock(t.pr.mergedAt)}` : 'merged', 'ok')),
     open.length ? label('order', `Merge next, in this order · ${open.length}`, 'padding-top: 12px') : '',
-    ...open.map((t) => row(String(++n), t, ...note(t))),
+    ...open.map((t) => row(String(++n), t, ...t.merge)),
     none.length ? label('pause', `No PR yet · ${none.length}`, 'padding-top: 12px') : '',
     ...none.map((t) => row('', t, t.after && byId[t.after]?.key !== 'merged' ? `starts after ${t.after}` : t.word, 'wait')),
   ].filter(Boolean)
@@ -396,29 +621,40 @@ if (t.pr.draft) return ['still a draft', 'run']
 function renderMid() {
   const open = state.questions.filter((q) => !q.answer)
   const stopped = new Set(open.map((q) => q.ticket)).size
+  const rulings = toRule()
   const t = ui.ticket && tickets().find((x) => x.ticket === ui.ticket)
-  document.title = (open.length ? `(${open.length}) ` : '') + 'Ship'
+  const run = state.run
+  document.title = (open.length ? `(${open.length}) ` : '') + [run?.id, run?.afk && 'AFK', ui.view && 'past run', 'Ship'].filter(Boolean).join(' · ')
+  $('afk').hidden = !run?.afk
+  favicon(open.length > 0)
 
   const active = document.activeElement
   const draft = active?.dataset?.draft
   const caret = draft ? active.selectionStart : 0
 
   const tabs = el('div', { class: 'tabs', role: 'tablist' },
-    el('button', { type: 'button', class: 'tab', role: 'tab', 'aria-selected': String(!t && ui.tab === 'inbox'), onclick: () => go({ tab: 'inbox', ticket: '' }) }, icon('inbox'), `Needs you · ${open.length}`),
+    el('button', { type: 'button', class: 'tab', role: 'tab', 'aria-selected': String(!t && ui.tab === 'inbox'), onclick: () => go({ tab: 'inbox', ticket: '' }) }, icon('inbox'), `Needs you · ${open.length + rulings.length}`),
     el('button', { type: 'button', class: 'tab', role: 'tab', 'aria-selected': String(!t && ui.tab === 'decisions'), onclick: () => go({ tab: 'decisions', ticket: '' }) }, icon('list'), `Decisions · ${state.decisions.length}`),
+    el('button', { type: 'button', class: 'tab', role: 'tab', 'aria-selected': String(!t && ui.tab === 'findings'), onclick: () => go({ tab: 'findings', ticket: '' }) }, icon('alert'), `Findings · ${(state.findings || []).filter((f) => f.outcome === 'open' || f.outcome === 'held').length} open`),
     el('button', { type: 'button', class: 'tab', role: 'tab', 'aria-selected': String(!t && ui.tab === 'merge'), onclick: () => go({ tab: 'merge', ticket: '' }) }, icon('pr'), `Merge order · ${tickets().filter((x) => x.pr).length}`),
     el('span', { class: 'grow' }),
     el('span', { class: 'mono' }, stopped ? `${stopped} worker${stopped > 1 ? 's' : ''} stopped until you answer` : 'no worker is stopped'))
 
   let body
   if (t) body = [story(t)]
-  else if (ui.tab === 'inbox') body = open.length ? open.map((q) => questionCard(q)) : [el('div', { class: 'empty' }, el('b', {}, 'Nothing needs you.'),
+  else if (ui.tab === 'inbox') body = open.length || rulings.length ? [...open.map((q) => questionCard(q)),
+    rulings.length ? label('alert', `Findings a reviewer left open · ${rulings.length} · accept for now or send back`, open.length ? 'padding-top: 12px' : '') : '',
+    ...rulings.map(rulingCard)].filter(Boolean) : [el('div', { class: 'empty' }, el('b', {}, 'Nothing needs you.'),
     el('span', {}, 'Every worker can keep going. Your answers are under Decisions, and you can change them there.'))]
   else if (ui.tab === 'merge') body = mergeList()
-  else body = state.decisions.length ? [...state.decisions].reverse().map(decisionRow) : [el('div', { class: 'empty' }, el('b', {}, 'No decisions yet.'),
+  else if (ui.tab === 'findings') body = findingList()
+  else body = state.decisions.length ? decisionGroups() : [el('div', { class: 'empty' }, el('b', {}, 'No decisions yet.'),
     el('span', {}, 'Each answer you give lands here.'))]
 
-  $('mid').replaceChildren(tabs, ...body)
+  const past = ui.view ? el('div', { class: 'pastbar' }, icon('clock', 15),
+    el('span', {}, 'You are looking at ', el('b', {}, state.run?.id || ui.view), ', a past run. Nothing here can be changed.'), el('span', { class: 'grow' }),
+    el('button', { type: 'button', class: 'btn', style: 'min-height: 32px', onclick: () => show('') }, icon('back', 14), 'Back to live run')) : ''
+  $('mid').replaceChildren(...[past, tabs, ...body].filter(Boolean))
   if (draft) {
     const box = document.querySelector(`[data-draft="${draft}"]`)
     if (box) { box.focus(); box.setSelectionRange(caret, caret) }
@@ -434,14 +670,18 @@ function renderRight() {
         el('span', { class: 'mono' }, t.key === 'merged' && t.pr?.mergedAt ? clock(t.pr.mergedAt) : t.w ? clock(t.w.at) : '')),
       el('div', { class: 'doing' }, (t.key === 'merged' && !t.w ? t.title : t.w?.doing) || t.title || (t.after ? `Starts when ${t.after} is merged.` : '')),
       segs(t),
-      t.at ? el('div', { class: 'mono' }, `step ${t.at} of ${t.of}`) : '',
-      brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 13), brain(t)) : ''))
+      stepText(t) ? el('div', { class: 'mono' }, stepText(t)) : '',
+      brain(t) ? el('div', { class: 'mono with' }, icon('cpu', 13), brain(t)) : '',
+      sess(t.ticket)?.id ? el('div', { class: 'mono' }, `attach ${sess(t.ticket).id}${sess(t.ticket).status === 'gone' ? ' · ended' : ''}`) : ''))
     : [el('div', { class: 'summary', style: 'padding-top: 14px' }, 'No worker has reported yet.')]))
 }
 
 function render() {
   if (!state) return
-  renderLeft(); renderMid(); renderRight()
+  renderToasts(); renderLeft(); renderMid(); renderRight()
+  // Every redraw rebuilds the bars; a phase from the clock keeps the sweep from restarting mid-stroke.
+  const phase = `-${Date.now() % 1600}ms`
+  for (const seg of document.querySelectorAll('.seg.run')) seg.style.setProperty('--phase', phase)
 }
 
 function route() {
@@ -450,18 +690,69 @@ function route() {
   else if (hash) Object.assign(ui, { ticket: '', tab: state?.decisions.some((d) => d.id === hash && !state.questions.some((q) => q.id === hash && !q.answer)) ? 'decisions' : 'inbox' })
 }
 
+async function loadRuns() {
+  try { const r = await (await fetch('/api/runs')).json(); ui.runs = Array.isArray(r) ? r : [] } catch { ui.runs = [] }
+  renderRunMenu()
+}
+
+function renderRunMenu() {
+  const runs = ui.runs || []
+  $('runMenu').hidden = !runs.length
+  const key = (r) => (r.live ? '' : r.id)
+  const cur = runs.find((r) => key(r) === ui.view) || runs[0]
+  if (!cur) return
+  const day = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  const name = (r) => (r.id === 'earlier' ? 'Earlier' : r.id)
+  const liveMark = () => el('span', { class: 'st ok' }, icon('pulse', 14), 'live')
+  $('runBtn').replaceChildren(el('span', { class: 't' }, el('span', { class: 'id' }, name(cur)), cur.title ? ` ${cur.title}` : ''), cur.live ? liveMark() : '', icon('down', 14))
+  $('runList').replaceChildren(el('div', { class: 'head' }, `Runs · ${runs.length}`), ...runs.map((r) => el('button', {
+    type: 'button', class: 'runopt', role: 'option', 'aria-selected': String(r === cur),
+    onclick: () => { closeRunMenu(); if (key(r) !== ui.view) show(key(r)) },
+  },
+    el('div', { class: 'l1' }, name(r),
+      el('span', { class: 'when' }, r.live ? liveMark() : el('span', { class: 'st wait' }, r.startedAt ? day(r.startedAt) : '')),
+      r === cur ? el('span', { class: 'tick', 'aria-hidden': 'true' }, icon('tick', 14)) : ''),
+    el('div', { class: 'l2' + (r.title ? '' : ' none') }, r.title || (r.id === 'earlier' ? 'items that named no run' : 'no title recorded')))))
+}
+
+function closeRunMenu() {
+  $('runList').hidden = true
+  $('runBtn').setAttribute('aria-expanded', 'false')
+}
+const EMPTY = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {} }
+async function show(view) {
+  ui.view = view
+  ui.ticket = ''
+  ui.tab = view ? 'decisions' : 'inbox'
+  state = view ? { ...EMPTY, ...(await (await fetch('/api/runs/' + encodeURIComponent(view))).json()) } : live
+  renderRunMenu()
+  render()
+}
+
 function connect() {
   const es = new EventSource('/api/events')
-  es.onopen = () => { $('live').replaceChildren(icon('pulse', 14), 'live'); $('live').className = 'mono with' }
+  es.onopen = () => { $('live').replaceChildren(icon('check', 14), 'connected'); $('live').className = 'st ok'; $('live').title = 'The page gets updates as they happen' }
   es.onmessage = (e) => {
-    const first = !state
-    state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, ...JSON.parse(e.data) }
+    const first = !live
+    const prevRun = live?.run?.id
+    live = { ...EMPTY, ...JSON.parse(e.data) }
+    if (live.run?.id !== prevRun) loadRuns()
+    if (ui.view) return
+    state = live
     if (first) route()
     render()
   }
-  es.onerror = () => { $('live').replaceChildren(icon('alert', 14), 'not connected'); $('live').className = 'mono with off' }
+  es.onerror = () => { $('live').replaceChildren(icon('alert', 14), 'not connected'); $('live').className = 'st bad' }
 }
 connect()
+$('runBtn').addEventListener('click', () => {
+  const open = $('runList').hidden
+  $('runList').hidden = !open
+  $('runBtn').setAttribute('aria-expanded', String(open))
+  if (open) $('runList').querySelector('[aria-selected="true"]')?.focus()
+})
+document.addEventListener('click', (e) => { if (!$('runMenu').contains(e.target)) closeRunMenu() })
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('runList').hidden) { closeRunMenu(); $('runBtn').focus() } })
 window.addEventListener('hashchange', () => { route(); render() })
 setInterval(() => { if (state && !document.activeElement?.dataset?.draft) render() }, 60000)
 </script>

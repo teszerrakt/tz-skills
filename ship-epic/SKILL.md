@@ -1,7 +1,7 @@
 ---
 name: ship-epic
 description: Drive an epic's takeable tickets, frontend and backend, to reviewed PRs, a few sessions at a time.
-argument-hint: "TRA-XXX"
+argument-hint: "TRA-XXX [--afk [--until HH:MM]]"
 disable-model-invocation: true
 ---
 
@@ -100,7 +100,8 @@ Everything a session cannot negotiate later goes in its prompt, after the `/ship
 - the per-worktree opt-outs it leaves alone,
 - for a backend session, the **migration numbers it owns**, one per service it will migrate, reserved above the base branch, every open PR, and every sibling's reservation,
 - for a frontend session blocked by this run's backend PR, that backend: the PR number, and its preview URL or its worktree and backend port,
-- the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*.
+- the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*,
+- under `--afk`, the rule quoted under *Unattended*.
 
 Migration numbers are reserved here because siblings are on no branch the others can see: each would take the same next number, and the collision surfaces only when the second one merges.
 
@@ -109,6 +110,8 @@ Done when every prompt names its own paths, its own port and its own lock rule. 
 ## Watching
 
 Poll `claude agents --json` and read only the sessions you named.
+
+**Where the config names `Status`, run the command center's `watch` too, in the background, and never write a watcher of your own.** `node ~/.claude/ship-ui/ship-ui.mjs watch` prints one line for each new thing to act on: `question <id> from <ticket>`, `resume <ticket>: <n> review threads open on #<pr>`, `resume <ticket>: CI failing on #<pr>`, `resume <ticket>: #<pr> conflicts with <branch>` or `resume <ticket>: the user asked to fix <id>: <claim>`, `<ticket> stopped: <reason>`, and `quiet <ticket>: no update for <n> min at step <step>`. A `resume` line means a finished session's PR needs it again: resume that session to run `/ship` step 12. For a conflict, tell it to merge the base branch in first; for a fix the user asked for, give it the finding's id, claim and note. A `quiet` line is not a stop: read the end of that session's transcript, and resume it only when its last turn ended with the `/ship` steps unfinished. A session still inside a turn is working, and resuming it starts a second copy in the same worktree. Findings a reviewer left open on a finished ticket wait under "Needs you" for the user to accept for now or send back; never rule on one yourself. The command center reads the review bot and CI correctly, from the PR's status contexts as well as its check runs; a hand-written watcher on the pilot read check runs only, never saw CodeRabbit's review, and left a ticket idle for forty minutes.
 
 | `status` / `waitingFor` | Means | Disposition |
 |---|---|---|
@@ -123,9 +126,11 @@ The last row is the one a stall-only watch misses. Under the `auto` permission m
 
 ## Human contact
 
-**A blocking spec question parks its ticket, and the run continues.** Never answer it from precedence rules on the session's behalf: `/ship`'s gate exists because a conflict found there costs one question, while the same conflict found at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed answer converts the cheap failure into the expensive one, silently.
+**A blocking spec question parks its ticket, and the run continues.** Never answer it from precedence rules on the session's behalf (under `--afk`, *Unattended* below decides the revertible ones): `/ship`'s gate exists because a conflict found there costs one question, while the same conflict found at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed answer converts the cheap failure into the expensive one, silently.
 
 **Alarm only when no session can progress** — every live session parked on a question. Run the config's alarm command then, and only then. Waking the user for a question two other sessions are working around trains them to ignore the alarm, which costs every later run.
+
+**Your own questions go on the command center too, when the config names `Ask`.** Run it yourself in the background with `--ticket RUN`, one call per question, in the same shape a session uses; it pops up and waits under "Needs you", and its answer is printed back to you. A question left only in this chat is one the user never sees: an unattended user reads the command center, not this session. Write the questions section here as well, for the record.
 
 Put the parked questions to the user as one **questions section** (CONTEXT.md), at most four across the whole run, then `SendMessage` each answer to the session that asked. A parked session resumes with its context intact, so parking costs one round trip rather than a re-run.
 
@@ -149,19 +154,45 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **The report is still written.** The page holds the run while it runs, and the report is what the user reads afterwards. Carry the page's decisions into it, changed answers included.
 
+## Unattended: `--afk`
+
+`/ship-epic <epic> --afk [--until HH:MM]` runs the epic while the user is away. Everything above holds except what this section changes. It needs the command center: without `Ask`, `Status` and `Finding` in the config, refuse `--afk` and say which key is missing. Your own review findings reach the page as *After the PR opens* says, `O<n>` ids included.
+
+**Decide if revertible, park if not.** Answer a session's question yourself if and only if a changed answer can be undone: nothing outside the unmerged branch has happened yet, and the user can change it when reviewing. A code or design choice inside a draft PR always qualifies. So does test data on staging written through the app's own screens and endpoints, the way live verification drives them: the user accepts that it stays, even where financial rows can only be reversed. Everything else outside the branch parks as above: touching a database directly (a SQL shell, a script on its connection string, a migration run by hand), sending a message, posting publicly, merging, deploying, granting access. Judge each option, not the question: offered "fix the row with SQL" and "redo it through the form", pick the form, never the SQL. When no option qualifies, or you are unsure, park it.
+
+**Answer through the command center, labelled as yours.** `ship-ui.mjs questions` lists what is open. `ship-ui.mjs answer --id <id> --choice <label> --note "<why, and what makes it revertible>" --as orchestrator` answers one: the session's blocked `ask` prints the choice, then `by: orchestrator` and `decision: D<n>`. Never `SendMessage` an answer and never word one as the user's: a session rightly refuses an answer that arrives unasked from another session claiming to be the user.
+
+**Tell every session the rule before it starts.** Add this to each spawn prompt, word for word:
+
+> This run is unattended (`--afk`). An answer your `ask` command prints with `by: orchestrator` is binding, the same as the user's: the orchestrator decided it because it can be reverted, and the user may change it later through a `revised:` line from `status`. Name its `decision: D<n>` in the commit message it shapes. Such a decision never holds your PR back: take it to ready and work the review bot's threads exactly as step 12 says, and list each decision in the PR body under `Decided unattended`, with its question, choice and note, so the reviewer sees it. If step 9's `BLOCK` would abort the run and its only causes are strays, do not stop: ask it through `ask`, one question per stray, with the options `Keep` and `Revert`, and resume as step 9 says a `BLOCK` the user rules on resumes. A `MISSING` row still aborts, as abort 4.
+
+**Every such answer is an unattended decision.** The command center numbers it `D<n>` per run and shows it as "decided while you were away", with your note as its reason. The user changes one on the page, or in this chat as "D3: No", which you pass on with `ship-ui.mjs revise --decision D3 --choice No`. Either way it reaches a running session through its next `status` call, and a finished ticket gets a follow-up.
+
+**A spec-review `BLOCK` on strays alone is yours to rule.** Keep or revert: both live on the branch, so it is a `D<n>` like any other. Revert unless the stray is the only way the ticket's own criteria pass. The repo's `Spec-review BLOCK` setting still decides when a `BLOCK` aborts; this only rules on one that would. A `MISSING` row still blocks.
+
+**Nothing sounds.** The alarm never fires under `--afk`, and `Run context` carries `"afk": true`, which turns the command center's pop-ups off for the run; the user turns them back on from the page. A question you cannot decide parks and the run goes on; when every live session is parked, start nothing and wait. When the run ends, send one quiet push notification naming the command center's address and the report's path.
+
+**The cutoff.** No ticket starts after `--until`. At start, state it in the machine's local zone with its UTC offset and the time left, from `date` on this machine, for example "no new tickets after 07:00 WIB (UTC+7), 7h 40m from now". WSL's zone can differ from Windows', and this line is where a wrong one shows before the user sleeps. The six-ticket cap still holds.
+
+**Stop and abort.** "stop" in this chat starts nothing new and lets running tickets finish. "abort" kills every session you spawned, and each leaves a draft whose body says it was aborted and at which step.
+
+**Stay awake, let the screen sleep.** Before the first spawn, start [`scripts/wake-lock.mjs`](./scripts/wake-lock.mjs) with `node` in the background. It holds the system awake and never the display, finds the `claude` process above it, and lets go when that process exits or after 12 hours (`--hours` moves the cap). On Windows it holds `ES_CONTINUOUS | ES_SYSTEM_REQUIRED` through PowerShell, which it reaches from WSL too; `caffeinate -i` on macOS; `systemd-inhibit` on Linux.
+
+**The morning.** The user comes back to a list of PRs ready for review, not drafts waiting on a ruling: an unattended decision is recorded, never a reason to hold a PR. The report and the command center list each ready PR with its `D<n>` decisions. "D3: No" in this chat changes one, and the session redoes what it touched on the same PR. A session that stopped with its PR a draft for no abort reason is yours to resume through step 12.
+
 ## After the PR opens
 
 `/ship` step 12 marks its own PR ready and works CodeRabbit's comments, so nothing here promotes or fixes. Read the outcome instead: a ready PR passed every phase, and a draft one did not.
 
 **Name every `RATE_LIMITED` review in the report.** Every session pushes as the same user, so they share the bot's rate limit — a multi-ticket run is where it bites, and the user needs to know which PRs no bot looked at.
 
-**A rate-limited PR already had its fallback reviewer**: `/ship` step 12 runs it, and reports the PR as waiting on CodeRabbit. Carry that wording into the report, never "ready for review".
+**A rate-limited PR already had its fallback reviewer**: `/ship` step 12 runs it. A clean fallback review makes the PR ready for review, backup-reviewed; carry that into the report with CodeRabbit named as rate limited, and list what is still open for any PR that is not clean.
 
-**A PR the bot skipped for its base gets an adversarial reviewer instead.** When its base is not `main`, spawn one `tz-fresh-reviewer` per such PR, given its diff from its own base saved as a file, with the ticket as the spec. Never pay for the bot's on-demand review, and never keep re-asking it — the limit is shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or `AskUserQuestion`: it reads and reports, which is the one job a subagent's grant fits. Verify each finding against the code yourself, then hand the confirmed ones to that ticket's session to fix, as its own CodeRabbit comments would be. Show every finding to the user through the config's `Finding` command too, confirmed or not, with what you did about it: the user reads the command center, not the hand-off. Give yours ids `O<n>`, so they never collide with a session's `F<n>`, and re-send the same id when its outcome changes. The report names which PRs were reviewed this way.
+**A PR the bot skipped for its base gets an adversarial reviewer instead.** When its base is not `main`, spawn one `tz-fresh-reviewer` per such PR, given its diff from its own base saved as a file, with the ticket as the spec. Never pay for the bot's on-demand review, and never keep re-asking it — the limit is shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or `AskUserQuestion`: it reads and reports, which is the one job a subagent's grant fits. Verify each finding against the code yourself, then hand the confirmed ones to that ticket's session to fix, as its own CodeRabbit comments would be. Show every finding to the user through the config's `Finding` command too, confirmed or not, with what you did about it: the user reads the command center, not the hand-off. Give yours ids `O<n>`, so they never collide with a session's `F<n>`, and re-send the same id when its outcome changes. Send `--verdict running` when your review starts and its verdict when it ends: a finished ticket shows as being reviewed only in between. The report names which PRs were reviewed this way.
 
 Waiting for CI and the review is nearly free, because it overlaps the next ticket.
 
-Done when every finished ticket's PR is ready with its review threads answered or named as waiting on CodeRabbit, and every aborted one is a draft whose body says why.
+Done when every finished ticket's PR is ready with its review threads answered or its fallback review clean, and every aborted one is a draft whose body says why.
 
 ## Draft is the abort signal
 

@@ -68,6 +68,14 @@ _Avoid_: batch, group, tranche, layer
 To stop one ticket on a question or a broken allowlist and let the rest of the run continue. A parked session resumes with its context intact, so it costs one round trip rather than a re-run.
 _Avoid_: pause, block, defer, hold
 
+**Unattended decision**:
+An answer the orchestrator gives a session's question under `--afk`, numbered `D<n>` per run. Allowed only where the answer can be reverted: nothing outside the unmerged branch has happened. It is labelled as the orchestrator's own, never relayed as the user's, and the user accepts or changes each one afterwards.
+_Avoid_: auto-answer, default, assumed answer
+
+**Wake lock**:
+A hold that keeps the machine awake, never the display, for as long as the orchestrator runs. It ends when the orchestrator's process does.
+_Avoid_: keep-awake, caffeinate, no-sleep
+
 **Unasserted**:
 A state that was screenshotted with no assertion spec. A third outcome beside pass and fail, never reported as either.
 _Avoid_: untested, skipped, n/a

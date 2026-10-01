@@ -2,15 +2,28 @@
 // Worker and orchestrator side of the command center.
 //   ask      --ticket T --question Q --option "Label|what I see" ... [--recommended 0]
 //            [--because "..."] [--example "..."] [--run EPIC]
-//            Blocks until answered. Prints "choice: <label>" and/or "text: <words>".
+//            Blocks until answered. Prints "choice: <label>" and/or "text: <words>",
+//            then "by: orchestrator" and "decision: D<n>" when the orchestrator answered it under --afk.
 //   status   --ticket T --step "9/12" --doing "spec review" [--stopped <reason>] [--pr URL]
 //            [--model "Opus 5.5"] [--effort high]
 //            Prints "ok", then one "revised: ..." line per answer the human changed.
 //   run      --file run.json   What the run ships: id, title, summary, tickets.
 //   followup --ticket T --sentence "..." [--anchor path:line]
+//   watch    [--every 30]  Runs until killed. One line per new thing the orchestrator must act on:
+//            a question, a finished ticket whose PR has threads open, CI failing or a conflict,
+//            a stopped worker, a worker with no update for 30 minutes.
+//   questions  Prints each open question: id, ticket, options (* marks the recommended one).
+//   answer   --id Q --choice LABEL [--note "..."] --as orchestrator
+//            The orchestrator's answer under --afk, labelled as its own.
+//   revise   --decision D3 --choice LABEL [--note "..."]   The user's change, typed in the orchestrator chat.
+//   finding  --ticket T --id F1 --by "adversarial review" --severity blocker|major|minor|note
+//            --claim "..." [--anchor path:line] --outcome open|fixed|refused|withdrawn|held
+//            A re-send with the same id updates that finding.
+//   finding  --ticket T --by "spec review" --verdict PASS_WITH_NOTES   A whole review's result.
 //   open     Opens the command center in the browser.
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -81,6 +94,7 @@ try {
         if (ans.error) throw new Error(ans.error)
         if (ans.choice) console.log(`choice: ${ans.choice}`)
         if (ans.note) console.log(`text: ${ans.note}`)
+        if (ans.via === 'orchestrator') console.log(`by: orchestrator\ndecision: ${ans.dn}`)
         break
       } catch (e) {
         if (/no such question/.test(String(e.message))) throw e
@@ -99,11 +113,49 @@ try {
   } else if (cmd === 'followup') {
     await post('/api/followups', a)
     console.log('ok')
+  } else if (cmd === 'watch') {
+    // Runs until killed; one line per new thing to act on. Meant for a background monitor.
+    const seen = new Set()
+    for (;;) {
+      try {
+        await ensureServer()
+        for (const a of await (await fetch(`${BASE}/api/attention`)).json()) {
+          if (seen.has(a.key)) continue
+          seen.add(a.key)
+          console.log(a.line)
+        }
+      } catch {}
+      await sleep(Number(a.every || 30) * 1000)
+    }
+  } else if (cmd === 'questions') {
+    const state = await (await fetch(`${BASE}/api/state`)).json()
+    for (const q of state.questions.filter((x) => !x.answer)) {
+      console.log(`${q.id} ${q.ticket}: ${q.question}`)
+      q.options.forEach((o, i) => console.log(`  ${i === q.recommended ? '*' : '-'} ${o.label}${o.detail ? ` | ${o.detail}` : ''}`))
+      if (q.because) console.log(`  because: ${q.because}`)
+    }
+  } else if (cmd === 'answer') {
+    if (a.as !== 'orchestrator') throw new Error('answer is for the orchestrator alone: pass --as orchestrator. The user answers on the page.')
+    if (!a.id) throw new Error('--id is required')
+    const ans = await post(`/api/questions/${a.id}/answer`, { choice: a.choice, note: a.note, as: 'orchestrator' })
+    console.log(`ok ${ans.choice || ans.note}`)
+  } else if (cmd === 'revise') {
+    const state = await (await fetch(`${BASE}/api/state`)).json()
+    const d = state.decisions.find((x) => x.dn === a.decision && (!a.run || x.run === a.run)) || state.decisions.find((x) => x.id === a.decision)
+    if (!d) throw new Error(`no decision ${a.decision}`)
+    await post(`/api/decisions/${d.id}/revise`, { choice: a.choice, note: a.note })
+    console.log(`ok ${d.dn || d.id} is now ${a.choice}`)
+  } else if (cmd === 'finding') {
+    await post('/api/findings', a)
+    console.log('ok')
   } else if (cmd === 'open') {
-    if (process.platform === 'win32') spawn('cmd.exe', ['/c', 'start', '', BASE], { detached: true, windowsHide: true }).unref()
+    const wsl = process.platform === 'linux' && /microsoft/i.test(os.release())
+    if (process.platform === 'win32' || wsl) {
+      spawn('cmd.exe', ['/c', 'start', '', BASE], { detached: true, windowsHide: true, cwd: wsl ? '/mnt/c' : undefined }).on('error', () => {}).unref()
+    }
     console.log(BASE)
   } else {
-    console.error('usage: ship-ui.mjs ask|status|run|followup|open [--flags]')
+    console.error('usage: ship-ui.mjs ask|status|run|followup|questions|answer|revise|finding|open [--flags]')
     process.exitCode = 2
   }
 } catch (e) {
