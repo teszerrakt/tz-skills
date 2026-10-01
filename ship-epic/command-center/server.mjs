@@ -34,7 +34,7 @@ const SEVERITIES = ['blocker', 'major', 'minor', 'note']
 const OUTCOMES = ['open', 'fixed', 'refused', 'withdrawn', 'held', 'accepted']
 
 fs.mkdirSync(DATA_DIR, { recursive: true })
-let state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {}, toasts: true }
+let state = { run: null, questions: [], workers: {}, decisions: [], followUps: [], events: {}, outbox: {}, prs: {}, findings: [], reviews: [], sessions: {}, toasts: true, profiles: [] }
 if (fs.existsSync(STATE_FILE)) state = { ...state, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }
 
 const streams = new Set()
@@ -219,16 +219,13 @@ async function refreshPrs() {
 }
 setInterval(refreshPrs, 120_000).unref()
 
-// One Claude config folder per line in `profiles`. Each profile lists only its own sessions,
-// and attach works only under the profile that owns the session.
-function profiles() {
-  const file = path.join(DATA_DIR, 'profiles')
-  const lines = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter(Boolean) : []
-  return lines.length ? lines : ['']
-}
+// The Profiles setting: Claude config folders. Each profile lists only its own sessions,
+// and attach works only under the profile that owns the session. None set means this server's own.
+const expand = (p) => p.replace(/^~(?=$|[\\/])/, os.homedir())
+const profiles = () => (state.profiles?.length ? state.profiles : [''])
 
 function listAgents(profile) {
-  const env = profile ? { ...process.env, CLAUDE_CONFIG_DIR: profile.replace(/^~(?=$|[\\/])/, os.homedir()) } : process.env
+  const env = profile ? { ...process.env, CLAUDE_CONFIG_DIR: expand(profile) } : process.env
   return new Promise((resolve) => {
     execFile('claude', ['agents', '--json'], { windowsHide: true, timeout: 20_000, env }, (err, out) => {
       if (err) return resolve(null)
@@ -510,12 +507,23 @@ async function route(req, res) {
 
   if (req.method === 'POST' && url.pathname === '/api/settings') {
     const b = await readBody(req)
-    if (typeof b.toasts !== 'boolean') return send(res, 400, { error: 'toasts must be true or false' })
-    state.toasts = b.toasts
-    if (!b.toasts && showing) showing.child?.kill()
+    const hasToasts = typeof b.toasts === 'boolean'
+    if (!hasToasts && !Array.isArray(b.profiles)) return send(res, 400, { error: 'send toasts (true or false) or profiles (a list of folders)' })
+    if (Array.isArray(b.profiles)) {
+      const list = [...new Set(b.profiles.map((p) => text(p, 200).trim()).filter(Boolean))].slice(0, 8)
+      // A folder that is not there would be created by the listing, as an empty profile.
+      const missing = list.find((p) => !fs.existsSync(expand(p)))
+      if (missing) return send(res, 400, { error: `no such folder: ${missing}` })
+      state.profiles = list
+    }
+    if (hasToasts) {
+      state.toasts = b.toasts
+      if (!b.toasts && showing) showing.child?.kill()
+    }
     save()
     pump()
-    return send(res, 200, { toasts: state.toasts })
+    if (Array.isArray(b.profiles)) readSessions()
+    return send(res, 200, { toasts: state.toasts, profiles: state.profiles })
   }
 
   if (req.method === 'POST' && url.pathname === '/api/followups') {
