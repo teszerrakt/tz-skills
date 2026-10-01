@@ -329,7 +329,7 @@ const sess = (key) => state.sessions?.[key]
 function attachLine(key) {
   const x = sess(key)
   if (!x?.id) return ''
-  const cmd = `claude attach ${x.id}`
+  const cmd = `${x.profile ? `CLAUDE_CONFIG_DIR=${x.profile} ` : ''}claude attach ${x.id}`
   const btn = el('button', { type: 'button', class: 'btn quiet', style: 'min-height: 28px; padding: 0 8px', onclick: async (e) => {
     e.stopPropagation()
     try { await navigator.clipboard.writeText(cmd); btn.textContent = 'copied' } catch { btn.textContent = 'copy failed' }

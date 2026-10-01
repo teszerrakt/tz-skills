@@ -219,27 +219,45 @@ async function refreshPrs() {
 }
 setInterval(refreshPrs, 120_000).unref()
 
+// One Claude config folder per line in `profiles`. Each profile lists only its own sessions,
+// and attach works only under the profile that owns the session.
+function profiles() {
+  const file = path.join(DATA_DIR, 'profiles')
+  const lines = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter(Boolean) : []
+  return lines.length ? lines : ['']
+}
+
+function listAgents(profile) {
+  const env = profile ? { ...process.env, CLAUDE_CONFIG_DIR: profile.replace(/^~(?=$|[\\/])/, os.homedir()) } : process.env
+  return new Promise((resolve) => {
+    execFile('claude', ['agents', '--json'], { windowsHide: true, timeout: 20_000, env }, (err, out) => {
+      if (err) return resolve(null)
+      try { resolve(JSON.parse(out).map((a) => ({ ...a, profile }))) } catch { resolve(null) }
+    })
+  })
+}
+
 // Sessions are named after their ticket (ship-epic's spawn line); the orchestrator's name starts with the run id.
-function readSessions() {
+async function readSessions() {
   const run = state.run
   if (!run?.id) return
-  execFile('claude', ['agents', '--json'], { windowsHide: true, timeout: 20_000 }, (err, out) => {
-    if (err) return
-    let agents
-    try { agents = JSON.parse(out) } catch { return }
-    const tickets = new Set([...(run.tickets || []).map((t) => t.ticket), ...Object.keys(state.workers)])
-    const next = { ...(state.sessions || {}) }
-    for (const key of Object.keys(next)) next[key] = { ...next[key], status: 'gone' }
-    for (const a of agents) {
-      const name = String(a.name || '')
-      const key = [...tickets].find((t) => t.toLowerCase() === name.toLowerCase())
-        || (name.toLowerCase().startsWith(run.id.toLowerCase()) ? 'orchestrator' : '')
-      if (key) next[key] = { id: a.id, sessionId: a.sessionId, name, status: a.status || '', cwd: a.cwd || '' }
-    }
-    if (JSON.stringify(next) === JSON.stringify(state.sessions || {})) return
-    state.sessions = next
-    save()
-  })
+  const lists = await Promise.all(profiles().map(listAgents))
+  // A profile that could not be read says nothing about its sessions, so none is marked gone.
+  if (lists.includes(null)) return
+  const tickets = new Set([...(run.tickets || []).map((t) => t.ticket), ...Object.keys(state.workers)])
+  const next = { ...(state.sessions || {}) }
+  for (const key of Object.keys(next)) next[key] = { ...next[key], status: 'gone' }
+  // Oldest first: a session resumed under another profile after a usage limit is the newer one, and wins.
+  for (const a of lists.flat().sort((x, y) => (x.startedAt || 0) - (y.startedAt || 0))) {
+    const name = String(a.name || '')
+    const key = [...tickets].find((t) => t.toLowerCase() === name.toLowerCase())
+      || (name.toLowerCase().startsWith(run.id.toLowerCase()) ? 'orchestrator' : '')
+    // A background session reports `state`, an interactive one `status`.
+    if (key) next[key] = { id: a.id, sessionId: a.sessionId, name, status: a.status || a.state || '', cwd: a.cwd || '', profile: a.profile }
+  }
+  if (JSON.stringify(next) === JSON.stringify(state.sessions || {})) return
+  state.sessions = next
+  save()
 }
 setInterval(readSessions, 60_000).unref()
 
