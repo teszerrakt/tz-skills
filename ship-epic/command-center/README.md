@@ -4,7 +4,7 @@ A local page for a `/ship-epic` run: what the run ships, the questions that wait
 
 ## Install
 
-Copy this folder to `~/.claude/ship-ui/`, then name its commands in the delivery file's `### Parallel runs` (`setup-tz-skills` holds the template). Nothing starts it by hand: the first command that needs it starts it.
+Link this folder as `~/.claude/ship-ui` (`ln -s <checkout>/ship-epic/command-center ~/.claude/ship-ui`), so an update to the checkout is the running version; on Windows, where a link needs admin rights, copy it and copy again after each update. Then name its commands in the delivery file's `### Parallel runs` (`setup-tz-skills` holds the template). Nothing starts it by hand: the first command that needs it starts it.
 
 ## Commands
 
@@ -34,7 +34,8 @@ PR and merge state, through `gh`, every two minutes and after each `status`. A P
 ## Limits
 
 - A toast closes itself once its question is answered anywhere else. A run sent with `"afk": true` starts with toasts off; the header's switch turns them on or off for the live run.
-- Toasts are Windows only (`toast.ps1`, WPF). Elsewhere the page and the blocking `ask` still work; nothing pops up.
+- Toasts are Windows only (`toast.ps1`, WPF), from Windows itself or from WSL, which reaches `powershell.exe`. On macOS and Linux the page and the blocking `ask` still work; nothing pops up.
+- Under WSL the page is at the same `http://127.0.0.1:4777` in the Windows browser. Run one command center, not one on each side. They share the address: with the Windows one started first, the browser shows it while WSL sessions write to the other; with the WSL one first, the Windows one exits without a word.
 - State is one JSON file, `~/.claude/orchestrate/ui/state.json`, holding one live run. When `run` names a new id, everything that belongs to another run moves to `runs/<id>.json` beside it; the header's picker shows those read only.
 - Each ticket shows its session's `claude attach <id>` and session id, read from `claude agents --json` by matching the session's name to the ticket; the orchestrator is the session whose name starts with the run id.
 - To open it from a phone, put it behind `tailscale serve --bg --https=8443 http://127.0.0.1:4777` and write the `https://<machine>.<tailnet>.ts.net:8443` origin into `~/.claude/orchestrate/ui/origins`, one per line. Without that line the phone can read the page but not answer. Never list a public origin: anything listed there can answer for the user. Give it a port of its own: a phone that once opened another app at the bare address keeps that app's cached copy there.

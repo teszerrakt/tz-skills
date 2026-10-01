@@ -4,7 +4,7 @@ import http from 'node:http'
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
-import { spawn, execFile } from 'node:child_process'
+import { spawn, execFile, execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
@@ -13,7 +13,10 @@ const PORT = Number(process.env.SHIP_UI_PORT || 4777)
 const DATA_DIR = process.env.SHIP_UI_DATA || path.join(os.homedir(), '.claude', 'orchestrate', 'ui')
 const STATE_FILE = path.join(DATA_DIR, 'state.json')
 const TOAST_SCRIPT = path.join(HERE, 'toast.ps1')
-const TOASTS_ON = process.platform === 'win32' && !process.env.SHIP_UI_NO_PING && fs.existsSync(TOAST_SCRIPT)
+// Under WSL the desktop is still Windows: powershell.exe and cmd.exe run from here, given Windows paths.
+const WSL = process.platform === 'linux' && /microsoft/i.test(os.release())
+const winPath = (p) => (WSL ? execFileSync('wslpath', ['-w', p], { encoding: 'utf8' }).trim() : p)
+const TOASTS_ON = (process.platform === 'win32' || WSL) && !process.env.SHIP_UI_NO_PING && fs.existsSync(TOAST_SCRIPT)
 const ORIGIN = `http://127.0.0.1:${PORT}`
 const WAIT_MS = 25_000
 const SNOOZE_MS = { later: 5 * 60_000, open: 5 * 60_000, timeout: 60_000 }
@@ -275,13 +278,15 @@ function attention() {
 }
 
 function openBrowser(hash = '') {
-  spawn('cmd.exe', ['/c', 'start', '', `${ORIGIN}/${hash ? '#' + hash : ''}`], { windowsHide: true, detached: true }).unref()
+  // cmd.exe refuses a WSL directory as its own, so it starts from the Windows drive.
+  spawn('cmd.exe', ['/c', 'start', '', `${ORIGIN}/${hash ? '#' + hash : ''}`], { windowsHide: true, detached: true, cwd: WSL ? '/mnt/c' : undefined })
+    .on('error', () => {}).unref()
 }
 
 function toast(spec, done) {
   const file = path.join(DATA_DIR, `toast-${randomUUID().slice(0, 8)}.json`)
   fs.writeFileSync(file, JSON.stringify(spec))
-  const child = spawn('powershell.exe', ['-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass', '-File', TOAST_SCRIPT, '-Spec', file], { windowsHide: true })
+  const child = spawn('powershell.exe', ['-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass', '-File', winPath(TOAST_SCRIPT), '-Spec', winPath(file)], { windowsHide: true })
   let out = ''
   child.stdout.on('data', (d) => (out += d))
   const end = () => {

@@ -23,6 +23,7 @@
 //   open     Opens the command center in the browser.
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -148,7 +149,10 @@ try {
     await post('/api/findings', a)
     console.log('ok')
   } else if (cmd === 'open') {
-    if (process.platform === 'win32') spawn('cmd.exe', ['/c', 'start', '', BASE], { detached: true, windowsHide: true }).unref()
+    const wsl = process.platform === 'linux' && /microsoft/i.test(os.release())
+    if (process.platform === 'win32' || wsl) {
+      spawn('cmd.exe', ['/c', 'start', '', BASE], { detached: true, windowsHide: true, cwd: wsl ? '/mnt/c' : undefined }).on('error', () => {}).unref()
+    }
     console.log(BASE)
   } else {
     console.error('usage: ship-ui.mjs ask|status|run|followup|questions|answer|revise|finding|open [--flags]')
