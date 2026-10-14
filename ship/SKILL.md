@@ -97,6 +97,8 @@ A fresh worktree runs nothing past `implement` until it has its dependencies and
 
 Name the branch by the repo's own convention. A tracker's suggested name embeds the username, which the convention does not.
 
+**A brief that names a base branch is a stacked run.** Branch from that base, rebase on it, and open the PR against it: every base branch and `<base>` below means that branch. The body opens with `Stacked on #N`, the PR the base belongs to.
+
 Write the worktree's own `settings.local.json` holding the per-worktree opt-outs `## Delivery` names. A repo-wide hook fires once per top-level session, so a stop gate that runs a whole test suite runs it again for every run in flight.
 
 Then install dependencies. Stop the run on a failed install: every later phase rests on it.
