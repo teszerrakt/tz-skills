@@ -1,7 +1,7 @@
 ---
 name: ship-epic
 description: Drive an epic's takeable tickets, frontend and backend, to reviewed PRs, a few sessions at a time.
-argument-hint: "TRA-XXX [--afk [--until HH:MM]]"
+argument-hint: "TRA-XXX [--afk [--until HH:MM]] [--stack]"
 disable-model-invocation: true
 ---
 
@@ -58,13 +58,15 @@ A repo with no `## Delivery` section: offer `/setup-tz-skills` once, then ask fo
 A ticket is **takeable** when all four hold:
 
 - its `statusType` is `backlog` or `unstarted`,
-- every `blockedBy` relation is complete, or is a backend ticket this run took to a **ready** PR,
+- every `blockedBy` relation is complete, or is a backend ticket this run took to a **ready** PR, or, under `--stack`, is any ticket this run took to a **ready** PR,
 - no open PR names it,
 - it carries `ready-for-agent`.
 
 **That label is a veto, not a trigger.** It does not discriminate: on the measured epic all thirteen children carried it, including the nine already Done. Removing it parks a ticket, and it does nothing else.
 
 **A ticket blocked only by this run's backend PR builds on the base branch, not on that PR's branch.** Stacking would break on squash merge: once the backend PR squashes, the stacked PR shows its commits again. So the frontend session gets the backend in its spawn prompt instead — the PR's preview URL, or its worktree and port for a `local` target — and `/ship` proves the frontend against it. The frontend PR then reads `Merge after #N`, and the report names the merge order. A frontend PR's own API client must not need the backend branch's code to compile; where it does, the ticket waits for the merge.
+
+**Under `--stack`, a ticket blocked by this run's own ticket builds on that ticket's branch instead.** The user asks for it when a chain of full-stack tickets would otherwise ship one PR per run. It holds only where the chain merges with merge commits, never squash, so check `gh api repos/<owner>/<repo> --jq .allow_merge_commit` at startup and refuse `--stack` when it is false. Spawn the child once its parent's PR is **ready**, with the parent's branch and PR number as its base in the spawn prompt; `/ship` treats a named base as a stacked run. Each PR targets its parent's branch, so the review bot skips every PR above the first, and *After the PR opens* reviews those. A parent that changes after its child spawned is the child's conflict to absorb: the command center's `conflicts with <branch>` line resumes it to merge the parent's branch in.
 
 **Six tickets per run.** The binding constraint is how many PRs the user will read in one sitting, not the machine. A dozen unreviewed PRs is worse than four, because the later ones rot while the earlier ones are worked.
 
@@ -100,6 +102,7 @@ Everything a session cannot negotiate later goes in its prompt, after the `/ship
 - the per-worktree opt-outs it leaves alone,
 - for a backend session, the **migration numbers it owns**, one per service it will migrate, reserved above the base branch, every open PR, and every sibling's reservation,
 - for a frontend session blocked by this run's backend PR, that backend: the PR number, and its preview URL or its worktree and backend port,
+- under `--stack`, its base: the parent ticket's branch and PR number,
 - the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*,
 - under `--afk`, the rule quoted under *Unattended*.
 
@@ -218,7 +221,7 @@ Write it to `~/.claude/orchestrate/<repo>/<epic>/<timestamp>.md`. Never inside t
 
 One row per child of the epic: the ticket, its verdict, its PR, and for anything short of ready, the abort number and a one-line reason. Skipped tickets carry the reason they were skipped.
 
-Then the **merge order**: every `Merge after #N` pair, backend first. A frontend PR merged ahead of its backend ships calls to an endpoint that does not exist yet.
+Then the **merge order**: every `Merge after #N` pair, backend first. A frontend PR merged ahead of its backend ships calls to an endpoint that does not exist yet. Under `--stack`, the chain merges bottom-up with merge commits, and each PR is retargeted to the base once its parent merges; GitHub does that by itself only when the repo deletes merged branches, so name the setting (`delete_branch_on_merge`) when it is off.
 
 Delete every infra namespace a `local` session created before the report is final; name any that would not delete.
 
