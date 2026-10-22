@@ -195,6 +195,13 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **Every PR with screenshots gets a visual reviewer too, whatever its base.** Once a ticket's PR is ready, spawn one fresh `general-purpose` subagent for it. It downloads the shots from the PR body, fetches the ticket's Figma frames, and compares the two pictures the way a designer doing QA would: a missing icon, a wrong colour, missing text, the wrong component. Tell it what is already ruled on: the PR's `Refused`, `Out of scope` and `Decided unattended` lines, and any fix in flight. Code reviewers never see pixels, and `/ship`'s own visual check is graded by the session that built the screen. On a measured run, a PR body said "header matches Figma" over a shot whose back link had lost its arrow and colour, and every code reviewer passed it. Handle its findings as `O<n>` exactly like the adversarial reviewer's: verify each one against the shot yourself, send it through `Finding` with `--by orchestrator`, and hand the confirmed ones to the session. When a fix re-shoots a PR, run the reviewer again.
 
+Give the visual reviewer this checklist. Each item is something the first measured run's reviewers missed and the user caught:
+
+- **Links and buttons:** a link keeps its icon and link colour, and Figma's inline link is not drawn as a separate button.
+- **Empty and no-match states:** they hug their content. A table that keeps its full height around a one-line message is wrong, even when the text matches.
+- **Every shot is fresh after a fix:** compare every shot in the PR, not only the one the fix names. A shot taken before the fix still sits in the body until someone re-takes it.
+- **No frame found is not "not drawn":** before calling something undrawn, search the ticket's frames and their siblings. If it is still unfound, report it as unmatched rather than passing it.
+
 **Every PR gets a completeness checker as well.** Spawn one more fresh subagent per ready PR, with the ticket, the diff and the PR body. It splits every line of the ticket's what-to-build list, rules, acceptance criteria and named stories and tests into single items, then marks each one built (with an anchor), partial, missing, or deferred. Deferred counts only when the ticket it names really lists the item. Spec-review audits acceptance criteria, but it never sees the what-to-build list, and a session trims that list quietly: a card drawn as an empty shell, or a clone with a named behaviour stripped out. Handle its gaps as `O<n>` findings, the same way as the other reviewers'.
 
 Waiting for CI and the review is nearly free, because it overlaps the next ticket.
