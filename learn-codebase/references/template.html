@@ -1,0 +1,546 @@
+<title>{{Chapter name}}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<script>try { var t = localStorage.getItem('kb-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
+<style>
+/* Layout: one 680px reading column, like a Medium story — serif body, sans headings, quiet chrome, "· · ·" between parts. Each box of the system owns one color, and its language shares it. */
+:root {
+  --bg: #ffffff;
+  --soft: #f4f4f4;
+  --ink: #242424;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --grid: #e9e9e9;
+  --accent: #1a8917;
+  --on-accent: #ffffff;
+
+  --c-screen: #6a4bd4;
+  --c-wire: #1b74b3;
+  --c-door: #a8620a;
+  --c-rules: #0b7f7a;
+  --c-sheets: #23803a;
+
+  --good: #1a8917;
+  --part: #a8620a;
+  --bad: #c4314b;
+
+  --f-serif: "Source Serif 4", Charter, "Bitstream Charter", Georgia, Cambria, serif;
+  --f-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", Menlo, Consolas, ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121212; --soft: #1e1e1e; --ink: #e6e6e6; --muted: #a3a3a3; --line: #2c2c2c; --grid: #2a2a2a; --accent: #4cbf47; --on-accent: #0b160b;
+    --c-screen: #a68fff; --c-wire: #63b4ec; --c-door: #e6a446; --c-rules: #43c6be; --c-sheets: #62c777;
+    --good: #4cbf47; --part: #e6a446; --bad: #f08094;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121212; --soft: #1e1e1e; --ink: #e6e6e6; --muted: #a3a3a3; --line: #2c2c2c; --grid: #2a2a2a; --accent: #4cbf47; --on-accent: #0b160b;
+  --c-screen: #a68fff; --c-wire: #63b4ec; --c-door: #e6a446; --c-rules: #43c6be; --c-sheets: #62c777;
+  --good: #4cbf47; --part: #e6a446; --bad: #f08094;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-serif);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  letter-spacing: -0.003em;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+
+/* Top bar */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.topbar-in {
+  max-width: calc(680px + 32px);
+  margin: 0 auto;
+  padding-block: 0.6rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.brand { font-family: var(--f-sans); font-weight: 700; font-size: 1rem; letter-spacing: -0.01em; }
+button.theme {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+button.theme:hover { border-color: var(--muted); }
+button.theme svg { width: 1.1rem; height: 1.1rem; }
+
+.page {
+  max-width: calc(680px + 32px);
+  margin: 0 auto;
+  padding-block: 3rem 6rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 3rem;
+}
+.prose > * + * { margin-top: 1.4rem; }
+p, ul, ol { margin: 0; }
+ul, ol { padding-left: 1.5rem; }
+li + li { margin-top: 0.5rem; }
+h1, h2, h3 { font-family: var(--f-sans); font-weight: 700; text-wrap: balance; margin: 0; letter-spacing: -0.016em; }
+h1 { font-size: clamp(2rem, 6vw, 2.6rem); line-height: 1.2; }
+h2 { font-size: 1.65rem; line-height: 1.25; }
+h3 { font-size: 1.3rem; line-height: 1.3; }
+.eyebrow { font-family: var(--f-sans); font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+code, .mono { font-family: var(--f-mono); font-size: 0.78em; }
+:not(pre) > code { background: var(--soft); border-radius: 3px; padding: 0.12em 0.35em; overflow-wrap: anywhere; }
+strong { font-weight: 700; }
+a { color: inherit; text-decoration: underline; text-underline-offset: 0.15em; }
+
+section { display: grid; gap: 1.75rem; }
+section + section::before { content: "· · ·"; text-align: center; font-family: var(--f-serif); font-size: 1.6rem; letter-spacing: 0.6em; color: var(--ink); padding-bottom: 1rem; }
+.section-head { display: grid; gap: 0.35rem; }
+
+header.hero { display: grid; gap: 0.9rem; }
+.hero .lede { font-family: var(--f-sans); font-size: 1.3rem; line-height: 1.4; color: var(--muted); }
+.hero .meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-family: var(--f-sans); font-size: 0.875rem; color: var(--muted); padding-top: 0.75rem; border-top: 1px solid var(--line); }
+
+/* Box colors: a box and its language share one hue */
+.k-screen { --k: var(--c-screen); }
+.k-wire   { --k: var(--c-wire); }
+.k-door   { --k: var(--c-door); }
+.k-rules  { --k: var(--c-rules); }
+.k-sheets { --k: var(--c-sheets); }
+
+/* The flow of boxes */
+.flow { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 0.6rem; font-family: var(--f-sans); }
+.flow .box { position: relative; border: 2px solid var(--k); border-radius: 8px; padding: 0.7rem 0.6rem; display: grid; gap: 0.15rem; align-content: start; min-width: 0; }
+.flow .box:not(:last-child)::after { content: ""; position: absolute; right: -0.6rem; top: 50%; width: 0.6rem; height: 2px; background: var(--muted); }
+.box .num { font-family: var(--f-mono); font-size: 0.7rem; color: var(--k); font-weight: 600; }
+.box .name { font-weight: 700; font-size: 0.98rem; line-height: 1.15; }
+.box .lang { font-family: var(--f-mono); font-size: 0.68rem; color: var(--muted); }
+.box .is { font-size: 0.8rem; color: var(--muted); line-height: 1.3; }
+@media (max-width: 620px) {
+  .flow { grid-auto-flow: row; grid-template-columns: 1fr; gap: 0.8rem; }
+  .flow .box:not(:last-child)::after { right: auto; left: 1.3rem; top: auto; bottom: -0.8rem; width: 2px; height: 0.8rem; }
+}
+
+/* Lists keyed by box color */
+.boxlist { display: grid; gap: 1.5rem; }
+.boxrow, .tell { border-left: 4px solid var(--k); padding-left: 1.1rem; display: grid; gap: 0.35rem; min-width: 0; }
+.boxrow .who, .tell .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; }
+.boxrow .name, .tell .name { font-family: var(--f-sans); font-weight: 700; font-size: 1.1rem; color: var(--k); }
+.boxrow .lang { font-family: var(--f-mono); font-size: 0.75rem; color: var(--muted); }
+.boxrow .what { display: grid; gap: 0.35rem; }
+.boxrow .path, .tell .where { font-family: var(--f-sans); font-size: 0.85rem; color: var(--muted); overflow-wrap: anywhere; }
+.tells { display: grid; gap: 1.5rem; }
+.tell ul { font-size: 1.1rem; }
+
+.neighbours { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem; }
+.neighbour { border: 1px solid var(--line); border-radius: 8px; padding: 0.9rem 1rem; display: grid; gap: 0.3rem; align-content: start; }
+.neighbour .name { font-family: var(--f-sans); font-weight: 700; }
+.neighbour p { font-size: 1rem; line-height: 1.5; color: var(--muted); }
+
+/* Code blocks with a language gutter per line */
+.code { background: var(--soft); border-radius: 6px; overflow: hidden; min-width: 0; }
+.code .file { font-family: var(--f-sans); font-size: 0.78rem; color: var(--muted); padding: 0.6rem 0.9rem 0.2rem; overflow-wrap: anywhere; }
+.code .lines { overflow-x: auto; padding-block: 0.5rem 0.7rem; }
+.code .l { display: grid; grid-template-columns: 2.6rem max-content; font-family: var(--f-mono); font-size: 0.82rem; line-height: 1.65; white-space: pre; letter-spacing: 0; }
+.code .l::before { content: attr(data-lang); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.04em; text-align: center; align-self: center; color: var(--k); }
+.code .l > span { padding-right: 1rem; border-left: 3px solid color-mix(in srgb, var(--k) 55%, transparent); padding-left: 0.6rem; }
+.code .l.sql > span { background: color-mix(in srgb, var(--c-sheets) 10%, transparent); }
+.code .l.dim > span { color: var(--muted); }
+.l.ts { --k: var(--c-screen); }
+.l.go { --k: var(--c-rules); }
+.l.sql { --k: var(--c-sheets); }
+.l.none { --k: var(--line); }
+.l.none::before { content: ""; }
+
+/* Spreadsheet look */
+.workbook { display: grid; gap: 0.4rem; min-width: 0; }
+.workbook .wb-name { font-family: var(--f-sans); font-size: 0.8rem; color: var(--muted); }
+.sheet-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px 6px 0 0; background: var(--bg); }
+table.sheet { border-collapse: collapse; font-family: var(--f-mono); font-size: 0.78rem; font-variant-numeric: tabular-nums; min-width: 100%; letter-spacing: 0; }
+table.sheet th, table.sheet td { border: 1px solid var(--grid); padding: 0.3rem 0.6rem; white-space: nowrap; text-align: left; }
+table.sheet thead th, table.sheet tbody th { background: var(--soft); color: var(--muted); font-weight: 400; text-align: center; font-size: 0.7rem; }
+table.sheet tbody th { width: 2.2rem; }
+table.sheet tr.names td { font-weight: 600; }
+table.sheet td.num { text-align: right; }
+table.sheet td.null { color: var(--muted); font-style: italic; }
+table.sheet td.mark { outline: 2px solid var(--c-sheets); outline-offset: -2px; background: color-mix(in srgb, var(--c-sheets) 12%, transparent); }
+table.sheet td.link { outline: 2px solid var(--c-wire); outline-offset: -2px; background: color-mix(in srgb, var(--c-wire) 12%, transparent); }
+table.sheet tr.new td { background: color-mix(in srgb, var(--c-door) 16%, transparent); }
+.tabs { display: flex; gap: 2px; font-family: var(--f-mono); font-size: 0.72rem; overflow-x: auto; }
+.tabs span { padding: 0.25rem 0.75rem; border: 1px solid var(--line); border-top: none; border-radius: 0 0 6px 6px; color: var(--muted); background: var(--soft); white-space: nowrap; }
+.tabs span.on { background: var(--bg); color: var(--c-sheets); font-weight: 600; border-bottom: 2px solid var(--c-sheets); }
+.caption { font-family: var(--f-sans); font-size: 0.875rem; line-height: 1.45; color: var(--muted); }
+
+.lookup { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0.75rem; align-items: center; font-family: var(--f-mono); font-size: 0.8rem; letter-spacing: 0; }
+.lookup .side { display: grid; gap: 0.25rem; min-width: 0; }
+.lookup .cell { border: 2px solid var(--c-wire); background: color-mix(in srgb, var(--c-wire) 12%, transparent); padding: 0.35rem 0.5rem; border-radius: 4px; overflow-wrap: anywhere; }
+.lookup .label { font-family: var(--f-sans); color: var(--muted); font-size: 0.75rem; }
+.lookup .arrow { color: var(--c-wire); font-weight: 600; text-align: center; }
+@media (max-width: 560px) { .lookup { grid-template-columns: 1fr; } .lookup .arrow { transform: rotate(90deg); } }
+
+.fact-list { display: grid; }
+.fact { display: grid; gap: 0.3rem; padding-block: 1rem; border-top: 1px solid var(--line); }
+.fact:last-child { border-bottom: 1px solid var(--line); }
+.fact .col { font-family: var(--f-mono); font-size: 0.9rem; font-weight: 600; color: var(--c-sheets); overflow-wrap: anywhere; }
+
+/* Callout: a Medium-style pull block */
+.note { border-left: 3px solid var(--ink); padding: 0.1rem 0 0.1rem 1.25rem; display: grid; gap: 0.5rem; }
+.note p { font-style: italic; }
+.note .eyebrow { font-style: normal; }
+
+/* A stop on the trip: words, then code */
+.stop { display: grid; gap: 1.25rem; }
+.stop + .stop { padding-top: 2rem; border-top: 1px solid var(--line); }
+.strip { display: flex; flex-wrap: wrap; gap: 0.35rem; font-family: var(--f-sans); font-size: 0.75rem; }
+.strip span { padding: 0.15rem 0.6rem; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.strip span.on { border-color: var(--k); background: var(--k); color: var(--bg); font-weight: 700; }
+.stop-head { display: grid; gap: 0.3rem; }
+.stop-head h3 { color: var(--k); }
+.split { display: grid; gap: 1.25rem; }
+.split .words { display: grid; gap: 1.1rem; }
+
+.url { display: flex; flex-wrap: wrap; font-family: var(--f-mono); font-size: 0.95rem; }
+.url span { padding: 0.35rem 0.55rem; border: 1px solid var(--line); display: grid; gap: 0.1rem; }
+.url span small { font-family: var(--f-sans); font-size: 0.7rem; color: var(--muted); }
+
+/* Exercises */
+.exercise { border: 1px solid var(--line); border-radius: 8px; padding: 1.4rem; display: grid; gap: 1.1rem; min-width: 0; }
+.pick .l { cursor: pointer; }
+.pick .l:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pick .l::before { content: "?"; color: var(--muted); }
+.pick .l.marked::before { content: "SQL"; color: var(--c-sheets); }
+.pick .l.marked > span { background: color-mix(in srgb, var(--c-sheets) 15%, transparent); border-left-color: var(--c-sheets); }
+.pick .l > span { border-left-color: var(--line); }
+.pick .l.wrong > span { box-shadow: inset 0 0 0 2px var(--bad); }
+.row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+button {
+  font: 400 0.95rem var(--f-sans);
+  border-radius: 99px;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+}
+button.ghost { background: transparent; color: var(--ink); border-color: var(--ink); }
+button:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button:disabled { opacity: 0.55; cursor: progress; }
+.result { font-size: 1.05rem; }
+.result:empty { display: none; }
+
+.q { display: grid; gap: 0.9rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
+.q:first-of-type { border-top: none; padding-top: 0; }
+.q .ask { font-family: var(--f-sans); font-weight: 700; font-size: 1.1rem; line-height: 1.4; }
+textarea { width: 100%; min-height: 7rem; resize: vertical; font: 1.05rem/1.5 var(--f-serif); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 0.7rem 0.8rem; }
+.verdict { display: grid; gap: 0.5rem; border-radius: 6px; padding: 0.9rem 1rem; background: var(--soft); font-size: 1.05rem; }
+.chip { justify-self: start; font-family: var(--f-sans); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.15rem 0.6rem; border-radius: 99px; color: var(--bg); }
+.chip.got_it { background: var(--good); }
+.chip.partly { background: var(--part); }
+.chip.not_yet { background: var(--bad); }
+.verdict .nudge { font-style: italic; }
+details { border-top: 1px solid var(--line); padding-top: 0.6rem; }
+summary { cursor: pointer; font-family: var(--f-sans); font-size: 0.9rem; color: var(--muted); }
+details .model { margin-top: 0.6rem; font-size: 1.05rem; display: grid; gap: 0.4rem; }
+
+footer { border-top: 1px solid var(--line); padding-top: 1.5rem; display: grid; gap: 0.4rem; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="topbar"><div class="topbar-in">
+  <span class="brand">{{KB name}} knowledge base</span>
+  <button type="button" class="theme" id="theme-toggle" aria-label="Switch to dark mode">
+    <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+  </button>
+</div></div>
+
+<!--
+  Chapter template. Every component a chapter uses appears once below.
+  Box color classes: k-screen k-wire k-door k-rules k-sheets. Rename the boxes per repo; keep one color per box.
+  Code line classes: ts go sql (add one per language, sharing its box's color), none for a trimmed "…" line.
+-->
+<div class="page">
+
+<header class="hero">
+  <div class="eyebrow">{{KB name}} knowledge base · Chapter {{n}} of {{total}}</div>
+  <h1>{{Chapter name}}</h1>
+  <p class="lede">{{One sentence: what the reader can do after this chapter.}}</p>
+  <div class="meta"><span>about {{N}} min</span><span>read top to bottom</span><span>{{K}} questions at the end</span></div>
+</header>
+
+<section>
+  <div class="section-head"><div class="eyebrow">Part 1</div><h2>{{Section heading}}</h2></div>
+
+  <!-- Recap: repeat an earlier chapter's idea here instead of linking to it -->
+  <div class="note"><span class="eyebrow">Recap from chapter {{n}}</span><p>{{Two sentences.}}</p></div>
+
+  <div class="prose"><p>{{Short paragraphs, plain words.}}</p></div>
+
+  <!-- The boxes a request passes through -->
+  <div class="flow" role="list">
+    <div class="box k-screen" role="listitem"><span class="num">1</span><span class="name">{{Box}}</span><span class="lang">{{Language}}</span><span class="is">{{What it does}}</span></div>
+    <div class="box k-wire" role="listitem"><span class="num">2</span><span class="name">{{Box}}</span><span class="lang">{{Language}}</span><span class="is">{{What it does}}</span></div>
+  </div>
+
+  <!-- A table as a spreadsheet: column letters, row numbers, fake rows. td.mark = column to learn, td.link = foreign key, tr.new = row this chapter's flow creates -->
+  <div class="workbook">
+    <span class="wb-name">{{database}} workbook</span>
+    <div class="sheet-scroll">
+      <table class="sheet">
+        <thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr></thead>
+        <tbody>
+          <tr class="names"><th>1</th><td>id</td><td class="mark">{{column}}</td><td class="link">{{other}}_id</td></tr>
+          <tr><th>2</th><td>r-001</td><td>{{value}}</td><td class="link">o-07</td></tr>
+          <tr class="new"><th>3</th><td>r-002</td><td>{{value}}</td><td class="null">NULL</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tabs"><span>{{sheet}}</span><span class="on">{{this sheet}}</span><span>…</span></div>
+  </div>
+
+  <!-- A foreign key drawn as a VLOOKUP -->
+  <div class="lookup">
+    <div class="side"><span class="label">{{sheet}} · row 2 · column C</span><span class="cell">{{other}}_id = o-07</span></div>
+    <span class="arrow" aria-hidden="true">──VLOOKUP──▶</span>
+    <div class="side"><span class="label">{{other sheet}} · column A</span><span class="cell">id = o-07 → {{name}}</span></div>
+  </div>
+
+  <div class="fact-list">
+    <div class="fact"><span class="col">{{column}}</span><p><strong>{{What it means in one line.}}</strong> {{Why it matters.}}</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><div class="eyebrow">Part 2</div><h2>Follow one {{action}}</h2></div>
+
+  <!-- One stop per box. The strip lights the current box. -->
+  <div class="stop k-door">
+    <div class="strip"><span>{{Box 1}}</span><span class="on k-door">{{Box 3}}</span><span>{{Box 5}}</span></div>
+    <div class="stop-head"><span class="eyebrow">Stop {{n}}</span><h3>{{What happens here, as a sentence}}</h3></div>
+    <div class="split">
+      <div class="words"><p>{{Plain-words reading of the code on the right.}}</p></div>
+      <div class="code">
+        <div class="file">{{path/from/repo/root.ext}} (trimmed)</div>
+        <div class="lines">
+          <div class="l go" data-lang="GO"><span>{{verbatim line}}</span></div>
+          <div class="l none dim"><span>	…</span></div>
+          <div class="l sql" data-lang="SQL"><span>{{verbatim line}}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><div class="eyebrow">Part {{n}}</div><h2>Check yourself</h2></div>
+  <div class="prose"><p>Answer in your own words. Short is fine, and so is messy. Claude reads it and tells you what you got and what's missing. Your drafts stay in this browser.</p></div>
+
+  <!-- Optional deterministic warm-up: click the lines of one language. data-sql="1" marks the answer. -->
+  <div class="exercise">
+    <div class="eyebrow">Try it · no grading, just clicks</div>
+    <p><strong>Click every line that is {{language}}.</strong> Then check.</p>
+    <div class="code pick" id="pick">
+      <div class="file">{{path}} (trimmed)</div>
+      <div class="lines">
+        <div class="l" tabindex="0" role="checkbox" aria-checked="false" data-sql="0"><span>{{line}}</span></div>
+        <div class="l" tabindex="0" role="checkbox" aria-checked="false" data-sql="1"><span>{{line}}</span></div>
+      </div>
+    </div>
+    <div class="row"><button type="button" id="pick-check">Check</button><button type="button" class="ghost" id="pick-reset">Clear</button></div>
+    <div class="result" id="pick-result" aria-live="polite"></div>
+  </div>
+
+  <!-- Graded questions. data-q keys into the kb-grading JSON below. -->
+  <div class="exercise" id="checks">
+    <div class="q" data-q="q1">
+      <p class="ask">1. {{Explain-it-back question}}</p>
+      <textarea id="ans-q1" aria-label="Your answer to question 1"></textarea>
+      <div class="row"><button type="button" class="grade">Check my answer</button></div>
+      <div class="result" aria-live="polite"></div>
+      <details><summary>Show a good answer</summary><div class="model"><p>{{Model answer}}</p></div></details>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="eyebrow">Next · Chapter {{n+1}}</div>
+  <h3>{{Next chapter name}}</h3>
+  <p class="caption">{{One line on what it covers.}}</p>
+</footer>
+
+</div>
+
+<!-- Grading data: the facts Claude grades against, and each question's key points. -->
+<script type="application/json" id="kb-grading">
+{
+  "storageKey": "{{kb-slug}}-ch{{n}}",
+  "context": "{{Codebase facts this chapter taught, in plain sentences. Claude sees only this, the question and the answer.}}",
+  "questions": {
+    "q1": { "question": "{{Same text as the question}}", "points": ["{{key point}}", "{{key point}}"] }
+  }
+}
+</script>
+
+<script>
+(function () {
+  const root = document.documentElement;
+  const btn = document.getElementById('theme-toggle');
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const current = () => root.getAttribute('data-theme') || (mq.matches ? 'dark' : 'light');
+  const paint = () => {
+    const dark = current() === 'dark';
+    btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.querySelector('.i-sun').toggleAttribute('hidden', !dark);
+    btn.querySelector('.i-moon').toggleAttribute('hidden', dark);
+  };
+  btn.addEventListener('click', () => {
+    const next = current() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('kb-theme', next); } catch (e) {}
+    paint();
+  });
+  if (mq.addEventListener) mq.addEventListener('change', paint);
+  paint();
+})();
+</script>
+
+<script>
+(function () {
+  // ── Line-pick exercise
+  const pick = document.getElementById('pick');
+  if (pick) {
+    const lines = Array.from(pick.querySelectorAll('.l'));
+    const pickResult = document.getElementById('pick-result');
+    const toggle = (l) => {
+      l.classList.toggle('marked');
+      l.classList.remove('wrong');
+      l.setAttribute('aria-checked', l.classList.contains('marked') ? 'true' : 'false');
+    };
+    lines.forEach((l) => {
+      l.addEventListener('click', () => toggle(l));
+      l.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(l); }
+      });
+    });
+    document.getElementById('pick-check').addEventListener('click', () => {
+      let wrong = 0;
+      lines.forEach((l) => {
+        const bad = (l.dataset.sql === '1') !== l.classList.contains('marked');
+        l.classList.toggle('wrong', bad);
+        if (bad) wrong++;
+      });
+      pickResult.textContent = wrong === 0
+        ? 'All right.'
+        : wrong + ' line' + (wrong === 1 ? ' is' : 's are') + ' off (red outline).';
+    });
+    document.getElementById('pick-reset').addEventListener('click', () => {
+      lines.forEach((l) => { l.classList.remove('marked', 'wrong'); l.setAttribute('aria-checked', 'false'); });
+      pickResult.textContent = '';
+    });
+  }
+
+  // ── Grading through Claude
+  const grading = JSON.parse(document.getElementById('kb-grading').textContent);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+  document.querySelectorAll('#checks textarea').forEach((t) => {
+    const key = grading.storageKey + ':' + t.id;
+    const saved = store.get(key);
+    if (saved) t.value = saved;
+    t.addEventListener('input', () => store.set(key, t.value));
+  });
+
+  const LABELS = { got_it: 'Got it', partly: 'Partly', not_yet: 'Not yet' };
+  let samplePromise = null;
+  const getSample = () => {
+    if (!samplePromise) {
+      samplePromise = (window.claude && typeof window.claude.use === 'function')
+        ? window.claude.use('sample').catch(() => null)
+        : Promise.resolve(null);
+    }
+    return samplePromise;
+  };
+  const say = (box, text) => { box.replaceChildren(); const p = document.createElement('p'); p.textContent = text; box.appendChild(p); };
+  const render = (box, r) => {
+    box.replaceChildren();
+    const wrap = document.createElement('div');
+    wrap.className = 'verdict';
+    const verdict = LABELS[r.verdict] ? r.verdict : 'partly';
+    const chip = document.createElement('span');
+    chip.className = 'chip ' + verdict;
+    chip.textContent = LABELS[verdict];
+    wrap.appendChild(chip);
+    if (r.good) { const p = document.createElement('p'); p.textContent = r.good; wrap.appendChild(p); }
+    if (Array.isArray(r.missing) && r.missing.length) {
+      const h = document.createElement('p'); h.textContent = 'Missing:'; h.style.fontWeight = '700'; wrap.appendChild(h);
+      const ul = document.createElement('ul');
+      r.missing.slice(0, 3).forEach((m) => { const li = document.createElement('li'); li.textContent = String(m); ul.appendChild(li); });
+      wrap.appendChild(ul);
+    }
+    if (r.nudge) { const p = document.createElement('p'); p.className = 'nudge'; p.textContent = r.nudge; wrap.appendChild(p); }
+    box.appendChild(wrap);
+  };
+
+  document.querySelectorAll('#checks .q').forEach((q) => {
+    const r = grading.questions[q.dataset.q];
+    const btn = q.querySelector('.grade');
+    const ta = q.querySelector('textarea');
+    const box = q.querySelector('.result');
+    btn.addEventListener('click', async () => {
+      const answer = ta.value.trim();
+      if (!answer) { say(box, 'Write something first. One messy sentence is enough.'); return; }
+      btn.disabled = true;
+      say(box, 'Reading your answer…');
+      const sample = await getSample();
+      if (!sample) {
+        btn.disabled = false;
+        say(box, 'Grading is not available in this view. Open "Show a good answer" below and compare.');
+        return;
+      }
+      const prompt = [
+        'You are a kind, honest tutor. A learner new to this part of the codebase answered a question. Grade the answer only against the key points below. Ignore spelling, grammar and wording; credit the idea in plain words even without the exact names.',
+        'Verdict: "got_it" if every required key point is there, "partly" if some are, "not_yet" if none or the core idea is wrong.',
+        'Write in plain words, short sentences, no jargon unless you explain it. Speak to the learner as "you".',
+        'Reply with JSON only: {"verdict": "got_it" | "partly" | "not_yet", "good": "one sentence on what they got right, or empty", "missing": ["up to 3 short items they left out or got wrong"], "nudge": "one question that leads them toward the biggest missing point, or empty if got_it"}',
+        '',
+        'Codebase facts: ' + grading.context,
+        'Question: ' + r.question,
+        'Key points:\n- ' + r.points.join('\n- '),
+        'Learner answer:\n' + answer,
+      ].join('\n');
+      try {
+        render(box, (await sample.json(prompt, { modelTier: 'quick' })) || {});
+      } catch (e) {
+        const code = e && e.code;
+        if (code === 'not_granted') {
+          btn.hidden = true;
+          say(box, 'Grading was not allowed in this view. Open "Show a good answer" below and compare.');
+        } else if (code === 'rate_limited') {
+          say(box, 'Too many checks in a short time. Wait a minute, then try again.');
+        } else {
+          say(box, 'The check did not go through. Try once more, or open "Show a good answer" below.');
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+})();
+</script>
