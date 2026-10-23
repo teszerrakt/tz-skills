@@ -1,0 +1,11 @@
+{
+  "name": "tz-skills",
+  "owner": { "name": "teszerrakt" },
+  "plugins": [
+    {
+      "name": "show-media",
+      "source": "./plugins/show-media",
+      "description": "Show images, videos and GIFs in a pane beside the chat, drawn with kitty's graphics protocol"
+    }
+  ]
+}
