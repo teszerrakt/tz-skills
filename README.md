@@ -56,6 +56,18 @@ It never reviews code quality — `/code-review` owns that axis — and it never
 
 Type it with the plugin prefix — `/mattpocock-skills:teach`. It is user-invoked, so no other skill can reach it and a bare `/teach` does not resolve.
 
+## Mods
+
+Mods are Claude Code plugins with hooks, installed from this repo's plugin marketplace rather than linked by `setup`.
+
+| Mod | What it does |
+| --- | ------------ |
+| [`show-media`](plugins/show-media/README.md) | Shows images, videos and GIFs in a pane beside the chat (kitty or Ghostty) |
+
+```
+/plugin install show-media --marketplace teszerrakt/tz-skills
+```
+
 ## Install
 
 Requires [bun](https://bun.sh/). Works on macOS, Linux and Windows. On Windows,

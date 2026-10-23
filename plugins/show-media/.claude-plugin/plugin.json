@@ -1,0 +1,9 @@
+{
+  "name": "show-media",
+  "version": "0.2.0",
+  "description": "Show images, videos and GIFs in a pane beside the chat, drawn with kitty's graphics protocol",
+  "author": { "name": "teszerrakt" },
+  "repository": "https://github.com/teszerrakt/tz-skills",
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}
