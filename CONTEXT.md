@@ -135,3 +135,7 @@ _Avoid_: playbook, appendix, sub-skill
 **Eval case**:
 A prompt a user might type, plus the graders that score what a skill did with it. It proves a behaviour holds across runs, not that the skill's text reads well.
 _Avoid_: test, scenario, benchmark
+
+**Affected skill**:
+A skill that names a changed skill, agent or file, directly or through another skill. A change runs the eval cases of every affected skill, not only its own.
+_Avoid_: dependent, downstream, related skill
