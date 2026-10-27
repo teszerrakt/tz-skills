@@ -71,7 +71,7 @@ Write the worktree's own `settings.local.json` holding the per-worktree opt-outs
 
 Then install dependencies. Stop the run on a failed install: every later phase rests on it.
 
-Plant the canary (see Briefs) by printing it into this context only:
+Plant the canary (`references/judges.md`) by printing it into this context only:
 
 ```bash
 echo "CANARY: $(head -c 6 /dev/urandom | od -An -tx1 | tr -d ' \n')"
@@ -106,7 +106,7 @@ Put the residue to the user as a **questions section** (CONTEXT.md) and write no
 Asked because: the ticket says 0 places, the currency migration seeds 2. No precedence rule covers ticket-versus-migration.
 ```
 
-The caps are in the term, and so is the reason it is not a table. A conflict a precedence rule already settles is **not** a question: resolve it silently and record it with its rule. A settled conflict in the section trains the reader to skim it.
+At most four questions, never a table: a terminal renders `<br>` literally. **The section closes the reply, with nothing after it**, not even what happens once it is answered: a reader looks at the end of a reply, and text below the section reads as more explanation. A conflict a precedence rule already settles is **not** a question: resolve it silently and record it with its rule. A settled conflict in the section trains the reader to skim it.
 
 An empty residue continues the run unattended and writes no section.
 
@@ -116,7 +116,7 @@ The acceptance criteria stay exactly as written, wherever the record lands. `/tz
 
 **Write the ledger rows here, before any code exists**, in `/tz-skills:spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, then append a `## Decisions` section holding every answer and precedence ruling from this step — without it step 9 reads each one as a stray. **Give each decision its own row quoting it**: step 9's row check counts a decision's must and must-not sentences as requirements. Keep both outside the worktree: a file inside it is a stray to step 9. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
 
-Then run the row check now, where a failure costs a rewrite rather than a finished build. Spawn `tz-skills:tz-fresh-reviewer` with the paths of `rows.json` and `ticket.md`, the path of spec-review's `SKILL.md` naming its Driven-mode bullet "Check the rows against the ticket", and this answer shape: `{"pass": true|false, "failures": ["<row id or ticket line, and what is wrong>"], "canary": "<rest of any CANARY: line in your context, or none>"}`. Fix the rows until it passes, and gate on its canary as Briefs says.
+Then run the row check now, where a failure costs a rewrite rather than a finished build. Spawn `tz-skills:tz-fresh-reviewer` with the paths of `rows.json` and `ticket.md`, the path of spec-review's `SKILL.md` naming its Driven-mode bullet "Check the rows against the ticket", and this answer shape: `{"pass": true|false, "failures": ["<row id or ticket line, and what is wrong>"], "canary": "<rest of any CANARY: line in your context, or none>"}`. Fix the rows until it passes, and gate on its canary as `references/judges.md` says.
 
 **A criterion the build departs from is reported, never quietly reconciled.** Say so in the PR body, in its own paragraph, naming the criterion and what replaced it — that is the one place a reviewer looks for it.
 
@@ -247,6 +247,8 @@ Done when every proposed follow-up passes the admission bar above and names its 
 ### 12. Mark ready, then work the review
 
 Runs only when no abort fired. `gh pr ready <n>`.
+
+**When your brief says the command center holds your review wait**, run the config's `Status` command right after, with `--step 12/12`, `--stopped review` and `--pr <url>`, and end your turn. A session that waits in its turn still counts against the run's `Max sessions`, so the next ticket cannot start. The orchestrator resumes you with a `resume <ticket>: …` line once the bot and CI have finished: read the bot's check once then, and go on from `review-loop.md`. Only this first wait is handed over; every later one runs in your turn.
 
 Then wait for CodeRabbit and CI, and work what they return: **read [`references/review-loop.md`](references/review-loop.md) first**. It holds how to read the bot's check, the four outcomes, the fallback reviewer, `/tz-skills:address-review --driven`, the push rules and the two rounds.
 

@@ -1,12 +1,19 @@
 // What the orchestrator must act on now. Each item has a stable key, so `ship-ui watch` prints it once.
 // A finished worker whose PR later gets review threads, red CI or a conflict does not wake by itself.
-import { QUIET_AFTER_MS } from './config.ts'
+import { NO_BOT_AFTER_MS, QUIET_AFTER_MS } from './config.ts'
 import { state } from './store.ts'
-import type { Finding, PullRequest, Worker } from './types.ts'
+import type { Finding, PullRequest, ReviewBotState, Worker } from './types.ts'
 
 export type AttentionItem = { key: string; line: string }
 
 const SETTLED_OUTCOMES = ['fixed', 'accepted', 'withdrawn']
+
+const BOT_SAID: Record<Exclude<ReviewBotState, 'waiting'>, string> = {
+  reviewed: 'review bot finished',
+  limited: 'review bot rate limited',
+  skipped: 'review bot skipped it',
+  none: 'no review bot',
+}
 
 export function attention(at = Date.now()): AttentionItem[] {
   const items: AttentionItem[] = []
@@ -16,6 +23,7 @@ export function attention(at = Date.now()): AttentionItem[] {
   }
   for (const [ticket, worker] of Object.entries(state.workers)) {
     items.push(...finishedButNeeded(ticket, worker, state.prs[ticket]))
+    items.push(...reviewSettled(ticket, worker, state.prs[ticket], at))
     items.push(...fixesAsked(ticket))
     items.push(...stoppedOrQuiet(ticket, worker, state.prs[ticket], at))
   }
@@ -43,6 +51,22 @@ function finishedButNeeded(ticket: string, worker: Worker, pr: PullRequest | und
   return items
 }
 
+/** A worker that handed its review wait to the command center, once the bot has finished and CI has stopped running. */
+function reviewSettled(ticket: string, worker: Worker, pr: PullRequest | undefined, at: number): AttentionItem[] {
+  const checks = pr?.state === 'OPEN' ? pr.checks : null
+  if (worker.stopped !== 'review' || !pr || !checks || checks.ci === 'running' || checks.rabbit === 'waiting') return []
+  // CI can finish before the bot posts its check at all, which reads as no bot.
+  if (checks.rabbit === 'none' && at - Date.parse(worker.at || '') < NO_BOT_AFTER_MS) return []
+
+  const threads = checks.threads ? `, ${checks.threads} thread${checks.threads > 1 ? 's' : ''} open` : ''
+  return [
+    {
+      key: `review:${ticket}:${worker.at}`,
+      line: `resume ${ticket}: ${BOT_SAID[checks.rabbit]} on #${pr.number}, CI ${checks.ci}${threads}`,
+    },
+  ]
+}
+
 function fixesAsked(ticket: string): AttentionItem[] {
   const asked = state.findings.filter((f: Finding) => f.ticket === ticket && f.fixAsked && !SETTLED_OUTCOMES.includes(f.outcome))
   return asked.map((finding) => ({
@@ -54,7 +78,7 @@ function fixesAsked(ticket: string): AttentionItem[] {
 function stoppedOrQuiet(ticket: string, worker: Worker, pr: PullRequest | undefined, at: number): AttentionItem[] {
   const doing = worker.doing || 'no detail'
 
-  if (worker.stopped && worker.stopped !== 'done' && worker.stopped !== 'question') {
+  if (worker.stopped && !['done', 'question', 'review'].includes(worker.stopped)) {
     return [{ key: `stopped:${ticket}:${worker.stopped}:${worker.at}`, line: `${ticket} stopped: ${worker.stopped} (${doing})` }]
   }
 

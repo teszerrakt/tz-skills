@@ -14,7 +14,7 @@ Link this folder as `~/.claude/ship-ui` (`ln -s <checkout>/ship-epic/command-cen
 | `ship-ui.ts status` | a session | records its step, what it is doing, its model and its PR; prints `ok`, then one `revised:` line per answer the user changed |
 | `ship-ui.ts run --file <json>` | the orchestrator | says what the run ships: `id`, `title`, `summary`, `repo`, `github`, `target`, `where`, and `tickets` as `{ticket, title, group, after, url}` |
 | `ship-ui.ts followup` | the orchestrator | records one follow-up sentence and its anchor |
-| `ship-ui.ts watch [--every 30]` | the orchestrator, in the background | runs until killed; prints one line per new thing to act on: an open question, a finished ticket whose PR has review threads open, CI failing or a conflict with its base (`resume …`), a worker that stopped for any reason other than done, a worker that posted no status for 30 minutes (`quiet …`) |
+| `ship-ui.ts watch [--every 30]` | the orchestrator, in the background | runs until killed; prints one line per new thing to act on: an open question, a ticket that handed its review wait over once the bot and CI have finished, a finished ticket whose PR has review threads open, CI failing or a conflict with its base (`resume …`), a worker that stopped for any reason other than done, a worker that posted no status for 30 minutes (`quiet …`) |
 | page: Needs you | the user | a finding a reviewer left open on a finished ticket gets **Accept for now** (saved as a follow-up) or **Send back to fix** (`watch` prints `resume <ticket>: the user asked to fix <id>`) |
 | `ship-ui.ts questions` | the orchestrator | prints each open question with its id and options, `*` on the recommended one |
 | `ship-ui.ts answer --id <id> --choice <label> [--note ...] --as orchestrator` | the orchestrator, under `--afk` | answers one question as itself, recorded as a numbered unattended decision |
@@ -24,7 +24,7 @@ Link this folder as `~/.claude/ship-ui` (`ln -s <checkout>/ship-epic/command-cen
 | `ship-ui.ts profiles [--set "<folder>,<folder>"]` | the user, the orchestrator | prints, or sets, the Claude config folders sessions are read from; `--set ""` clears it |
 | `ship-ui.ts open` | anyone | opens the page |
 
-`status --stopped` takes one reason: `question`, `waiting-slot`, `usage-limit`, `blocked-by-ticket`, `gate-failed`, `done` or `merged`.
+`status --stopped` takes one reason: `question`, `waiting-slot`, `usage-limit`, `blocked-by-ticket`, `gate-failed`, `review`, `done` or `merged`. `review` hands the wait for the review bot and CI to the command center: `watch` prints `resume <ticket>: …` once both have finished.
 
 `finding --severity` takes `blocker`, `major`, `minor` or `note`; `--outcome` takes `open`, `fixed`, `refused`, `withdrawn` or `held`. `--by` names the judge: `row check`, `adversarial review`, `spec review`, `second opinion`, `fallback review` or `orchestrator`.
 

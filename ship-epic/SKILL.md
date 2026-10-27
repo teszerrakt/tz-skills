@@ -78,6 +78,8 @@ Done when every child of the epic is takeable, skipped with a stated reason, or 
 
 **The backbone wave runs serial. Consumer waves run up to `Max sessions` at a time.** Almost all collision risk lives in the backbone, because that is the wave whose job is inventing shared files; consumers mostly add inside their own route folder. Two parallel sessions that each need the same helper will each invent one, both PRs will pass CI, and both will pass `/tz-skills:spec-review` — neither duplicate is a stray against its own ticket. It stays invisible until a human reads both PRs.
 
+**A ticket whose session stopped at `review` holds no place.** Its PR is ready, and the bot and CI are all it waits on, so for `Max sessions` and for serial order it counts as finished until a `resume` line brings it back. Start the next ticket meanwhile. A resumed session takes the next free place, ahead of any ticket not yet started.
+
 Pin each session's task runner with the config's concurrency flag. The runner's default already stacks test workers until timing-sensitive tests fail on load alone, and under a self-fix loop a load-induced failure is worse than noise: the fixer tries to fix it.
 
 ## Startup
@@ -103,7 +105,7 @@ Everything a session cannot negotiate later goes in its prompt, after the `/tz-s
 - for a backend session, the **migration numbers it owns**, one per service it will migrate, reserved above the base branch, every open PR, and every sibling's reservation,
 - for a frontend session blocked by this run's backend PR, that backend: the PR number, and its preview URL or its worktree and backend port,
 - under `--stack`, its base: the parent ticket's branch and PR number,
-- the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*,
+- the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*, and the line `The command center holds your review wait.`,
 - under `--afk`, the rule quoted in `references/afk.md`,
 - that a reviewer's design finding is refused only with the frame that settles it. "No frame draws it" needs a search of the ticket's frames and their siblings first; when the search finds nothing, the session asks through `Ask` and does not refuse.
 
@@ -115,13 +117,14 @@ Done when every prompt names its own paths, its own port and its own lock rule. 
 
 Poll `claude agents --json` and read only the sessions you named. It lists your own profile alone: where `ship-ui.ts profiles` prints more than one folder, a session the user moved to another profile is listed by `CLAUDE_CONFIG_DIR=<folder> claude agents --json`, and attached to or resumed under that same folder, as the command center prints it.
 
-**Where the config names `Status`, run the command center's `watch` too, in the background, and never write a watcher of your own.** `bun ~/.claude/ship-ui/ship-ui.ts watch` prints one line for each new thing to act on: `question <id> from <ticket>`, `resume <ticket>: <n> review threads open on #<pr>`, `resume <ticket>: CI failing on #<pr>`, `resume <ticket>: #<pr> conflicts with <branch>` or `resume <ticket>: the user asked to fix <id>: <claim>`, `<ticket> stopped: <reason>`, and `quiet <ticket>: no update for <n> min at step <step>`. A `resume` line means a finished session's PR needs it again: resume that session to run `/tz-skills:ship` step 12. For a conflict, tell it to merge the base branch in first; for a fix the user asked for, give it the finding's id, claim and note. A `quiet` line is not a stop: read the end of that session's transcript, and resume it only when its last turn ended with the `/tz-skills:ship` steps unfinished. A session still inside a turn is working, and resuming it starts a second copy in the same worktree. **One writer per worktree.** `claude --bg --resume <id>` with flags starts a copy under the same name, so names repeat. Before resuming a ticket, list its sessions with `ListAgents`. If any is busy, message that one by `name [ref]`. A bare name can reach an idle older copy, which wakes up and edits the same files. When looping over spawns in a script, give each `claude` call `</dev/null`, or it reads the rest of the loop's input as its own. Findings a reviewer left open on a finished ticket wait under "Needs you" for the user to accept for now or send back; never rule on one yourself. The command center reads the review bot and CI correctly, from the PR's status contexts as well as its check runs; a hand-written watcher on the pilot read check runs only, never saw CodeRabbit's review, and left a ticket idle for forty minutes.
+**Where the config names `Status`, run the command center's `watch` too, in the background, and never write a watcher of your own.** `bun ~/.claude/ship-ui/ship-ui.ts watch` prints one line for each new thing to act on: `question <id> from <ticket>`, `resume <ticket>: review bot finished on #<pr>, CI green` for a session that handed over its review wait, `resume <ticket>: <n> review threads open on #<pr>`, `resume <ticket>: CI failing on #<pr>`, `resume <ticket>: #<pr> conflicts with <branch>` or `resume <ticket>: the user asked to fix <id>: <claim>`, `<ticket> stopped: <reason>`, and `quiet <ticket>: no update for <n> min at step <step>`. A `resume` line means a finished session's PR needs it again: resume that session to run `/tz-skills:ship` step 12. For a conflict, tell it to merge the base branch in first; for a fix the user asked for, give it the finding's id, claim and note. A `quiet` line is not a stop: read the end of that session's transcript, and resume it only when its last turn ended with the `/tz-skills:ship` steps unfinished. A session still inside a turn is working, and resuming it starts a second copy in the same worktree. **One writer per worktree.** `claude --bg --resume <id>` with flags starts a copy under the same name, so names repeat. Before resuming a ticket, list its sessions with `ListAgents`. If any is busy, message that one by `name [ref]`. A bare name can reach an idle older copy, which wakes up and edits the same files. When looping over spawns in a script, give each `claude` call `</dev/null`, or it reads the rest of the loop's input as its own. Findings a reviewer left open on a finished ticket wait under "Needs you" for the user to accept for now or send back; never rule on one yourself. The command center reads the review bot and CI correctly, from the PR's status contexts as well as its check runs; a hand-written watcher on the pilot read check runs only, never saw CodeRabbit's review, and left a ticket idle for forty minutes.
 
 | `status` / `waitingFor` | Means | Disposition |
 |---|---|---|
 | `waiting` / `input needed` | the reconcile gate is asking | park, and collect the question |
 | `waiting` / `permission prompt` | the allowlist is wrong | kill, park, report the denied command, no alarm |
 | `busy` | working | nothing |
+| `idle`, its status `stopped: review` | its PR is ready and waits on the review bot and CI | nothing until `watch` prints its `resume` line; it holds no place |
 | `idle` with no PR on its branch | denied outright, or died | park, and read its last message for the command |
 
 The last row is the one a stall-only watch misses. Under the `auto` permission mode a session never stalls: an unlisted command is **denied outright**, and the session either works around it or stops and explains. So the abort signal is a branch that reached the end with no PR, not only a session sitting still.
@@ -174,7 +177,7 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **Three more reviewers read each ready PR. Read [`references/pr-reviewers.md`](references/pr-reviewers.md) once the first PR is ready**: an adversarial reviewer for a PR the bot skipped for its base, a visual reviewer for every PR with screenshots, and a completeness checker for every PR. Their findings are yours, as `O<n>`.
 
-Waiting for CI and the review is nearly free, because it overlaps the next ticket.
+Waiting for CI and the review is nearly free: each session hands that wait to the command center, and the next ticket runs meanwhile.
 
 Done when every finished ticket's PR is ready with its review threads answered or its fallback review clean, its screenshots visually reviewed, its completeness checked, and every aborted one is a draft whose body says why.
 

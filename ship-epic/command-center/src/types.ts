@@ -52,7 +52,16 @@ export type Question = {
   answer: Answer | null
 }
 
-export const STOP_REASONS = ['question', 'waiting-slot', 'usage-limit', 'blocked-by-ticket', 'gate-failed', 'done', 'merged'] as const
+export const STOP_REASONS = [
+  'question',
+  'waiting-slot',
+  'usage-limit',
+  'blocked-by-ticket',
+  'gate-failed',
+  'review',
+  'done',
+  'merged',
+] as const
 export type StopReason = (typeof STOP_REASONS)[number]
 
 export type Worker = {
