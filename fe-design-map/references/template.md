@@ -19,7 +19,9 @@ Guidance notes are in blockquotes; delete them in the real doc. Sections marked 
 ---
 
 Author: {name}
+
 Created: {YYYY-MM-DD}
+
 Status: {Spec, not yet in build | In build | Shipped} (ticket: {parent or TODO})
 
 ---

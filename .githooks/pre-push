@@ -1,0 +1,8 @@
+#!/bin/sh
+# Lint and unit tests, then the eval cases of every skill the pushed branch changes or affects.
+# Evals run on this machine's Claude login and take minutes; `git push --no-verify` skips the hook.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+bun run lint:skills
+bun test
+bun run evals

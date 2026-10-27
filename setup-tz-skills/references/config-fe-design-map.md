@@ -2,8 +2,8 @@
 
 Read by `fe-design-map`. Nine sections. The tag on each says where the value comes from.
 
-**[detect]** — exploration already found it. Propose it; do not ask.
-**[ask]** — no file states it. Ask.
+- **[detect]** — exploration already found it. Propose it; do not ask.
+- **[ask]** — no file states it. Ask.
 
 Drop a section the repo has no use for. A frontend-only repo needs no `Sources` entry for a backend permissions file.
 

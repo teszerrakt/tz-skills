@@ -16,9 +16,9 @@ This is wayfinder's shape with three rules changed:
 
 ## Vocabulary
 
-**Map ticket** — a child issue of the map that resolves one decision or one harvest.
-**Build ticket** — an issue that one coding session implements.
-**Fact base** — the machine-local directory that holds every harvested fact.
+- **Map ticket** — a child issue of the map that resolves one decision or one harvest.
+- **Build ticket** — an issue that one coding session implements.
+- **Fact base** — the machine-local directory that holds every harvested fact.
 
 The tracker teams for each are domain config, not skill content. Read them from the project config.
 
