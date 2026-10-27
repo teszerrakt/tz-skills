@@ -70,7 +70,9 @@ if (import.meta.main) {
 
   // --scaffold copies each case's fixture/ into its workspace; the scaffold scripts are this repo's own.
   const command = ['claude', 'plugin', 'eval', root, '--ablation', 'none', '--no-publish', '--trust-plugin', '--scaffold']
-  command.push('--threshold', '1', '--concurrency', '4', ...skills.flatMap((s) => ['--tag', s]), ...args)
+  // The default Haiku judge failed correct long answers; a flaky judge blocks a push as surely as a regression.
+  command.push('--judge-model', 'sonnet', '--threshold', '1', '--concurrency', '4')
+  command.push(...skills.flatMap((s) => ['--tag', s]), ...args)
   const run = Bun.spawnSync(command, { cwd: root, stdio: ['inherit', 'inherit', 'inherit'] })
   process.exit(run.exitCode ?? 1)
 }

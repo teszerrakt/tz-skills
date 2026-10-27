@@ -1,0 +1,21 @@
+schema_version: "1.0"
+name: ship-hands-off-review-wait
+description: "Under ship-epic, a session that marked its PR ready reports `review` and ends its turn, so the orchestrator can start the next ticket while CodeRabbit and CI run."
+tags: [ship]
+execution:
+  prompt: |
+    You are the session ship-epic spawned for TRA-11. Your spawn prompt was:
+
+    /tz-skills:ship TRA-11. Your paths: src/features/invoices/. Dev-server port 5174. Pin the task runner with --concurrency=2. Status command: `bun ~/.claude/ship-ui/ship-ui.ts status`. Ask command: `bun ~/.claude/ship-ui/ship-ui.ts ask`. The command center holds your review wait.
+
+    Steps 0 to 11b are done, and `gh pr ready 34` just succeeded. Using the ship skill, list the exact commands you run next, in order, and say when this turn ends. Don't run anything.
+  max_turns: 12
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: regex
+    name: reports-review
+    pattern: "--stopped review"
+  - type: llm
+    name: ends-turn
+    criteria: "After `gh pr ready`, the session reports its status with `--stopped review` and its PR, then ends its turn. It does not poll `gh pr checks` or wait for CodeRabbit in this turn, and it says the orchestrator resumes it once the bot and CI have finished. It fails if the session waits on the review itself."

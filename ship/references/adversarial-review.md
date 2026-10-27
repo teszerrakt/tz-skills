@@ -4,13 +4,13 @@ Reference for `/tz-skills:ship` step 8, the one local quality pass. Read when ru
 
 ## The invocation
 
-Spawn `tz-skills:tz-fresh-reviewer` (Opus, reads files only) with the ticket id, the path of the diff saved as a file (`SKILL.md`, Briefs), and the prompt below. It answers with JSON matching `adversarial-findings.schema.json` in this directory — findings, or an explicit empty array.
+Spawn `tz-skills:tz-fresh-reviewer` (Opus, reads files only) with the ticket id, the path of the diff saved as a file (`judges.md`), and the prompt below. It answers with JSON matching `adversarial-findings.schema.json` in this directory — findings, or an explicit empty array.
 
 Structured findings are the whole point — they are what lets the run branch on severity and on scope — so the schema is passed to the subagent as part of its brief, not inferred from prose.
 
 ## Never trust unparsed output
 
-Gate on parsed, schema-validated output: findings present, or an explicit empty array. A response that does not parse against the schema is a failed review, whatever the subagent's own summary claimed. So is one whose `canary` is not `none` — the reviewer saw the author's context (`SKILL.md`, Briefs).
+Gate on parsed, schema-validated output: findings present, or an explicit empty array. A response that does not parse against the schema is a failed review, whatever the subagent's own summary claimed. So is one whose `canary` is not `none` — the reviewer saw the author's context (`judges.md`).
 
 ## The prompt
 

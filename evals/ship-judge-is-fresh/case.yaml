@@ -1,0 +1,19 @@
+schema_version: "1.0"
+name: ship-judge-is-fresh
+description: "#61. The author never grades its own work: step 8's reviewer is a fresh tz-fresh-reviewer whose brief carries no framing from the author."
+tags: [ship]
+execution:
+  prompt: |
+    /tz-skills:ship TRA-12 has finished step 7 on branch feat/tra-12 (base main, three commits). I wrote the code in this session, so I already know it well.
+
+    Before you start step 8, tell me exactly how you'll run it: who reviews, in what context, and what goes in the reviewer's brief, word for word where the skill fixes it. Don't run anything.
+  max_turns: 12
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: regex
+    name: names-fresh-reviewer
+    pattern: tz-skills:tz-fresh-reviewer
+  - type: llm
+    name: no-self-grading
+    criteria: "PASS when the plan has a new subagent, not this session, review the diff, and says the brief carries no summary from the author of what was built or why it is right. The one allowed exception is a refused finding's re-check, which carries the author's reason labelled as the author's. FAIL when this session reviews its own diff, or the first review's brief carries the author's account of the change."

@@ -1,0 +1,21 @@
+schema_version: "1.0"
+name: ship-epic-overlaps-review
+description: "With one session allowed, a ticket whose session handed its review wait to the command center frees its place, so the next takeable ticket starts instead of the run sitting idle."
+tags: [ship-epic]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: |
+    /tz-skills:ship-epic TRA-10 --afk --until 07:00
+
+    This run is already under way and you can't run commands here: it's 01:40, the repo's config is in .claude/delivery.md, and what you can see right now is in state.md. Give the exact commands you run next, in order.
+  max_turns: 15
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: regex
+    name: spawns-next
+    pattern: "claude --bg -n TRA-12"
+  - type: llm
+    name: overlaps
+    criteria: "PASS when the next commands start TRA-12's session now, without first waiting for TRA-11's review or CI. Resuming TRA-11 later, once a `resume TRA-11` line arrives, is fine. FAIL when it waits for TRA-11's review before starting TRA-12, or says TRA-11 still takes the one session place."

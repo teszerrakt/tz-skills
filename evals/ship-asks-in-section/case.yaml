@@ -1,0 +1,32 @@
+schema_version: "1.0"
+name: ship-asks-in-section
+description: "#5. A ticket-versus-code conflict no precedence rule settles is asked as a questions section at the end, never as a table or prose."
+tags: [ship]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: |
+    Run step 1 of /tz-skills:ship (intake and reconcile) for the ticket in ticket.md. There is no tracker: the ticket text is that file. The code is under src/ and the delivery config under .claude/. Stop at the gate.
+  max_turns: 20
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: regex
+    name: section-heading
+    pattern: "## ❓ Needs your call"
+  - type: regex
+    name: recommends
+    pattern: "✨"
+  - type: regex
+    name: says-why
+    pattern: "Asked because:"
+  - type: regex
+    name: section-is-last
+    pattern: "Asked because:[^\\n]*\\s*$"
+  - type: regex
+    name: not-a-table
+    pattern: "## ❓[\\s\\S]*\\|\\s*-{3,}"
+    match: not_contains
+  - type: llm
+    name: asks-the-residue
+    criteria: "PASS when the reply asks the user how many decimal places the bill amount shows (the ticket says none; the currency seed gives IDR two), with each option on its own bullet. FAIL when that conflict is decided without asking, or the question appears only inside prose."

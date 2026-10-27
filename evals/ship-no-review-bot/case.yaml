@@ -1,0 +1,21 @@
+schema_version: "1.0"
+name: ship-no-review-bot
+description: "#71. A repo with no review bot reports NO_BOT and runs the fallback reviewer, instead of waiting on a CodeRabbit check that never comes."
+tags: [ship]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: |
+    I'm running /tz-skills:ship on TRA-12 and it's at step 12. PR #34 was marked ready at 10:00 and it's 10:14 now. CI finished at 10:09. `gh pr checks 34 --json name,state,description` printed what's in checks.json in this folder.
+
+    Using the ship skill, tell me the run's state and the next thing it does. Don't run anything, just answer.
+  max_turns: 12
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: regex
+    name: reports-no-bot
+    pattern: NO_BOT
+  - type: llm
+    name: runs-fallback
+    criteria: The answer says the repo runs no review bot, so the run stops waiting for CodeRabbit and runs the fallback reviewer (step 8's adversarial reviewer) against the final head. It fails if it says to keep polling or waiting for a CodeRabbit check.

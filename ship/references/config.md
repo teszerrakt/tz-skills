@@ -21,5 +21,5 @@ What each key in `.claude/delivery.md`'s `## Delivery` section holds for `/tz-sk
 | PR body sections | the allowed headings, in order, and the caps |
 | PR body write path | how to write a body, and how to prove it landed |
 | Spec-review BLOCK | `strict` or `lenient` — whether step 9 may fix a stray-only `BLOCK` once |
-| Finding | the command that shows a judge's finding to the user — Briefs |
+| Finding | the command that shows a judge's finding to the user — `judges.md` |
 | Environment traps | the machine-specific gotchas a delegate must be told |
