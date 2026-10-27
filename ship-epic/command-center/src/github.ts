@@ -78,7 +78,7 @@ async function readChecks(repo: string, number: number): Promise<Checks | null> 
   return {
     ci: ciState(ci.length, failing.length, running),
     failing,
-    rabbit: reviewBotState(pr, contexts),
+    rabbit: reviewBotState(pr, contexts, !running),
     threads: pr.reviewThreads.nodes.filter((thread) => !thread.isResolved).length,
     items: pr.reviewThreads.nodes.map(reviewItem),
     // GitHub answers UNKNOWN while it recomputes after the base moves; null lets the caller keep its last answer.
@@ -95,7 +95,12 @@ function ciState(total: number, failing: number, running: boolean): Checks['ci']
 }
 
 // The bot's own check says what it did; a clean review leaves no review object, only "Review completed".
-function reviewBotState(pr: PullRequestQueryResult, contexts: CheckContext[]): ReviewBotState {
+// No bot check once CI has finished means the repo runs no review bot.
+export function reviewBotState(
+  pr: Pick<PullRequestQueryResult, 'reviews' | 'comments'>,
+  contexts: CheckContext[],
+  ciDone: boolean,
+): ReviewBotState {
   const botSaid = contexts.find((check) => isReviewBot(checkName(check)))?.description || ''
 
   const reviewed = pr.reviews.nodes.some((review) => isReviewBot(review.author?.login)) || /completed/i.test(botSaid)
@@ -105,6 +110,7 @@ function reviewBotState(pr: PullRequestQueryResult, contexts: CheckContext[]): R
 
   const limitComment = pr.comments.nodes.some((c) => isReviewBot(c.author?.login) && /rate limited by coderabbit/i.test(c.body))
   if (!botSaid && limitComment) return 'limited'
+  if (!botSaid && ciDone) return 'none'
   return 'waiting'
 }
 
