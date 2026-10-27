@@ -1,6 +1,6 @@
 # The command center
 
-A local page for a `/ship-epic` run: what the run ships, the questions that wait for the user, every answer they gave or the orchestrator gave while they were away, every reviewer finding and what happened to it, each session's step, and the order the PRs merge in. It listens on `127.0.0.1` only and needs nothing but [Bun](https://bun.sh/) 1.1 or newer, plus a desktop toolkit for the toasts (see Limits).
+A local page for a `/tz-skills:ship-epic` run: what the run ships, the questions that wait for the user, every answer they gave or the orchestrator gave while they were away, every reviewer finding and what happened to it, each session's step, and the order the PRs merge in. It listens on `127.0.0.1` only and needs nothing but [Bun](https://bun.sh/) 1.1 or newer, plus a desktop toolkit for the toasts (see Limits).
 
 ## Install
 

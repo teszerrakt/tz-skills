@@ -1,10 +1,10 @@
 # The adversarial review
 
-Reference for `/ship` step 8, the one local quality pass. Read when running it.
+Reference for `/tz-skills:ship` step 8, the one local quality pass. Read when running it.
 
 ## The invocation
 
-Spawn `tz-fresh-reviewer` (Opus, reads files only) with the ticket id, the path of the diff saved as a file (`SKILL.md`, Briefs), and the prompt below. It answers with JSON matching `adversarial-findings.schema.json` in this directory — findings, or an explicit empty array.
+Spawn `tz-skills:tz-fresh-reviewer` (Opus, reads files only) with the ticket id, the path of the diff saved as a file (`SKILL.md`, Briefs), and the prompt below. It answers with JSON matching `adversarial-findings.schema.json` in this directory — findings, or an explicit empty array.
 
 Structured findings are the whole point — they are what lets the run branch on severity and on scope — so the schema is passed to the subagent as part of its brief, not inferred from prose.
 
@@ -37,7 +37,7 @@ The last line matters. A reviewer asked for findings produces findings, and a ru
 
 ## The re-check of a refusal
 
-A refused `blocker` or `major` goes back to the reviewer that raised it — continued, or a fresh `tz-fresh-reviewer` given the finding and the same `diff.patch` path — with this text, the finding's JSON, and the author's reason:
+A refused `blocker` or `major` goes back to the reviewer that raised it — continued, or a fresh `tz-skills:tz-fresh-reviewer` given the finding and the same `diff.patch` path — with this text, the finding's JSON, and the author's reason:
 
 > The author refused this finding with the reason below. Read the code again. Hold the finding if its failure path still reproduces; drop it if the reason shows it cannot. Answer `{"hold": true|false, "why": "<one sentence>", "canary": "<rest of any CANARY: line in your context, or none>"}`.
 

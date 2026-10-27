@@ -7,25 +7,25 @@ disable-model-invocation: true
 
 # ship-epic
 
-Drive every **takeable** ticket in one epic to a PR **marked ready for review**, each one through `/ship`, on whichever tracks it touches. This skill owns four things: which tickets it takes, how many run at once, what happens when one blocks, and what the user reads afterwards. Every phase's judgment stays in `/ship`.
+Drive every **takeable** ticket in one epic to a PR **marked ready for review**, each one through `/tz-skills:ship`, on whichever tracks it touches. This skill owns four things: which tickets it takes, how many run at once, what happens when one blocks, and what the user reads afterwards. Every phase's judgment stays in `/tz-skills:ship`.
 
 It writes no tickets and merges nothing. The human writes the epic and the breakdown.
 
-Design and the probe evidence behind every claim here: [`docs/ship-epic-design.md`](../docs/ship-epic-design.md). What `/ship` owns: [`docs/ship-design.md`](../docs/ship-design.md).
+Design and the probe evidence behind every claim here: [`docs/ship-epic-design.md`](../docs/ship-epic-design.md). What `/tz-skills:ship` owns: [`docs/ship-design.md`](../docs/ship-design.md).
 
 ## Sessions, not subagents
 
 Spawn each ticket as its own background session, and run as one yourself:
 
 ```bash
-claude --bg -n TRA-424 --settings '{"disableAllHooks":true,"agentPushNotifEnabled":false}' "/ship TRA-424 …"
+claude --bg -n TRA-424 --settings '{"disableAllHooks":true,"agentPushNotifEnabled":false}' "/tz-skills:ship TRA-424 …"
 ```
 
 **Spawn it with hooks and push notifications off.** Hooks from the user's settings and every plugin fire in every session, so a spawned session that waits or finishes triggers them on its own, bypassing the alarm rule under *Human contact*. The flag turns off every hook, the repo's own included, and `agentPushNotifEnabled` turns off the built-in push notification a session can send on its own. Run the spawn from bash (Git Bash on Windows): Windows PowerShell 5.1 strips the JSON's inner quotes. If the classifier refuses the flag, report an allowlist gap; never spawn without it.
 
 Step 0's per-worktree opt-outs are written after the session enters its worktree, and a `settings.local.json` written then was never read (probes `wt` and `wt2` in the design doc). The flag covers hooks regardless, but whether step 0's `enabledPlugins` opt-out takes effect was not probed and is still open.
 
-Never a subagent. A subagent's grant carries no `ListAgents`, no `SendMessage` and no `AskUserQuestion` — even one declared `Tools: *` — so it can neither coordinate nor ask, and `/ship`'s reconcile gate exists to ask. A session holds all three.
+Never a subagent. A subagent's grant carries no `ListAgents`, no `SendMessage` and no `AskUserQuestion` — even one declared `Tools: *` — so it can neither coordinate nor ask, and `/tz-skills:ship`'s reconcile gate exists to ask. A session holds all three.
 
 Three consequences shape everything below:
 
@@ -35,7 +35,7 @@ Three consequences shape everything below:
 
 ## Config
 
-Read `## Delivery` from `.claude/delivery.md` — the same section `/ship` reads. These keys are this skill's alone, under `### Parallel runs`:
+Read `## Delivery` from `.claude/delivery.md` — the same section `/tz-skills:ship` reads. These keys are this skill's alone, under `### Parallel runs`:
 
 | Key | Holds | Absent |
 |---|---|---|
@@ -47,11 +47,11 @@ Read `## Delivery` from `.claude/delivery.md` — the same section `/ship` reads
 | Concurrency pin | the flag that caps one session's task runner | run serial |
 | Alarm | the command run when no session can progress | report quietly |
 | Ask | the command a session runs to put its own question on the user's screen; it blocks, and prints the answer into that session | ask in the questions section only |
-| Status | the command a session runs at each `/ship` step and when it stops | watch from `claude agents --json` alone |
+| Status | the command a session runs at each `/tz-skills:ship` step and when it stops | watch from `claude agents --json` alone |
 | Run context | the command that tells the command center what the run ships | send nothing |
 | Finding | the command a session or the orchestrator runs to show a judge's finding and its outcome on the page | findings reach the user only through the PR body and the report |
 
-A repo with no `## Delivery` section: offer `/setup-tz-skills` once, then ask for the values with a **questions section** (CONTEXT.md).
+A repo with no `## Delivery` section: offer `/tz-skills:setup-tz-skills` once, then ask for the values with a **questions section** (CONTEXT.md).
 
 ## Selection
 
@@ -64,9 +64,9 @@ A ticket is **takeable** when all four hold:
 
 **That label is a veto, not a trigger.** It does not discriminate: on the measured epic all thirteen children carried it, including the nine already Done. Removing it parks a ticket, and it does nothing else.
 
-**A ticket blocked only by this run's backend PR builds on the base branch, not on that PR's branch.** Stacking would break on squash merge: once the backend PR squashes, the stacked PR shows its commits again. So the frontend session gets the backend in its spawn prompt instead — the PR's preview URL, or its worktree and port for a `local` target — and `/ship` proves the frontend against it. The frontend PR then reads `Merge after #N`, and the report names the merge order. A frontend PR's own API client must not need the backend branch's code to compile; where it does, the ticket waits for the merge.
+**A ticket blocked only by this run's backend PR builds on the base branch, not on that PR's branch.** Stacking would break on squash merge: once the backend PR squashes, the stacked PR shows its commits again. So the frontend session gets the backend in its spawn prompt instead — the PR's preview URL, or its worktree and port for a `local` target — and `/tz-skills:ship` proves the frontend against it. The frontend PR then reads `Merge after #N`, and the report names the merge order. A frontend PR's own API client must not need the backend branch's code to compile; where it does, the ticket waits for the merge.
 
-**Under `--stack`, a ticket blocked by this run's own ticket builds on that ticket's branch instead.** The user asks for it when a chain of full-stack tickets would otherwise ship one PR per run. Check `gh api repos/<owner>/<repo> --jq .allow_merge_commit` at startup. Where it is false, the chain merges by squash, and each child has to be brought onto the base after its parent merges (see *The report*). Say so once at startup, then stack anyway. Spawn the child once its parent's PR is **ready**, with the parent's branch and PR number as its base in the spawn prompt; `/ship` treats a named base as a stacked run. Each PR targets its parent's branch, so the review bot skips every PR above the first, and *After the PR opens* reviews those. A parent that changes after its child spawned is the child's conflict to absorb: the command center's `conflicts with <branch>` line resumes it to merge the parent's branch in.
+**Under `--stack`, a ticket blocked by this run's own ticket builds on that ticket's branch instead.** The user asks for it when a chain of full-stack tickets would otherwise ship one PR per run. Check `gh api repos/<owner>/<repo> --jq .allow_merge_commit` at startup. Where it is false, the chain merges by squash, and each child has to be brought onto the base after its parent merges (see *The report*). Say so once at startup, then stack anyway. Spawn the child once its parent's PR is **ready**, with the parent's branch and PR number as its base in the spawn prompt; `/tz-skills:ship` treats a named base as a stacked run. Each PR targets its parent's branch, so the review bot skips every PR above the first, and *After the PR opens* reviews those. A parent that changes after its child spawned is the child's conflict to absorb: the command center's `conflicts with <branch>` line resumes it to merge the parent's branch in.
 
 **Six tickets per run.** The binding constraint is how many PRs the user will read in one sitting, not the machine. A dozen unreviewed PRs is worse than four, because the later ones rot while the earlier ones are worked.
 
@@ -76,7 +76,7 @@ Done when every child of the epic is takeable, skipped with a stated reason, or 
 
 **The epic body declares its waves** — "B1 and B2 run together, then B3, then B4, then P1, then P2/P3/P4/P5 run together, then P6." An epic that declares none runs serial.
 
-**The backbone wave runs serial. Consumer waves run up to `Max sessions` at a time.** Almost all collision risk lives in the backbone, because that is the wave whose job is inventing shared files; consumers mostly add inside their own route folder. Two parallel sessions that each need the same helper will each invent one, both PRs will pass CI, and both will pass `/spec-review` — neither duplicate is a stray against its own ticket. It stays invisible until a human reads both PRs.
+**The backbone wave runs serial. Consumer waves run up to `Max sessions` at a time.** Almost all collision risk lives in the backbone, because that is the wave whose job is inventing shared files; consumers mostly add inside their own route folder. Two parallel sessions that each need the same helper will each invent one, both PRs will pass CI, and both will pass `/tz-skills:spec-review` — neither duplicate is a stray against its own ticket. It stays invisible until a human reads both PRs.
 
 Pin each session's task runner with the config's concurrency flag. The runner's default already stacks test workers until timing-sensitive tests fail on load alone, and under a self-fix loop a load-induced failure is worse than noise: the fixer tries to fix it.
 
@@ -84,16 +84,16 @@ Pin each session's task runner with the config's concurrency flag. The runner's 
 
 Assert before the first spawn, not at the phase that trips over it:
 
-- the per-worktree opt-outs `/ship` step 0 writes are **provably inert**,
+- the per-worktree opt-outs `/tz-skills:ship` step 0 writes are **provably inert**,
 - each planned session has a port of its own, and each backend session on a `local` target a backend port too,
 - the report directory exists **outside the repo**,
 - where the config names `Run context`, the command center has been sent the run: every child of the epic, finished ones too, each with its wave and the ticket it waits for.
 
-A report file inside a worktree becomes a stray in the diff `/spec-review` audits.
+A report file inside a worktree becomes a stray in the diff `/tz-skills:spec-review` audits.
 
 ## The spawn prompt
 
-Everything a session cannot negotiate later goes in its prompt, after the `/ship` command:
+Everything a session cannot negotiate later goes in its prompt, after the `/tz-skills:ship` command:
 
 - the paths it owns, and the shared modules it **imports rather than creates**,
 - its dev-server port,
@@ -115,7 +115,7 @@ Done when every prompt names its own paths, its own port and its own lock rule. 
 
 Poll `claude agents --json` and read only the sessions you named. It lists your own profile alone: where `ship-ui.ts profiles` prints more than one folder, a session the user moved to another profile is listed by `CLAUDE_CONFIG_DIR=<folder> claude agents --json`, and attached to or resumed under that same folder, as the command center prints it.
 
-**Where the config names `Status`, run the command center's `watch` too, in the background, and never write a watcher of your own.** `bun ~/.claude/ship-ui/ship-ui.ts watch` prints one line for each new thing to act on: `question <id> from <ticket>`, `resume <ticket>: <n> review threads open on #<pr>`, `resume <ticket>: CI failing on #<pr>`, `resume <ticket>: #<pr> conflicts with <branch>` or `resume <ticket>: the user asked to fix <id>: <claim>`, `<ticket> stopped: <reason>`, and `quiet <ticket>: no update for <n> min at step <step>`. A `resume` line means a finished session's PR needs it again: resume that session to run `/ship` step 12. For a conflict, tell it to merge the base branch in first; for a fix the user asked for, give it the finding's id, claim and note. A `quiet` line is not a stop: read the end of that session's transcript, and resume it only when its last turn ended with the `/ship` steps unfinished. A session still inside a turn is working, and resuming it starts a second copy in the same worktree. **One writer per worktree.** `claude --bg --resume <id>` with flags starts a copy under the same name, so names repeat. Before resuming a ticket, list its sessions with `ListAgents`. If any is busy, message that one by `name [ref]`. A bare name can reach an idle older copy, which wakes up and edits the same files. When looping over spawns in a script, give each `claude` call `</dev/null`, or it reads the rest of the loop's input as its own. Findings a reviewer left open on a finished ticket wait under "Needs you" for the user to accept for now or send back; never rule on one yourself. The command center reads the review bot and CI correctly, from the PR's status contexts as well as its check runs; a hand-written watcher on the pilot read check runs only, never saw CodeRabbit's review, and left a ticket idle for forty minutes.
+**Where the config names `Status`, run the command center's `watch` too, in the background, and never write a watcher of your own.** `bun ~/.claude/ship-ui/ship-ui.ts watch` prints one line for each new thing to act on: `question <id> from <ticket>`, `resume <ticket>: <n> review threads open on #<pr>`, `resume <ticket>: CI failing on #<pr>`, `resume <ticket>: #<pr> conflicts with <branch>` or `resume <ticket>: the user asked to fix <id>: <claim>`, `<ticket> stopped: <reason>`, and `quiet <ticket>: no update for <n> min at step <step>`. A `resume` line means a finished session's PR needs it again: resume that session to run `/tz-skills:ship` step 12. For a conflict, tell it to merge the base branch in first; for a fix the user asked for, give it the finding's id, claim and note. A `quiet` line is not a stop: read the end of that session's transcript, and resume it only when its last turn ended with the `/tz-skills:ship` steps unfinished. A session still inside a turn is working, and resuming it starts a second copy in the same worktree. **One writer per worktree.** `claude --bg --resume <id>` with flags starts a copy under the same name, so names repeat. Before resuming a ticket, list its sessions with `ListAgents`. If any is busy, message that one by `name [ref]`. A bare name can reach an idle older copy, which wakes up and edits the same files. When looping over spawns in a script, give each `claude` call `</dev/null`, or it reads the rest of the loop's input as its own. Findings a reviewer left open on a finished ticket wait under "Needs you" for the user to accept for now or send back; never rule on one yourself. The command center reads the review bot and CI correctly, from the PR's status contexts as well as its check runs; a hand-written watcher on the pilot read check runs only, never saw CodeRabbit's review, and left a ticket idle for forty minutes.
 
 | `status` / `waitingFor` | Means | Disposition |
 |---|---|---|
@@ -130,7 +130,7 @@ The last row is the one a stall-only watch misses. Under the `auto` permission m
 
 ## Human contact
 
-**A blocking spec question parks its ticket, and the run continues.** Never answer it from precedence rules on the session's behalf (under `--afk`, *Unattended* below decides the revertible ones): `/ship`'s gate exists because a conflict found there costs one question, while the same conflict found at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed answer converts the cheap failure into the expensive one, silently.
+**A blocking spec question parks its ticket, and the run continues.** Never answer it from precedence rules on the session's behalf (under `--afk`, *Unattended* below decides the revertible ones): `/tz-skills:ship`'s gate exists because a conflict found there costs one question, while the same conflict found at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed answer converts the cheap failure into the expensive one, silently.
 
 **Alarm only when no session can progress** — every live session parked on a question. Run the config's alarm command then, and only then. Waking the user for a question two other sessions are working around trains them to ignore the alarm, which costs every later run.
 
@@ -150,7 +150,7 @@ Run completion notifies quietly.
 
 Optional, and on when the config names `Status`. It is a local page that holds what the run knows, so the knowledge outlives you: an orchestrator gets compacted, runs out of usage or restarts, and a run watched only from its memory goes stale each time. The files are in [`command-center/`](./command-center/).
 
-**Every session reports for itself.** `Status` at the start of each `/ship` step, with the step, what it is doing and its model; with its PR once one exists; and once more when it stops, with one reason from the command's fixed list. You are no longer the only writer, which is what kept a measured run's page wrong whenever the orchestrator was busy.
+**Every session reports for itself.** `Status` at the start of each `/tz-skills:ship` step, with the step, what it is doing and its model; with its PR once one exists; and once more when it stops, with one reason from the command's fixed list. You are no longer the only writer, which is what kept a measured run's page wrong whenever the orchestrator was busy.
 
 **A `revised:` line in a `Status` reply is the user changing an earlier answer.** The session redoes what the old answer touched, and says so in its commit message. A change to a finished ticket never reaches a session: the command center keeps it as a follow-up, and the report carries it.
 
@@ -160,7 +160,7 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 ## Unattended: `--afk`
 
-`/ship-epic <epic> --afk [--until HH:MM]` runs the epic while the user is away. Everything above holds except what this section changes. It needs the command center: without `Ask`, `Status` and `Finding` in the config, refuse `--afk` and say which key is missing. Your own review findings reach the page as *After the PR opens* says, `O<n>` ids included.
+`/tz-skills:ship-epic <epic> --afk [--until HH:MM]` runs the epic while the user is away. Everything above holds except what this section changes. It needs the command center: without `Ask`, `Status` and `Finding` in the config, refuse `--afk` and say which key is missing. Your own review findings reach the page as *After the PR opens* says, `O<n>` ids included.
 
 **Decide if revertible, park if not.** Answer a session's question yourself if and only if a changed answer can be undone: nothing outside the unmerged branch has happened yet, and the user can change it when reviewing. A code or design choice inside a draft PR always qualifies. So does test data on staging written through the app's own screens and endpoints, the way live verification drives them: the user accepts that it stays, even where financial rows can only be reversed. Everything else outside the branch parks as above: touching a database directly (a SQL shell, a script on its connection string, a migration run by hand), sending a message, posting publicly, merging, deploying, granting access. Judge each option, not the question: offered "fix the row with SQL" and "redo it through the form", pick the form, never the SQL. When no option qualifies, or you are unsure, park it.
 
@@ -186,15 +186,15 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 ## After the PR opens
 
-`/ship` step 12 marks its own PR ready and works CodeRabbit's comments, so nothing here promotes or fixes. Read the outcome instead: a ready PR passed every phase, and a draft one did not.
+`/tz-skills:ship` step 12 marks its own PR ready and works CodeRabbit's comments, so nothing here promotes or fixes. Read the outcome instead: a ready PR passed every phase, and a draft one did not.
 
 **Name every `RATE_LIMITED` review in the report.** Every session pushes as the same user, so they share the bot's rate limit — a multi-ticket run is where it bites, and the user needs to know which PRs no bot looked at.
 
-**A `RATE_LIMITED` or `NO_BOT` PR already had its fallback reviewer**: `/ship` step 12 runs it. A clean fallback review makes the PR ready for review, backup-reviewed; carry that into the report with CodeRabbit named as rate limited or the repo as running no bot, and list what is still open for any PR that is not clean.
+**A `RATE_LIMITED` or `NO_BOT` PR already had its fallback reviewer**: `/tz-skills:ship` step 12 runs it. A clean fallback review makes the PR ready for review, backup-reviewed; carry that into the report with CodeRabbit named as rate limited or the repo as running no bot, and list what is still open for any PR that is not clean.
 
-**A PR the bot skipped for its base gets an adversarial reviewer instead.** When its base is not `main`, spawn one `tz-fresh-reviewer` per such PR, given its diff from its own base saved as a file, with the ticket as the spec. A `NO_BOT` PR needs none: step 12's fallback reviewer already read it. Never pay for the bot's on-demand review, and never keep re-asking it — the limit is shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or `AskUserQuestion`: it reads and reports, which is the one job a subagent's grant fits. Verify each finding against the code yourself, then hand the confirmed ones to that ticket's session to fix, as its own CodeRabbit comments would be. Show every finding to the user through the config's `Finding` command too, confirmed or not, with what you did about it: the user reads the command center, not the hand-off. Give yours ids `O<n>`, so they never collide with a session's `F<n>`, and re-send the same id when its outcome changes. Send `--verdict running` when your review starts and its verdict when it ends: a finished ticket shows as being reviewed only in between. The report names which PRs were reviewed this way.
+**A PR the bot skipped for its base gets an adversarial reviewer instead.** When its base is not `main`, spawn one `tz-skills:tz-fresh-reviewer` per such PR, given its diff from its own base saved as a file, with the ticket as the spec. A `NO_BOT` PR needs none: step 12's fallback reviewer already read it. Never pay for the bot's on-demand review, and never keep re-asking it — the limit is shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or `AskUserQuestion`: it reads and reports, which is the one job a subagent's grant fits. Verify each finding against the code yourself, then hand the confirmed ones to that ticket's session to fix, as its own CodeRabbit comments would be. Show every finding to the user through the config's `Finding` command too, confirmed or not, with what you did about it: the user reads the command center, not the hand-off. Give yours ids `O<n>`, so they never collide with a session's `F<n>`, and re-send the same id when its outcome changes. Send `--verdict running` when your review starts and its verdict when it ends: a finished ticket shows as being reviewed only in between. The report names which PRs were reviewed this way.
 
-**Every PR with screenshots gets a visual reviewer too, whatever its base.** Once a ticket's PR is ready, spawn one fresh `general-purpose` subagent for it. It downloads the shots from the PR body, fetches the ticket's Figma frames, and compares the two pictures the way a designer doing QA would: a missing icon, a wrong colour, missing text, the wrong component. Tell it what is already ruled on: the PR's `Refused`, `Out of scope` and `Decided unattended` lines, and any fix in flight. Code reviewers never see pixels, and `/ship`'s own visual check is graded by the session that built the screen. On a measured run, a PR body said "header matches Figma" over a shot whose back link had lost its arrow and colour, and every code reviewer passed it. Handle its findings as `O<n>` exactly like the adversarial reviewer's: verify each one against the shot yourself, send it through `Finding` with `--by orchestrator`, and hand the confirmed ones to the session. When a fix re-shoots a PR, run the reviewer again.
+**Every PR with screenshots gets a visual reviewer too, whatever its base.** Once a ticket's PR is ready, spawn one fresh `general-purpose` subagent for it. It downloads the shots from the PR body, fetches the ticket's Figma frames, and compares the two pictures the way a designer doing QA would: a missing icon, a wrong colour, missing text, the wrong component. Tell it what is already ruled on: the PR's `Refused`, `Out of scope` and `Decided unattended` lines, and any fix in flight. Code reviewers never see pixels, and `/tz-skills:ship`'s own visual check is graded by the session that built the screen. On a measured run, a PR body said "header matches Figma" over a shot whose back link had lost its arrow and colour, and every code reviewer passed it. Handle its findings as `O<n>` exactly like the adversarial reviewer's: verify each one against the shot yourself, send it through `Finding` with `--by orchestrator`, and hand the confirmed ones to the session. When a fix re-shoots a PR, run the reviewer again.
 
 Give the visual reviewer these rules. On the first measured run, every miss the user caught broke one of them while the text on screen matched:
 
@@ -212,7 +212,7 @@ Done when every finished ticket's PR is ready with its review threads answered o
 
 ## Draft is the abort signal
 
-Each abort parks one ticket and leaves a **draft PR carrying the reason**. `/ship` opens drafts anyway, so this costs nothing, and the PR is the only artifact that appears where the user already looks: a branch with no PR is invisible among two dozen live worktrees.
+Each abort parks one ticket and leaves a **draft PR carrying the reason**. `/tz-skills:ship` opens drafts anyway, so this costs nothing, and the PR is the only artifact that appears where the user already looks: a branch with no PR is invisible among two dozen live worktrees.
 
 A ready PR passed every phase. A draft one did not, and its body says which.
 
@@ -220,11 +220,11 @@ A ready PR passed every phase. A draft one did not, and its body says which.
 |---|---|
 | 1 | Residue from the reconcile gate — parked, session resumable |
 | 2 | Typecheck, lint or tests still failing after two self-fix attempts |
-| 3 | `/spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
+| 3 | `/tz-skills:spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
 | 4 | An assert `FAIL` that survives the expectation re-check |
 | 5 | Two adversarial-review rounds with findings still open |
-| 5b | `/spec-review` printed no verdict, or `NEEDS_ROWS` / `NO_CONTRACT` — `/ship` abort 9 |
-| 5c | The rate-limit fallback reviewer holds a `blocker` or `major` — `/ship` abort 10, PR back to draft |
+| 5b | `/tz-skills:spec-review` printed no verdict, or `NEEDS_ROWS` / `NO_CONTRACT` — `/tz-skills:ship` abort 9 |
+| 5c | The rate-limit fallback reviewer holds a `blocker` or `major` — `/tz-skills:ship` abort 10, PR back to draft |
 | 6 | A denied command — session stopped, the exact command reported |
 | 7 | A backend live target that never came up |
 
@@ -247,11 +247,11 @@ Delete every infra namespace a `local` session created before the report is fina
 
 Then the follow-ups the sessions' PR bodies listed, gathered for the user to pass to `/mattpocock-skills:to-tickets`. Writing them to the tracker here is refused by the user's own standing preference.
 
-**Filter before you gather.** Carry only follow-ups that pass `/ship` 11b's admission bar: a problem a user can notice today, or a known unfixed bug, named in one sentence. Drop refactors, coverage gaps for working code, "a future change could break this", accepted cosmetic nits, and orchestrator-review notes that were verified as not defects — even when a session listed them. Aim for zero to five per run, ranked by what a user loses. A measured run carried 16 and the user kept 2; the other 14 were noise that buried them.
+**Filter before you gather.** Carry only follow-ups that pass `/tz-skills:ship` 11b's admission bar: a problem a user can notice today, or a known unfixed bug, named in one sentence. Drop refactors, coverage gaps for working code, "a future change could break this", accepted cosmetic nits, and orchestrator-review notes that were verified as not defects — even when a session listed them. Aim for zero to five per run, ranked by what a user loses. A measured run carried 16 and the user kept 2; the other 14 were noise that buried them.
 
 **Say it is a proposal.** End the section with one line: the list is for the user to grill, not to hand to `to-tickets` as is. Never suggest running `to-tickets` on the list before the user has ruled on each item.
 
-**Carry every field, not the one-line summary.** `/ship` step 11b fixes the shape — surface, severity, why it exists, what breaks if it never ships, effort with its reason, and a `file:line` anchor. The PR body holds the short form because a reviewer scans; this report is the long form, and it is what `/mattpocock-skills:to-tickets` reads. A report that copies the PR's one-liners throws away the half that makes a follow-up rulable.
+**Carry every field, not the one-line summary.** `/tz-skills:ship` step 11b fixes the shape — surface, severity, why it exists, what breaks if it never ships, effort with its reason, and a `file:line` anchor. The PR body holds the short form because a reviewer scans; this report is the long form, and it is what `/mattpocock-skills:to-tickets` reads. A report that copies the PR's one-liners throws away the half that makes a follow-up rulable.
 
 **Re-check the anchors before writing them down.** A session's own summary of its follow-ups is the least verified prose it produced — it is written last, after the gates, and nothing audits it. Counts and file references stated there have been wrong in a measured run. Grep each one.
 

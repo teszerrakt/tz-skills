@@ -26,7 +26,7 @@ Write no new config file. Read, in this order:
 2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
 3. Ask the user for what neither file states, as a **questions section** (CONTEXT.md).
 
-A missing `## Review exclusions` section is not a blocker. Fall back to the defaults in step 4, name the fallback in the report, and offer `/setup-tz-skills` once.
+A missing `## Review exclusions` section is not a blocker. Fall back to the defaults in step 4, name the fallback in the report, and offer `/tz-skills:setup-tz-skills` once.
 
 ## Process
 
@@ -221,7 +221,7 @@ Write no `❓` section when nothing needs deciding; end with one line saying not
 
 ## Driven mode
 
-`/spec-review --driven <base>...<head> --rows <rows.json> --ticket <ticket.md>` is for a driver such as `/ship` step 9. The driver starts it in a fresh session, because its own context is the author's, and an author reads its own diff as meeting the rows.
+`/tz-skills:spec-review --driven <base>...<head> --rows <rows.json> --ticket <ticket.md>` is for a driver such as `/tz-skills:ship` step 9. The driver starts it in a fresh session, because its own context is the author's, and an author reads its own diff as meeting the rows.
 
 - **The rows arrive confirmed.** Skip step 3: the driver extracted them before any code existed and asked about the doubtful ones then. Never extract rows here: nobody is left to confirm them, and the paraphrase would be the grader's own.
 - **Check the rows against the ticket before grading.** The author wrote the rows unwatched, so a row it dropped, narrowed or reworded would pass silently. Return `NEEDS_ROWS` naming each failure — also when `--rows` is absent, empty, or not valid JSON:

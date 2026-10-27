@@ -36,7 +36,7 @@ This subsection is the one place a machine-specific gotcha belongs: the driver s
 ```markdown
 ## Delivery
 
-Consumed by `/ship`. Each key names the project's half of one phase; a phase
+Consumed by `/tz-skills:ship`. Each key names the project's half of one phase; a phase
 whose key is absent reports `SKIPPED`.
 
 - **Tracks:** frontend {{paths}}; backend {{paths}}.
@@ -67,7 +67,7 @@ whose key is absent reports `SKIPPED`.
 - **Token file:** {{path}}. A browser reports colour as `oklch(…)`, so assert
   token identity against this file rather than the hex a design names.
 - **PR body sections:** {{headings, in order}} — {{required ones}} required,
-  at most {{n}} sections, at most {{n}} tables, {{other caps}}. `/ship` step 11
+  at most {{n}} sections, at most {{n}} tables, {{other caps}}. `/tz-skills:ship` step 11
   writes them in CodeRabbit's shape: `Summary`, `Changes`, `Merge risk`.
 - **PR body write path:** {{command}}, then read the body back and confirm it
   changed.
@@ -97,7 +97,7 @@ Tell each delegate the ones its phase can hit.
 
 ### Parallel runs
 
-Read by `/ship-epic` only. A key with no value makes the run serial rather than
+Read by `/tz-skills:ship-epic` only. A key with no value makes the run serial rather than
 guessing.
 
 - **Max sessions:** {{n}} — set by the machine's memory, not its cores.
@@ -123,5 +123,5 @@ guessing.
   <json>`, once, before the first spawn.
 - **Finding:** {{command}} — `bun ~/.claude/ship-ui/ship-ui.ts finding …`. Run
   after every judge, once per finding and again when its outcome changes.
-  `/ship-epic --afk` requires it.
+  `/tz-skills:ship-epic --afk` requires it.
 ```

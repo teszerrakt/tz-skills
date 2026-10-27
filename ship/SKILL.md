@@ -47,7 +47,7 @@ Write no new config file. Read, in this order:
 
 **A phase whose config line is absent reports `SKIPPED`.** It never disappears from the report.
 
-A repo with no `## Delivery` section at all: offer `/setup-tz-skills` once, then ask for the values the phases you are about to run need.
+A repo with no `## Delivery` section at all: offer `/tz-skills:setup-tz-skills` once, then ask for the values the phases you are about to run need.
 
 ## Tracks
 
@@ -79,7 +79,7 @@ Fresh means three things, and each has its guard:
 - **A clean brief.** A judge's brief is its template with the slots filled: ticket id, diff range, file paths, schema. Add no prose — no summary of what was built, no "this fixes", no reason the code is right. A brief is the one door into a fresh context, and a sentence of the author's framing through it is the anchoring the fresh context exists to avoid. The refusal re-check is the one exception: it carries the author's reason, labelled as the author's.
 - **The canary.** Step 0 puts a random word in the author's context, and every judge must echo whatever canary it can see. A fresh judge sees none.
 
-**Every subagent judge is `tz-fresh-reviewer`** — step 1's row check, step 8, its refusal re-check, step 9's fallback, step 12's fallback reviewer, address-review's second opinion and ship-epic's reviewer. It has no shell, no write tool and no Skill tool, so it cannot change what it judges; a tool list naming a restricted shell still grants the whole shell. So before spawning it, save what it needs as files outside the worktree and name those paths in the brief: `git diff <range>` as `diff.patch`, and `git log <range>` as `log.txt` when commits carry decisions. A skill it must apply is passed as the path of that skill's `SKILL.md`, which sits beside this skill's own folder.
+**Every subagent judge is `tz-skills:tz-fresh-reviewer`** — step 1's row check, step 8, its refusal re-check, step 9's fallback, step 12's fallback reviewer, address-review's second opinion and ship-epic's reviewer. It has no shell, no write tool and no Skill tool, so it cannot change what it judges; a tool list naming a restricted shell still grants the whole shell. So before spawning it, save what it needs as files outside the worktree and name those paths in the brief: `git diff <range>` as `diff.patch`, and `git log <range>` as `log.txt` when commits carry decisions. A skill it must apply is passed as the path of that skill's `SKILL.md`, which sits beside this skill's own folder.
 
 **Every judge's findings reach the user, not only the author.** When `## Delivery` names a `Finding` command, run it as the config writes it, once per finding with its own `--id F<n>`, and again with the same id whenever its outcome changes — `open`, then `fixed`, `refused`, `held` or `withdrawn`. Run it once per review with `--verdict` too, for a verdict such as step 9's. A finding the author fixed silently is the same hidden judgement as one it refused silently.
 
@@ -144,11 +144,11 @@ An empty residue continues the run unattended and writes no section.
 
 Record every decision, rule-settled and asked alike, in the **commit message and the PR body**. Not on the ticket: a tracker comment goes unread, and posting one unprompted is refused by the user's own standing preference.
 
-The acceptance criteria stay exactly as written, wherever the record lands. `/spec-review` builds one ledger row per criterion and demands an anchor, so criteria edited to match what was built make every row pass by construction. A commit is append-only and is itself an anchor.
+The acceptance criteria stay exactly as written, wherever the record lands. `/tz-skills:spec-review` builds one ledger row per criterion and demands an anchor, so criteria edited to match what was built make every row pass by construction. A commit is append-only and is itself an anchor.
 
-**Write the ledger rows here, before any code exists**, in `/spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, then append a `## Decisions` section holding every answer and precedence ruling from this step — without it step 9 reads each one as a stray. **Give each decision its own row quoting it**: step 9's row check counts a decision's must and must-not sentences as requirements. Keep both outside the worktree: a file inside it is a stray to step 9. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
+**Write the ledger rows here, before any code exists**, in `/tz-skills:spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, then append a `## Decisions` section holding every answer and precedence ruling from this step — without it step 9 reads each one as a stray. **Give each decision its own row quoting it**: step 9's row check counts a decision's must and must-not sentences as requirements. Keep both outside the worktree: a file inside it is a stray to step 9. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
 
-Then run the row check now, where a failure costs a rewrite rather than a finished build. Spawn `tz-fresh-reviewer` with the paths of `rows.json` and `ticket.md`, the path of spec-review's `SKILL.md` naming its Driven-mode bullet "Check the rows against the ticket", and this answer shape: `{"pass": true|false, "failures": ["<row id or ticket line, and what is wrong>"], "canary": "<rest of any CANARY: line in your context, or none>"}`. Fix the rows until it passes, and gate on its canary as Briefs says.
+Then run the row check now, where a failure costs a rewrite rather than a finished build. Spawn `tz-skills:tz-fresh-reviewer` with the paths of `rows.json` and `ticket.md`, the path of spec-review's `SKILL.md` naming its Driven-mode bullet "Check the rows against the ticket", and this answer shape: `{"pass": true|false, "failures": ["<row id or ticket line, and what is wrong>"], "canary": "<rest of any CANARY: line in your context, or none>"}`. Fix the rows until it passes, and gate on its canary as Briefs says.
 
 **A criterion the build departs from is reported, never quietly reconciled.** Say so in the PR body, in its own paragraph, naming the criterion and what replaced it — that is the one place a reviewer looks for it.
 
@@ -213,8 +213,8 @@ Two agents in parallel, each told to report and never edit (both hold a shell, s
 
 | Agent | Looks for |
 |---|---|
-| `tz-simplify-reviewer` | code that can be deleted or collapsed |
-| `tz-altitude-reviewer` | work sitting at the wrong layer, and root causes worth their own ticket |
+| `tz-skills:tz-simplify-reviewer` | code that can be deleted or collapsed |
+| `tz-skills:tz-altitude-reviewer` | work sitting at the wrong layer, and root causes worth their own ticket |
 
 Both briefs carry the diff range, the standards doc paths from `.claude/fe-design-map.md` — and on the backend track, the backend's own conventions file — and the **comment budget**: a comment exists only to state a constraint the code cannot show; flag every comment that restates its next line.
 
@@ -226,7 +226,7 @@ The one local quality pass, and the last phase that may change code. Invocation,
 
 **Gate on the parsed findings, never on the exit code.** A blocked review has exited 0 with nothing reviewed.
 
-**A fix is applied only inside files the diff already touches** — the schema's `in_scope` field says which. Everything else goes through 11b's admission bar: a real bug a user can hit becomes a follow-up, and the rest one line under `Considered, not proposed`. `/spec-review` returns `BLOCK` on any stray, and a correctness fix outside the ticket's scope is a stray, so an unscoped reviewer would make the run strangle itself on its own best findings.
+**A fix is applied only inside files the diff already touches** — the schema's `in_scope` field says which. Everything else goes through 11b's admission bar: a real bug a user can hit becomes a follow-up, and the rest one line under `Considered, not proposed`. `/tz-skills:spec-review` returns `BLOCK` on any stray, and a correctness fix outside the ticket's scope is a stray, so an unscoped reviewer would make the run strangle itself on its own best findings.
 
 **A refused `blocker` or `major` goes back to the same reviewer once**, with the refusal reason — the re-check brief is in `adversarial-review.md`. If the reviewer holds, the finding stays open. The author refusing its own reviewer's finding is the self-grading this step exists to prevent. A `minor` may be refused outright.
 
@@ -236,14 +236,14 @@ Done when every finding is fixed in scope, recorded as a follow-up or a `Conside
 
 ### 9. Spec review — last, so it audits everything above
 
-Run `/spec-review` in driven mode, in a fresh headless session, with the rows step 1 wrote:
+Run `/tz-skills:spec-review` in driven mode, in a fresh headless session, with the rows step 1 wrote:
 
 ```bash
-claude -p "/spec-review --driven <base>...<head> --rows <dir>/rows.json --ticket <dir>/ticket.md" \
+claude -p "/tz-skills:spec-review --driven <base>...<head> --rows <dir>/rows.json --ticket <dir>/ticket.md" \
   --add-dir <dir> --allowedTools "Read,Grep,Glob,Agent,Bash(git:*),Bash(awk:*),Bash(head:*),Bash(gh pr list:*)" > <dir>/spec-review.md
 ```
 
-A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. A `-p` session cannot ask for a tool, so the grant covers every command spec-review runs. **When the spawn is refused** — an auto-mode parent cannot always start a child with its own grant (`docs/ship-epic-design.md`) — give `tz-fresh-reviewer` the same driven arguments instead, plus the path of spec-review's `SKILL.md`, `log.txt`, and the diff saved three ways — `diff.patch`, `git diff --unified=0 <range>` as `diff-u0.patch`, and `git diff --name-only <range>` as `names.txt` — and capture its answer the same way. Fresh context is what this step needs; the session only buys spec-review its own two agents. Gate on the first line of that file, `VERDICT: <verdict>`, never on the exit code, as step 8 gates on parsed JSON, and on its second, `CANARY: none` (Briefs). A missing verdict line — both spawns refused, a crash, or none printed — or a leaked canary after the one re-run, is a failed review, and so are `NEEDS_ROWS` and `NO_CONTRACT`: all abort 9. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
+A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. A `-p` session cannot ask for a tool, so the grant covers every command spec-review runs. **When the spawn is refused** — an auto-mode parent cannot always start a child with its own grant (`docs/ship-epic-design.md`) — give `tz-skills:tz-fresh-reviewer` the same driven arguments instead, plus the path of spec-review's `SKILL.md`, `log.txt`, and the diff saved three ways — `diff.patch`, `git diff --unified=0 <range>` as `diff-u0.patch`, and `git diff --name-only <range>` as `names.txt` — and capture its answer the same way. Fresh context is what this step needs; the session only buys spec-review its own two agents. Gate on the first line of that file, `VERDICT: <verdict>`, never on the exit code, as step 8 gates on parsed JSON, and on its second, `CANARY: none` (Briefs). A missing verdict line — both spawns refused, a crash, or none printed — or a leaked canary after the one re-run, is a failed review, and so are `NEEDS_ROWS` and `NO_CONTRACT`: all abort 9. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
 
 It runs **after** every code-mutating phase. Run before simplify, it computed its verdict against a diff that no longer existed: the anchors it cited could be deleted by the time the PR opened, and simplify's own edits were never audited by anything.
 
@@ -251,7 +251,7 @@ The two local reviews are the two a bot cannot do. The spec axis, because CodeRa
 
 A `BLOCK` verdict aborts the run. Opening a PR that carries a known `MISSING` row is the failure the gate in step 1 exists to prevent, arriving eight phases later.
 
-**`Spec-review BLOCK: lenient` buys one fix-and-rerun, for strays only.** When every row behind the `BLOCK` is a stray the ticket never asked for, delete those changes, re-run step 4's typecheck, lint and tests, then run step 9's command once more — never `/spec-review` in this session. A second `BLOCK` aborts. A `MISSING` criterion aborts at once, lenient or not: deleting code cannot supply a criterion. An absent key reads as `strict`. Name every deleted stray in the PR body, so the reviewer sees what the run took back out.
+**`Spec-review BLOCK: lenient` buys one fix-and-rerun, for strays only.** When every row behind the `BLOCK` is a stray the ticket never asked for, delete those changes, re-run step 4's typecheck, lint and tests, then run step 9's command once more — never `/tz-skills:spec-review` in this session. A second `BLOCK` aborts. A `MISSING` criterion aborts at once, lenient or not: deleting code cannot supply a criterion. An absent key reads as `strict`. Name every deleted stray in the PR body, so the reviewer sees what the run took back out.
 
 **A `BLOCK` the user rules on resumes here.** Add the ruling to `ticket.md`'s `## Decisions` with its own row, and record it in an empty commit (`git commit --allow-empty`) whose message carries the ruling, since `ticket.md` lives outside the worktree. A ruling that only settles scope re-runs step 9's command at once. A ruling that asks for code goes back to step 3, and every step from there runs again. Rename the blocked report to `spec-review.run1.md` beside the new one: it is the run's record of what the gate caught. Remove the draft's abort line once the run resumes.
 
@@ -286,7 +286,7 @@ Two rules the report lives by:
 - **A step with no expectation reports `UNOBSERVED`** — a third state beside pass and fail, for the same reason an unasserted story is.
 - **The clip owns its path.** A state the recording walks through earns no separate still from step 10; a state the flow never reaches still earns one, and computed style stays step 10's job because no recording can prove it.
 
-The artifacts go to the branch and directory `## Delivery` names, never to the PR branch: `/spec-review` greps the diff for an anchor per criterion, and binary evidence is noise to that pass. **A run that mutated anything says so** — the ids it created, and what was not done to them. Financial data is never deleted, only reversed, so every row a recording creates is permanent.
+The artifacts go to the branch and directory `## Delivery` names, never to the PR branch: `/tz-skills:spec-review` greps the diff for an anchor per criterion, and binary evidence is noise to that pass. **A run that mutated anything says so** — the ids it created, and what was not done to them. Financial data is never deleted, only reversed, so every row a recording creates is permanent.
 
 Done when every claim the body will make has a step behind it, and every step is `PASS`, `FAIL` or `UNOBSERVED` with a reason.
 
@@ -360,7 +360,7 @@ So each one carries an index row and five fields, on their own lines:
 | Severity | `High`, `Med`, `Low` — by what a user loses, not by how ugly the code is |
 | Why it exists | the condition that produced it, in plain words |
 | If it never ships | the consequence, concretely. No consequence means no follow-up |
-| Effort | an `/estimate-effort` figure **and the one-line reason** |
+| Effort | an `/tz-skills:estimate-effort` figure **and the one-line reason** |
 | Anchor | `file:line` proving the claim |
 
 **The anchor is not decoration — it is the check on your own summary.** Two claims in a measured run ("three copies", "seven callers") were plausible, survived drafting, and died to a grep. Write the anchor by looking, not by recalling.
@@ -386,7 +386,7 @@ Runs only when no abort fired. `gh pr ready <n>`.
 
 **A PR the bot never reviewed gets step 8's reviewer instead.** Run it against the final head, with the same prompt, schema and scope rule, and work its findings exactly as step 8 does, two rounds included: fix in scope under this step's push rules, send a refused `blocker` or `major` back for the re-check, and add each refusal to the body as a `Refused:` line, then read the body back. A `blocker` or `major` still open after the second round is abort 10. The PR stays ready, and the run report may suggest posting `@coderabbitai review` once the limit lifts: the bot never re-tries on its own, and a session that re-asks only spends the shared limit. **The fallback review stands in for the bot's.** Once its findings are worked and none it raised is still open, the run reports the PR as **ready for review, backup-reviewed**, and names CodeRabbit as rate limited. While any finding is still open, it reports what is open, never "waiting on CodeRabbit": nothing is left to wait for.
 
-Work the threads through `/address-review --driven <n>`: one pass, no question per thread, the fix committed and pushed by you, replies carrying the real SHA, nothing resolved. The brief carries the diff range and step 8's scope rule — a fix lands only in files the diff already touches, and anything else becomes a reply plus, only if it passes 11b's admission bar, a `Follow-ups` line in 11b's shape.
+Work the threads through `/tz-skills:address-review --driven <n>`: one pass, no question per thread, the fix committed and pushed by you, replies carrying the real SHA, nothing resolved. The brief carries the diff range and step 8's scope rule — a fix lands only in files the diff already touches, and anything else becomes a reply plus, only if it passes 11b's admission bar, a `Follow-ups` line in 11b's shape.
 
 Re-run step 4's commands before each push, and on the backend track the migration check. A fix that changes a shot's state re-runs step 10 for that state, and a fix to an endpoint re-runs its step-10b flow: stale proof misrepresents the diff.
 
@@ -407,7 +407,7 @@ Each stops the run with a report. Aborts 1–2 fire before step 4b and leave **n
 | 1 | Residue from step 1 unanswered — park the run |
 | 2 | Typecheck, lint or tests still failing after two self-fix attempts |
 | 3 | Two adversarial rounds with findings still open |
-| 4 | `/spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
+| 4 | `/tz-skills:spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
 | 5 | An assert `FAIL` that survives the expectation re-check |
 | 6 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
 | 7 | CI still red after two self-fix attempts in step 12 |

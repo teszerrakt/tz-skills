@@ -1,23 +1,19 @@
 {
-  "name": "@teszerrakt/skills",
-  "version": "0.1.0",
-  "description": "Personal Claude Code skills — frontend design-doc pipeline (fe-design-map, ask-stakeholders, estimate-effort, fe-design-cleanup), PR review (address-review), standup drafting. Installs via bunx.",
+  "name": "tz-skills",
+  "version": "0.2.0",
+  "private": true,
+  "description": "teszerrakt's Claude Code skills, shipped as the tz-skills plugin.",
   "type": "module",
-  "bin": {
-    "tz-skills": "./bin/install.ts"
-  },
-  "files": [
-    "bin",
-    "README.md"
-  ],
   "scripts": {
-    "setup": "bun run setup.ts",
-    "uninstall": "bun run setup.ts --uninstall",
+    "prepare": "git config core.hooksPath .githooks",
+    "check": "bun run lint:skills && bun run typecheck && bun run lint && bun test",
+    "lint:skills": "bun scripts/lint-skills.ts",
+    "evals": "bun scripts/evals.ts",
     "typecheck": "tsc --noEmit",
-    "test": "bun test ship-epic",
-    "lint": "oxlint ship-epic/command-center ship-epic/scripts",
-    "format": "oxfmt 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts'",
-    "format:check": "oxfmt --check 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts'"
+    "test": "bun test",
+    "lint": "oxlint ship-epic/command-center ship-epic/scripts scripts",
+    "format": "oxfmt 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts' 'scripts/**/*.ts'",
+    "format:check": "oxfmt --check 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts' 'scripts/**/*.ts'"
   },
   "engines": {
     "bun": ">=1.0.0"
@@ -30,15 +26,6 @@
   "bugs": {
     "url": "https://github.com/teszerrakt/tz-skills/issues"
   },
-  "keywords": [
-    "claude-code",
-    "skills",
-    "claude",
-    "design-docs",
-    "figma",
-    "standup",
-    "pr-review"
-  ],
   "author": "teszerrakt",
   "license": "MIT",
   "devDependencies": {
