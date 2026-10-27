@@ -76,6 +76,10 @@ _Avoid_: auto-answer, default, assumed answer
 A hold that keeps the machine awake, never the display, for as long as the orchestrator runs. It ends when the orchestrator's process does.
 _Avoid_: keep-awake, caffeinate, no-sleep
 
+**Toast**:
+A card the command center puts on the user's desktop for one question or one ticket event. It can be answered or dismissed there; the page holds the same question. Off for an `--afk` run until the user turns it on.
+_Avoid_: notification, pop-up, alert (a push notification is the one quiet message at the end of an `--afk` run)
+
 **Unasserted**:
 A state that was screenshotted with no assertion spec. A third outcome beside pass and fail, never reported as either.
 _Avoid_: untested, skipped, n/a

@@ -12,7 +12,12 @@
   ],
   "scripts": {
     "setup": "bun run setup.ts",
-    "uninstall": "bun run setup.ts --uninstall"
+    "uninstall": "bun run setup.ts --uninstall",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test ship-epic",
+    "lint": "oxlint ship-epic/command-center ship-epic/scripts",
+    "format": "oxfmt 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts'",
+    "format:check": "oxfmt --check 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts'"
   },
   "engines": {
     "bun": ">=1.0.0"
@@ -35,5 +40,11 @@
     "pr-review"
   ],
   "author": "teszerrakt",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
+    "typescript": "^7.0.2"
+  }
 }

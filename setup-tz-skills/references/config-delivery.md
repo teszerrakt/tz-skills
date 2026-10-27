@@ -114,15 +114,14 @@ guessing.
 - **Alarm:** {{command}}. Run only when no session can progress.
 - **Ask:** {{command}} — a session runs it to put its own question on screen,
   and it blocks until the answer. `ship-epic/command-center/` does this on any
-  machine with Node: copy the folder to `~/.claude/ship-ui/` and name
-  `node ~/.claude/ship-ui/ship-ui.mjs ask …`. Without Node, on Windows,
-  `ship-epic/scripts/ask-me.ps1` shows the card alone.
-- **Status:** {{command}} — `node ~/.claude/ship-ui/ship-ui.mjs status …`. A
+  machine with Bun: link or copy the folder to `~/.claude/ship-ui/` and name
+  `bun ~/.claude/ship-ui/ship-ui.ts ask …`.
+- **Status:** {{command}} — `bun ~/.claude/ship-ui/ship-ui.ts status …`. A
   session runs it at each step and when it stops. Naming it turns the command
   center on.
-- **Run context:** {{command}} — `node ~/.claude/ship-ui/ship-ui.mjs run --file
+- **Run context:** {{command}} — `bun ~/.claude/ship-ui/ship-ui.ts run --file
   <json>`, once, before the first spawn.
-- **Finding:** {{command}} — `node ~/.claude/ship-ui/ship-ui.mjs finding …`. Run
+- **Finding:** {{command}} — `bun ~/.claude/ship-ui/ship-ui.ts finding …`. Run
   after every judge, once per finding and again when its outcome changes.
   `/ship-epic --afk` requires it.
 ```
