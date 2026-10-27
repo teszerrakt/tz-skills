@@ -66,7 +66,7 @@ A ticket is **takeable** when all four hold:
 
 **A ticket blocked only by this run's backend PR builds on the base branch, not on that PR's branch.** Stacking would break on squash merge: once the backend PR squashes, the stacked PR shows its commits again. So the frontend session gets the backend in its spawn prompt instead — the PR's preview URL, or its worktree and port for a `local` target — and `/tz-skills:ship` proves the frontend against it. The frontend PR then reads `Merge after #N`, and the report names the merge order. A frontend PR's own API client must not need the backend branch's code to compile; where it does, the ticket waits for the merge.
 
-**Under `--stack`, a ticket blocked by this run's own ticket builds on that ticket's branch instead.** The user asks for it when a chain of full-stack tickets would otherwise ship one PR per run. Check `gh api repos/<owner>/<repo> --jq .allow_merge_commit` at startup. Where it is false, the chain merges by squash, and each child has to be brought onto the base after its parent merges (see *The report*). Say so once at startup, then stack anyway. Spawn the child once its parent's PR is **ready**, with the parent's branch and PR number as its base in the spawn prompt; `/tz-skills:ship` treats a named base as a stacked run. Each PR targets its parent's branch, so the review bot skips every PR above the first, and *After the PR opens* reviews those. A parent that changes after its child spawned is the child's conflict to absorb: the command center's `conflicts with <branch>` line resumes it to merge the parent's branch in.
+**Under `--stack`, a ticket blocked by this run's own ticket builds on that ticket's branch instead.** The user asks for it when a chain of full-stack tickets would otherwise ship one PR per run. **Read [`references/stack.md`](references/stack.md) at startup when the run has `--stack`**: the merge-commit check, when a child spawns and on which base, and how a child reaches the base after its parent squashes.
 
 **Six tickets per run.** The binding constraint is how many PRs the user will read in one sitting, not the machine. A dozen unreviewed PRs is worse than four, because the later ones rot while the earlier ones are worked.
 
@@ -104,7 +104,7 @@ Everything a session cannot negotiate later goes in its prompt, after the `/tz-s
 - for a frontend session blocked by this run's backend PR, that backend: the PR number, and its preview URL or its worktree and backend port,
 - under `--stack`, its base: the parent ticket's branch and PR number,
 - the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*,
-- under `--afk`, the rule quoted under *Unattended*,
+- under `--afk`, the rule quoted in `references/afk.md`,
 - that a reviewer's design finding is refused only with the frame that settles it. "No frame draws it" needs a search of the ticket's frames and their siblings first; when the search finds nothing, the session asks through `Ask` and does not refuse.
 
 Migration numbers are reserved here because siblings are on no branch the others can see: each would take the same next number, and the collision surfaces only when the second one merges.
@@ -130,7 +130,7 @@ The last row is the one a stall-only watch misses. Under the `auto` permission m
 
 ## Human contact
 
-**A blocking spec question parks its ticket, and the run continues.** Never answer it from precedence rules on the session's behalf (under `--afk`, *Unattended* below decides the revertible ones): `/tz-skills:ship`'s gate exists because a conflict found there costs one question, while the same conflict found at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed answer converts the cheap failure into the expensive one, silently.
+**A blocking spec question parks its ticket, and the run continues.** Never answer it from precedence rules on the session's behalf (under `--afk`, `references/afk.md` decides the revertible ones): `/tz-skills:ship`'s gate exists because a conflict found there costs one question, while the same conflict found at PR time costs a re-implementation, a re-shoot and a body rewrite. A guessed answer converts the cheap failure into the expensive one, silently.
 
 **Alarm only when no session can progress** — every live session parked on a question. Run the config's alarm command then, and only then. Waking the user for a question two other sessions are working around trains them to ignore the alarm, which costs every later run.
 
@@ -160,29 +160,9 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 ## Unattended: `--afk`
 
-`/tz-skills:ship-epic <epic> --afk [--until HH:MM]` runs the epic while the user is away. Everything above holds except what this section changes. It needs the command center: without `Ask`, `Status` and `Finding` in the config, refuse `--afk` and say which key is missing. Your own review findings reach the page as *After the PR opens* says, `O<n>` ids included.
+`/tz-skills:ship-epic <epic> --afk [--until HH:MM]` runs the epic while the user is away. It needs the command center: without `Ask`, `Status` and `Finding` in the config, refuse `--afk` and say which key is missing. Your own review findings reach the page as *After the PR opens* says, `O<n>` ids included.
 
-**Decide if revertible, park if not.** Answer a session's question yourself if and only if a changed answer can be undone: nothing outside the unmerged branch has happened yet, and the user can change it when reviewing. A code or design choice inside a draft PR always qualifies. So does test data on staging written through the app's own screens and endpoints, the way live verification drives them: the user accepts that it stays, even where financial rows can only be reversed. Everything else outside the branch parks as above: touching a database directly (a SQL shell, a script on its connection string, a migration run by hand), sending a message, posting publicly, merging, deploying, granting access. Judge each option, not the question: offered "fix the row with SQL" and "redo it through the form", pick the form, never the SQL. When no option qualifies, or you are unsure, park it.
-
-**Answer through the command center, labelled as yours.** `ship-ui.ts questions` lists what is open. `ship-ui.ts answer --id <id> --choice <label> --note "<why, and what makes it revertible>" --as orchestrator` answers one: the session's blocked `ask` prints the choice, then `by: orchestrator` and `decision: D<n>`. Never `SendMessage` an answer and never word one as the user's: a session rightly refuses an answer that arrives unasked from another session claiming to be the user.
-
-**Tell every session the rule before it starts.** Add this to each spawn prompt, word for word:
-
-> This run is unattended (`--afk`). An answer your `ask` command prints with `by: orchestrator` is binding, the same as the user's: the orchestrator decided it because it can be reverted, and the user may change it later through a `revised:` line from `status`. Name its `decision: D<n>` in the commit message it shapes. Such a decision never holds your PR back: take it to ready and work the review bot's threads exactly as step 12 says, and list each decision in the PR body under `Decided unattended`, with its question, choice and note, so the reviewer sees it. If step 9's `BLOCK` would abort the run and its only causes are strays, do not stop: ask it through `ask`, one question per stray, with the options `Keep` and `Revert`, and resume as step 9 says a `BLOCK` the user rules on resumes. A `MISSING` row still aborts, as abort 4.
-
-**Every such answer is an unattended decision.** The command center numbers it `D<n>` per run and shows it as "decided while you were away", with your note as its reason. The user changes one on the page, or in this chat as "D3: No", which you pass on with `ship-ui.ts revise --decision D3 --choice No`. Either way it reaches a running session through its next `status` call, and a finished ticket gets a follow-up.
-
-**A spec-review `BLOCK` on strays alone is yours to rule.** Keep or revert: both live on the branch, so it is a `D<n>` like any other. Revert unless the stray is the only way the ticket's own criteria pass. The repo's `Spec-review BLOCK` setting still decides when a `BLOCK` aborts; this only rules on one that would. A `MISSING` row still blocks.
-
-**Nothing sounds.** The alarm never fires under `--afk`, and `Run context` carries `"afk": true`, which turns the command center's pop-ups off for the run; the user turns them back on from the page. A question you cannot decide parks and the run goes on; when every live session is parked, start nothing and wait. When the run ends, send one quiet push notification naming the command center's address and the report's path.
-
-**The cutoff.** No ticket starts after `--until`. At start, state it in the machine's local zone with its UTC offset and the time left, from `date` on this machine, for example "no new tickets after 07:00 WIB (UTC+7), 7h 40m from now". WSL's zone can differ from Windows', and this line is where a wrong one shows before the user sleeps. The six-ticket cap still holds.
-
-**Stop and abort.** "stop" in this chat starts nothing new and lets running tickets finish. "abort" kills every session you spawned, and each leaves a draft whose body says it was aborted and at which step.
-
-**Stay awake, let the screen sleep.** Before the first spawn, start [`scripts/wake-lock.ts`](./scripts/wake-lock.ts) with `bun` in the background. It holds the system awake and never the display, finds the `claude` process above it, and lets go when that process exits or after 12 hours (`--hours` moves the cap). On Windows it holds `ES_CONTINUOUS | ES_SYSTEM_REQUIRED` through PowerShell, which it reaches from WSL too; `caffeinate -i` on macOS; `systemd-inhibit --what=sleep` on Linux, which blocks suspend but leaves screen dimming and locking alone.
-
-**The morning.** The user comes back to a list of PRs ready for review, not drafts waiting on a ruling: an unattended decision is recorded, never a reason to hold a PR. The report and the command center list each ready PR with its `D<n>` decisions. "D3: No" in this chat changes one, and the session redoes what it touched on the same PR. A session that stopped with its PR a draft for no abort reason is yours to resume through step 12.
+**Under `--afk`, read [`references/afk.md`](references/afk.md) before the first spawn.** It decides which questions you answer yourself and how, adds a rule to every spawn prompt, silences the alarm, sets the cutoff, keeps the machine awake, and says what the user finds in the morning.
 
 ## After the PR opens
 
@@ -192,19 +172,7 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **A `RATE_LIMITED` or `NO_BOT` PR already had its fallback reviewer**: `/tz-skills:ship` step 12 runs it. A clean fallback review makes the PR ready for review, backup-reviewed; carry that into the report with CodeRabbit named as rate limited or the repo as running no bot, and list what is still open for any PR that is not clean.
 
-**A PR the bot skipped for its base gets an adversarial reviewer instead.** When its base is not `main`, spawn one `tz-skills:tz-fresh-reviewer` per such PR, given its diff from its own base saved as a file, with the ticket as the spec. A `NO_BOT` PR needs none: step 12's fallback reviewer already read it. Never pay for the bot's on-demand review, and never keep re-asking it — the limit is shared, so a re-ask only spends it. A reviewer needs no `SendMessage` or `AskUserQuestion`: it reads and reports, which is the one job a subagent's grant fits. Verify each finding against the code yourself, then hand the confirmed ones to that ticket's session to fix, as its own CodeRabbit comments would be. Show every finding to the user through the config's `Finding` command too, confirmed or not, with what you did about it: the user reads the command center, not the hand-off. Give yours ids `O<n>`, so they never collide with a session's `F<n>`, and re-send the same id when its outcome changes. Send `--verdict running` when your review starts and its verdict when it ends: a finished ticket shows as being reviewed only in between. The report names which PRs were reviewed this way.
-
-**Every PR with screenshots gets a visual reviewer too, whatever its base.** Once a ticket's PR is ready, spawn one fresh `general-purpose` subagent for it. It downloads the shots from the PR body, fetches the ticket's Figma frames, and compares the two pictures the way a designer doing QA would: a missing icon, a wrong colour, missing text, the wrong component. Tell it what is already ruled on: the PR's `Refused`, `Out of scope` and `Decided unattended` lines, and any fix in flight. Code reviewers never see pixels, and `/tz-skills:ship`'s own visual check is graded by the session that built the screen. On a measured run, a PR body said "header matches Figma" over a shot whose back link had lost its arrow and colour, and every code reviewer passed it. Handle its findings as `O<n>` exactly like the adversarial reviewer's: verify each one against the shot yourself, send it through `Finding` with `--by orchestrator`, and hand the confirmed ones to the session. When a fix re-shoots a PR, run the reviewer again.
-
-Give the visual reviewer these rules. On the first measured run, every miss the user caught broke one of them while the text on screen matched:
-
-- **Element by element, not text by text.** For each element in the frame, check it is the same kind of component, with the same icon and the same colour. Matching words are not a match.
-- **Size and position, not only content.** Check each container's size against the frame: whether it hugs its content or fills the space, and where it sits.
-- **Only states a user can reach.** A shot that freezes a moment the app never shows (a modal mid-call behind its own success toast, a screen taken before the fix) is a finding. So is every shot in the PR, not only the ones a fix named.
-- **Behaviour a picture cannot show.** Read the frame's annotations and the handover for timing, dismissal and focus, and check them against the stories.
-- **Not found is not approved.** Search the ticket's frames and their siblings before calling anything undrawn. Report what is still unmatched as unmatched, never as passing.
-
-**Every PR gets a completeness checker as well.** Spawn one more fresh subagent per ready PR, with the ticket, the diff and the PR body. It splits every line of the ticket's what-to-build list, rules, acceptance criteria and named stories and tests into single items, then marks each one built (with an anchor), partial, missing, or deferred. Deferred counts only when the ticket it names really lists the item. Give it the parent epic too. A rule the epic states for every ticket, such as "every state for all three types", multiplies each item that varies by type into one item per type, and each one needs its own story and shot. Spec-review audits acceptance criteria, but it never sees the what-to-build list, and a session trims that list quietly: a card drawn as an empty shell, or a clone with a named behaviour stripped out. Handle its gaps as `O<n>` findings, the same way as the other reviewers'.
+**Three more reviewers read each ready PR. Read [`references/pr-reviewers.md`](references/pr-reviewers.md) once the first PR is ready**: an adversarial reviewer for a PR the bot skipped for its base, a visual reviewer for every PR with screenshots, and a completeness checker for every PR. Their findings are yours, as `O<n>`.
 
 Waiting for CI and the review is nearly free, because it overlaps the next ticket.
 
@@ -236,26 +204,13 @@ One row per child of the epic: the ticket, its verdict, its PR, and for anything
 
 Then the **merge order**: every `Merge after #N` pair, backend first. A frontend PR merged ahead of its backend ships calls to an endpoint that does not exist yet. Under `--stack`, the chain merges bottom-up, and each PR is retargeted to the base once its parent merges. GitHub does that by itself only when the repo deletes merged branches, so name the setting (`delete_branch_on_merge`) when it is off.
 
-On a squash-only repo, the child then conflicts with the base: git sees the parent's files added twice. Bring the child over yourself once the user merges the parent:
-
-1. Merge the parent's final head (`pull/<n>/head`) into the child, so the child holds everything the squash holds.
-2. Merge the base. In a file that only the parent's squash touched since the merge base, the child's side is a superset, so take it (`git log <merge-base>..origin/<base> -- <file>` proves which commits touched it). Resolve any other conflict by hand.
-3. Check that the PR still shows only the child's own work: the added and removed lines of `git diff origin/<base> HEAD` must equal those of `git diff <parent head> HEAD` taken before step 2.
-4. Typecheck on the merged result, because the base now holds the other merged PRs too, then push.
+On a squash-only repo, the child then conflicts with the base. Bring it over once the user merges the parent, as [`references/stack.md`](references/stack.md), After the parent merges, says.
 
 Delete every infra namespace a `local` session created before the report is final; name any that would not delete.
 
 Then the follow-ups the sessions' PR bodies listed, gathered for the user to pass to `/mattpocock-skills:to-tickets`. Writing them to the tracker here is refused by the user's own standing preference.
 
-**Filter before you gather.** Carry only follow-ups that pass `/tz-skills:ship` 11b's admission bar: a problem a user can notice today, or a known unfixed bug, named in one sentence. Drop refactors, coverage gaps for working code, "a future change could break this", accepted cosmetic nits, and orchestrator-review notes that were verified as not defects — even when a session listed them. Aim for zero to five per run, ranked by what a user loses. A measured run carried 16 and the user kept 2; the other 14 were noise that buried them.
-
-**Say it is a proposal.** End the section with one line: the list is for the user to grill, not to hand to `to-tickets` as is. Never suggest running `to-tickets` on the list before the user has ruled on each item.
-
-**Carry every field, not the one-line summary.** `/tz-skills:ship` step 11b fixes the shape — surface, severity, why it exists, what breaks if it never ships, effort with its reason, and a `file:line` anchor. The PR body holds the short form because a reviewer scans; this report is the long form, and it is what `/mattpocock-skills:to-tickets` reads. A report that copies the PR's one-liners throws away the half that makes a follow-up rulable.
-
-**Re-check the anchors before writing them down.** A session's own summary of its follow-ups is the least verified prose it produced — it is written last, after the gates, and nothing audits it. Counts and file references stated there have been wrong in a measured run. Grep each one.
-
-**Merge across tickets, not just within one.** A session sees only its own diff, so it cannot notice that two tickets raised the same follow-up, or that one ticket's refactor dissolves another's bug. That judgment exists only here. Merging never promotes an item: two refactor notes merged are still a refactor note, and still dropped.
+**Read [`references/report-follow-ups.md`](references/report-follow-ups.md) before gathering them**: the admission filter, the fields each carries, the anchor re-check, and merging across tickets.
 
 Duration goes in the report too: per session, start and end in the user's local zone, and the run's wall clock. Token and dollar figures do not — the transcripts carry usage, but a subscription is not billed per token, so a computed cost is a list-price estimate wearing the clothes of an invoice.
 
