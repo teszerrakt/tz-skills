@@ -328,6 +328,7 @@ function prState(t, byId) {
   if (c.rabbit === 'waiting') return ['waiting on CodeRabbit', 'wait']
   if (c.rabbit === 'limited') return ['waiting on CodeRabbit, rate limited', 'wait']
   if (c.rabbit === 'skipped') return ['ready, CodeRabbit skipped it', 'ok']
+  if (c.rabbit === 'none') return ['ready, no review bot', 'ok']
   return ['ready to merge', 'ok']
 }
 
@@ -624,7 +625,7 @@ function mergeList() {
         t.pr ? el('a', { class: 'with', href: t.pr.url, target: '_blank', rel: 'noopener' }, icon('pr', 13), '#' + t.pr.number) : '',
         t.pr?.checks ? [
           { green: 'CI green', running: 'CI running', failing: 'CI failing: ' + t.pr.checks.failing.join(', '), none: 'no CI' }[t.pr.checks.ci],
-          { reviewed: 'CodeRabbit reviewed', limited: 'CodeRabbit rate limited, not reviewed yet', skipped: 'CodeRabbit skipped it', waiting: 'CodeRabbit not done' }[t.pr.checks.rabbit],
+          { reviewed: 'CodeRabbit reviewed', limited: 'CodeRabbit rate limited, not reviewed yet', skipped: 'CodeRabbit skipped it', waiting: 'CodeRabbit not done', none: 'no review bot' }[t.pr.checks.rabbit],
           `${t.pr.checks.threads} thread${t.pr.checks.threads === 1 ? '' : 's'} open`,
           t.pr.checks.conflict ? 'conflicts' : '',
         ].filter(Boolean).join(' · ') : '')),

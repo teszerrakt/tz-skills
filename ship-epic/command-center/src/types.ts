@@ -159,7 +159,7 @@ export type ReviewItem = {
   outcome: 'fixed' | 'open'
 }
 
-export type ReviewBotState = 'reviewed' | 'limited' | 'skipped' | 'waiting'
+export type ReviewBotState = 'reviewed' | 'limited' | 'skipped' | 'waiting' | 'none'
 
 export type Checks = {
   ci: 'none' | 'failing' | 'running' | 'green'

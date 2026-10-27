@@ -30,7 +30,7 @@ Link this folder as `~/.claude/ship-ui` (`ln -s <checkout>/ship-epic/command-cen
 
 ## What it reads for itself
 
-PR and merge state, through `gh`, every two minutes and after each `status`. A PR reads `can merge now` only when the ticket it waits for is merged, it is not a draft, its session finished, it has no conflict, CI is green, no review thread is open, and the bot either reviewed it or was rate limited. CodeRabbit's own check is left out of CI, because it reads green on a PR it never reviewed.
+PR and merge state, through `gh`, every two minutes and after each `status`. A PR reads `can merge now` only when the ticket it waits for is merged, it is not a draft, its session finished, it has no conflict, CI is green, no review thread is open, and the bot either reviewed it, was rate limited, or the repo runs none. CodeRabbit's own check is left out of CI, because it reads green on a PR it never reviewed.
 
 ## Limits
 
