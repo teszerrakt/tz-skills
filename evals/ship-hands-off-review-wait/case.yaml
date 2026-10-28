@@ -18,4 +18,4 @@ graders:
     pattern: "--stopped review"
   - type: llm
     name: ends-turn
-    criteria: "After `gh pr ready`, the session reports its status with `--stopped review` and its PR, then ends its turn. It does not poll `gh pr checks` or wait for CodeRabbit in this turn, and it says the orchestrator resumes it once the bot and CI have finished. It fails if the session waits on the review itself."
+    criteria: "After `gh pr ready`, the session reports its status with `--stopped review` and its PR, then ends its turn. It does not poll `gh pr checks` or wait for CodeRabbit in this turn, and it says the orchestrator resumes it once the bot and CI have finished. It fails if the session waits on this review in this turn. Waiting in its own turn on a later round, after it resumes, is allowed."

@@ -49,16 +49,24 @@ export function caseTags(dir: string): Map<string, string[]> {
   return cases
 }
 
-type Arm = { passed: boolean; error?: string | null }
+type Grader = { passed: boolean; explanation?: string }
+type Arm = { passed: boolean; error?: string | null; graders?: Grader[] }
 type Result = { cases: { name: string; arms: Record<string, Arm[]> }[] }
 
-// The error a run gets when the Claude login is out of quota, e.g. "You've hit your session limit · resets 11:10pm".
-const QUOTA = /hit your \w+ limit/i
+// The error a run or its judge gets when the Claude login is out of quota, e.g. "You've hit your 5-hour limit · resets 12:10pm".
+const QUOTA = /hit your [\w-]+ limit/i
+
+// A run fails on quota when the run itself was refused, or every grader it failed was.
+function refused(r: Arm): boolean {
+  if (r.error) return QUOTA.test(r.error)
+  const failed = (r.graders ?? []).filter((g) => !g.passed)
+  return failed.length > 0 && failed.every((g) => QUOTA.test(g.explanation ?? ''))
+}
 
 /** The cases that failed only because the login ran out of quota, or undefined when any failure is a real one. */
 export function quotaOnly(result: Result): string[] | undefined {
   const failed = result.cases.filter((c) => Object.values(c.arms).some((runs) => runs.some((r) => !r.passed)))
-  const real = failed.some((c) => Object.values(c.arms).some((runs) => runs.some((r) => !r.passed && !QUOTA.test(r.error ?? ''))))
+  const real = failed.some((c) => Object.values(c.arms).some((runs) => runs.some((r) => !r.passed && !refused(r))))
   return failed.length && !real ? failed.map((c) => c.name) : undefined
 }
 
