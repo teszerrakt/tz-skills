@@ -13,6 +13,14 @@ ship/
 
 A fix lands where its rule lives. A new rule for one step goes in that step's reference, not in `SKILL.md`.
 
+## A skill stands alone
+
+A skill runs in someone else's repo, so a bare path in it resolves there, not here. `(CONTEXT.md)` behind a rule pointed at the project's own glossary, or at nothing, and `ship` stopped closing its reply with the questions section.
+
+- **State the rule in the skill** when the agent must follow it: inline, or in that skill's own `references/`.
+- **Link this repo by absolute GitHub URL** only for background the run can do without.
+- **Name another skill by its command and step** (`/tz-skills:ship` step 11b), never by a path into its folder.
+
 ## The linter
 
 `bun run lint:skills` fails on:
@@ -42,3 +50,13 @@ evals/ship-no-review-bot/
 - **A new case fails first.** Run it against the skill before the fix and keep it only if it goes red, or say in the case's description that it guards behaviour that already holds.
 
 `bun run evals` runs the cases for this branch's changes; `bun run evals --all` runs every one. Each run is a full Claude session on this machine's login, three runs per case, and every run must pass. Flags after the script name pass through to `claude plugin eval` (`--case <name>`, `--runs 1`, `--keep-temp`).
+
+## Checking a change
+
+A skill change is done when these pass:
+
+- `bun run check`: the linter, typecheck, oxlint and unit tests;
+- `claude plugin validate . --strict`: the manifests, as CI checks them;
+- `bun run evals`: the cases of every skill the branch changes or affects.
+
+The pre-push hook runs the linter, the unit tests and the evals. A run refused only for quota warns and lets the push through; run `bun run evals` once the quota resets.
