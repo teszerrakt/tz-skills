@@ -10,9 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The version check diffs against the merge base with origin/main.
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Skill linter, typecheck, oxlint, unit tests
         run: bun run check
+      - name: Plugin versions
+        run: bun run check:versions
       - name: Plugin manifests
         run: npx -y @anthropic-ai/claude-code plugin validate . --strict
