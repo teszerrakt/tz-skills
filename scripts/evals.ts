@@ -49,6 +49,28 @@ export function caseTags(dir: string): Map<string, string[]> {
   return cases
 }
 
+type Arm = { passed: boolean; error?: string | null }
+type Result = { cases: { name: string; arms: Record<string, Arm[]> }[] }
+
+// The error a run gets when the Claude login is out of quota, e.g. "You've hit your session limit · resets 11:10pm".
+const QUOTA = /hit your \w+ limit/i
+
+/** The cases that failed only because the login ran out of quota, or undefined when any failure is a real one. */
+export function quotaOnly(result: Result): string[] | undefined {
+  const failed = result.cases.filter((c) => Object.values(c.arms).some((runs) => runs.some((r) => !r.passed)))
+  const real = failed.some((c) => Object.values(c.arms).some((runs) => runs.some((r) => !r.passed && !QUOTA.test(r.error ?? ''))))
+  return failed.length && !real ? failed.map((c) => c.name) : undefined
+}
+
+function latestResult(since: Date): Result | undefined {
+  const dir = join(root, 'evals', 'results')
+  if (!existsSync(dir)) return undefined
+  const file = join(dir, readdirSync(dir).toSorted().at(-1) ?? '', 'aggregate-result.json')
+  if (!existsSync(file)) return undefined
+  const result = JSON.parse(readFileSync(file, 'utf8'))
+  return new Date(result.startedAt) >= since ? result : undefined
+}
+
 if (import.meta.main) {
   const plugin = loadPlugin(root)
   const skills = all
@@ -73,6 +95,14 @@ if (import.meta.main) {
   // The default Haiku judge failed correct long answers; a flaky judge blocks a push as surely as a regression.
   command.push('--judge-model', 'sonnet', '--threshold', '1', '--concurrency', '4')
   command.push(...skills.flatMap((s) => ['--tag', s]), ...args)
+  const started = new Date()
   const run = Bun.spawnSync(command, { cwd: root, stdio: ['inherit', 'inherit', 'inherit'] })
+  const result = run.exitCode === 0 ? undefined : latestResult(started)
+  const skipped = result && quotaOnly(result)
+  if (skipped) {
+    // Lint and unit tests already passed; an empty quota says nothing about the skills.
+    console.warn(`\n⚠ Out of Claude quota: ${skipped.join(', ')} did not run. Run \`bun run evals\` once it resets.`)
+    process.exit(0)
+  }
   process.exit(run.exitCode ?? 1)
 }

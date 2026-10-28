@@ -2,6 +2,7 @@ import { afterAll, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
+import { quotaOnly } from './evals.ts'
 import { lint } from './lint-skills.ts'
 import { affected, bareAgents, bareCommands, hardWraps, loadPlugin } from './skills.ts'
 
@@ -88,4 +89,15 @@ test('a skill over the word limit fails, and a missing pointer target fails', ()
   expect(problems).toContain('error standup/SKILL.md')
   expect(problems).toContain('error standup/SKILL.md:8')
   write('standup/SKILL.md', skill('standup', 'Draft the standup.'))
+})
+
+const run = (...arms: object[][]) => ({ cases: arms.map((runs, i) => ({ name: `case-${i}`, arms: { with: runs as never } })) })
+
+test('a run that failed only on quota is told apart from one that failed a case', () => {
+  const quota = { passed: false, error: "exit 1: You've hit your session limit · resets 11:10pm (Asia/Jakarta)" }
+  const graded = { passed: false, error: null }
+  const pass = { passed: true }
+  expect(quotaOnly(run([quota, quota], [pass]))).toEqual(['case-0'])
+  expect(quotaOnly(run([quota], [graded]))).toBeUndefined()
+  expect(quotaOnly(run([pass]))).toBeUndefined()
 })
