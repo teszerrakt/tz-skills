@@ -130,6 +130,8 @@ Delegate to the built-in `Explore` agent. The brief names each component the pla
 
 Pick the ticket's tracks from the paths the plan touches (see Tracks).
 
+**A match that only partly fits, read [`references/reuse.md`](references/reuse.md)**: it is widened, not copied.
+
 Done when every component the plan names is either matched to an existing one or proven absent, and the tracks are named.
 
 ### 3. Implement
@@ -185,6 +187,8 @@ Two agents in parallel, each told to report and never edit (both hold a shell, s
 | `tz-skills:tz-altitude-reviewer` | work sitting at the wrong layer, and root causes worth their own ticket |
 
 Both briefs carry the diff range, the standards doc paths from `.claude/fe-design-map.md` — and on the backend track, the backend's own conventions file — and the **comment budget**: a comment exists only to state a constraint the code cannot show; flag every comment that restates its next line.
+
+**A finding that removes a duplicate this diff adds is never refused for scope**: read [`references/reuse.md`](references/reuse.md).
 
 Done when every finding is applied, or refused with a stated reason that step 11 carries into the body.
 

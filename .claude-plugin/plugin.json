@@ -1,6 +1,6 @@
 {
   "name": "tz-skills",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Ticket-to-PR delivery (ship, ship-epic, spec-review, address-review), the frontend design-doc pipeline, and standup drafting.",
   "author": {
     "name": "teszerrakt"

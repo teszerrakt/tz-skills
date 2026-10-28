@@ -114,7 +114,7 @@ The three classes for agent B:
 |---|---|---|
 | `STRAY` | The ticket reads one way and the change breaks it, or the ticket is silent. | Yes |
 | `AMBIGUOUS` | The agent quotes **two readings of one ticket line**, and the change satisfies one. The ticket is the defect, not the diff. | No |
-| `IMPLIED` | A named ADR, RFC, or design-doc line requires the change. Cite it. | No |
+| `IMPLIED` | A named ADR, RFC, or design-doc line requires the change. Cite it. Or an existing helper widened so the diff reuses it instead of copying it, with every other caller's behaviour unchanged. Name the callers. | No |
 
 **An `AMBIGUOUS` finding with no second reading quoted is an unproven claim. Downgrade it to `STRAY`.** This is the rule that stops the class from becoming an excuse.
 
