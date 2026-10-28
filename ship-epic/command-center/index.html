@@ -207,6 +207,7 @@ const WORDS = {
   'usage-limit': ['ran out of usage', 'bad'],
   'blocked-by-ticket': ['waiting for a ticket', 'wait'],
   'gate-failed': ['a check failed', 'bad'],
+  'review': ['waiting on the review bot', 'wait'],
   'done': ['finished', 'ok'],
   'merged': ['merged', 'ok'],
   '': ['working', 'run'],
@@ -303,7 +304,7 @@ function tickets() {
         tone: running ? 'run' : open ? 'you' : /BLOCK|FAIL/i.test(last.verdict) ? 'bad' : 'ok' }
     }
     if (t.key !== 'merged' && t.pr?.state === 'OPEN') t.merge = prState(t, byId)
-    if (t.key === 'done' && t.merge) [t.word, t.tone] = t.merge
+    if ((t.key === 'done' || t.key === 'review') && t.merge) [t.word, t.tone] = t.merge
   }
   return list
 }
@@ -312,7 +313,7 @@ function prState(t, byId) {
   const parent = t.after && byId[t.after]
   if (parent && parent.key !== 'merged') return [`merge ${parent.pr ? '#' + parent.pr.number : parent.ticket} first`, 'wait']
   if (t.pr.draft) return ['still a draft', 'run']
-  if (t.w && t.key !== 'done') return ['worker is still on it', 'run']
+  if (t.w && t.key !== 'done' && t.key !== 'review') return ['worker is still on it', 'run']
   const c = t.pr.checks
   if (!c) return ['could not read its checks', 'wait']
   if (c.conflict) return [`conflicts with ${state.run?.target || 'its base'}`, 'bad']

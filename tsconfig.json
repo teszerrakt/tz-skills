@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "types": ["bun"]
   },
-  "include": ["ship-epic/command-center/**/*.ts", "ship-epic/scripts/**/*.ts"]
+  "include": ["ship-epic/command-center/**/*.ts", "ship-epic/scripts/**/*.ts", "scripts/**/*.ts"]
 }

@@ -19,7 +19,7 @@ Keep the worked example in the written file until real blocks replace it. It car
 ```markdown
 # Stakeholders ({{REPO}})
 
-Consumed by `/ask-stakeholders`. Per-developer config, not tracked.
+Consumed by `/tz-skills:ask-stakeholders`. Per-developer config, not tracked.
 
 Questions go to a **public channel thread**, never a DM. One parent post carries the situation;
 one threaded reply carries each bare question.

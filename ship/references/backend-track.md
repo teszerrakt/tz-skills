@@ -1,6 +1,6 @@
 # The backend track
 
-Reference for `/ship` when a ticket's plan touches a backend path. Read before step 4. Every other phase runs as `SKILL.md` writes it.
+Reference for `/tz-skills:ship` when a ticket's plan touches a backend path. Read before step 4. Every other phase runs as `SKILL.md` writes it.
 
 ## Keys
 
@@ -21,7 +21,7 @@ A key with no value makes its phase report `SKIPPED`, as on the frontend track.
 
 Follow the `Tests (BE)` rule for where a test sits. Run tests for the packages the diff touches; CI runs the whole suite. When the brief names a lock for the test command, take it around every run: parallel runs of one app can share a test database, and one run's reset drops the other's connections.
 
-Lint only what is new since the base branch. The repo's older findings are not this ticket's, and a fix to them is a stray to `/spec-review`.
+Lint only what is new since the base branch. The repo's older findings are not this ticket's, and a fix to them is a stray to `/tz-skills:spec-review`.
 
 ## Migrations
 
@@ -33,7 +33,7 @@ Before every push, for each migration file the diff adds:
 2. Confirm the number is free there and in every open PR's files (`gh pr list --state open --json number,files`).
 3. Taken: rename to the next number free in both, and amend.
 
-A number assigned in the brief was reserved by `/ship-epic` against its sibling sessions. Use it as given, and still run the check.
+A number assigned in the brief was reserved by `/tz-skills:ship-epic` against its sibling sessions. Use it as given, and still run the check.
 
 ## Step 5 — live verification
 

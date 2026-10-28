@@ -125,3 +125,17 @@ _Avoid_: partial, WIP, follow-up
 **Verdict**:
 The single outcome of a review: `BLOCK`, `PASS_WITH_NOTES`, `PASS`, or `NO_CONTRACT` — and, in driven mode only, `NEEDS_ROWS`.
 _Avoid_: score, grade, status
+
+### Authoring
+
+**Reference**:
+A file a skill points to and reads only on the branch that needs it: one track, one flag, one step. What every run needs stays in the skill itself.
+_Avoid_: playbook, appendix, sub-skill
+
+**Eval case**:
+A prompt a user might type, plus the graders that score what a skill did with it. It proves a behaviour holds across runs, not that the skill's text reads well.
+_Avoid_: test, scenario, benchmark
+
+**Affected skill**:
+A skill that names a changed skill, agent or file, directly or through another skill. A change runs the eval cases of every affected skill, not only its own.
+_Avoid_: dependent, downstream, related skill

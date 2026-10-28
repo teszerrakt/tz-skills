@@ -1,0 +1,18 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Skill linter, typecheck, oxlint, unit tests
+        run: bun run check
+      - name: Plugin manifests
+        run: npx -y @anthropic-ai/claude-code plugin validate . --strict

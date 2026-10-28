@@ -1,7 +1,13 @@
 {
   "name": "tz-skills",
   "owner": { "name": "teszerrakt" },
+  "description": "teszerrakt's Claude Code skills and mods.",
   "plugins": [
+    {
+      "name": "tz-skills",
+      "source": "./",
+      "description": "Ticket-to-PR delivery, the frontend design-doc pipeline, and standup drafting"
+    },
     {
       "name": "show-media",
       "source": "./plugins/show-media",

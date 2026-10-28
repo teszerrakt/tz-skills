@@ -98,6 +98,7 @@ Present the draft for my approval (yesterday → today → blockers); revise unt
 2. Send **two threaded replies per question** (`thread_ts` = parent ts, `channel_id` = the `D…` id), **one at a time, in order**, so the labels and content stay interleaved:
    - a **label reply** — `**① What did you do yesterday?** _(content below ↓)_`
    - a **content-only reply** — just the bullets, no header, so I can copy it clean into Standuply.
+
    Repeat for ② today and ③ obstacles. WHY: keeping the label out of the content reply lets me copy only the answer text.
 3. Return the parent + the 3 content-reply links to me.
 

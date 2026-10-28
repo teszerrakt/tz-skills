@@ -20,6 +20,9 @@ export const ANSWER_WAIT_MS = 25_000
 // The pilot's longest healthy silence was 27 minutes; its hidden stalls ran 29 and up.
 export const QUIET_AFTER_MS = Number(process.env.SHIP_UI_QUIET_MIN || 30) * 60_000
 
+// /tz-skills:ship step 12 reads a missing bot check as "no bot" only ten minutes after `gh pr ready`.
+export const NO_BOT_AFTER_MS = 10 * 60_000
+
 export const PR_REFRESH_MS = 120_000
 export const SESSION_REFRESH_MS = 60_000
 export const TOAST_CHECK_MS = 15_000

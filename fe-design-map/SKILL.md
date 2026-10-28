@@ -16,15 +16,15 @@ This is wayfinder's shape with three rules changed:
 
 ## Vocabulary
 
-**Map ticket** — a child issue of the map that resolves one decision or one harvest.
-**Build ticket** — an issue that one coding session implements.
-**Fact base** — the machine-local directory that holds every harvested fact.
+- **Map ticket** — a child issue of the map that resolves one decision or one harvest.
+- **Build ticket** — an issue that one coding session implements.
+- **Fact base** — the machine-local directory that holds every harvested fact.
 
 The tracker teams for each are domain config, not skill content. Read them from the project config.
 
 ## Config
 
-Read `.claude/fe-design-map.md` in the repo root. It holds the docs platform and home doc, the API base URL, the permissions source, the Figma workspace file, the PRD home, the tracker teams, and the doc authoring preferences. If a section is missing, ask, then offer to write it back — or run `/setup-tz-skills`, which writes the whole file.
+Read `.claude/fe-design-map.md` in the repo root. It holds the docs platform and home doc, the API base URL, the permissions source, the Figma workspace file, the PRD home, the tracker teams, and the doc authoring preferences. If a section is missing, ask, then offer to write it back — or run `/tz-skills:setup-tz-skills`, which writes the whole file.
 
 An older install wrote this config as `.claude/fe-design-doc.md`. If that name exists and `fe-design-map.md` does not, read it and offer to rename it.
 
@@ -104,7 +104,7 @@ The user gives a map, and optionally a ticket.
 
 1. Load the map body. Do not fetch every ticket.
 2. Choose the ticket: the one named, or the first on the frontier. Assign it to the user's tracker account before any work.
-3. **Re-run the ledger of every closed harvest this ticket depends on** before trusting its facts: `node ~/.claude/skills/fe-design-map/scripts/gate-check.mjs <ledger>`. A gate that now fails means the harvest is unmet, whatever its comment says.
+3. **Re-run the ledger of every closed harvest this ticket depends on** before trusting its facts: `node <this skill's base directory>/scripts/gate-check.mjs <ledger>`. A gate that now fails means the harvest is unmet, whatever its comment says.
 4. Resolve the ticket. Read the reference the ticket names.
 5. Post the resolution as a comment, close the ticket, and add one line to the map's Decisions-so-far.
 6. Continue to the next ticket in the same session when it is sequential and cheap. Tickets 6 and 7 are one sitting.
@@ -115,7 +115,7 @@ The user gives a map, and optionally a ticket.
 
 **Ticket 4 — live capture (AFK).** Read [references/capture-playbook.md](references/capture-playbook.md). The agent works inside the capture limits set at chart time and never widens them. A surprise it cannot place inside those limits stops the run: it reports what it created and cleaned and hands back, since no one is there to ask. The ticket closes when ledger 04 passes and ticket 3's ledger still passes.
 
-**Ticket 5 — synthesis grilling.** Run the grilling and domain-modeling skills (see [External skills](#external-skills)), seeded with the harvested facts and the live captures. Classify every answer: a resolved decision goes into the doc as behavior, an unknown becomes `OQ-n` with an owner, a missing endpoint becomes `G-n`. Then present the open-question table — one row per `OQ`, marked `decide`, `ask open`, or `ask with default`. `ask open` is the default mark. Rows marked to ask go to `/ask-stakeholders` as one batch.
+**Ticket 5 — synthesis grilling.** Run the grilling and domain-modeling skills (see [External skills](#external-skills)), seeded with the harvested facts and the live captures. Classify every answer: a resolved decision goes into the doc as behavior, an unknown becomes `OQ-n` with an owner, a missing endpoint becomes `G-n`. Then present the open-question table — one row per `OQ`, marked `decide`, `ask open`, or `ask with default`. `ask open` is the default mark. Rows marked to ask go to `/tz-skills:ask-stakeholders` as one batch.
 
 **Ticket 6 — draft and publish.** Read [references/template.md](references/template.md). Draft in the fact base; the author reads it in the [review artifact](#review-artifact), frame renders included, and iterates there until they approve. Run the ledger before you publish. Publish only after approval. More than three blocking `OQ`s means the doc is not ready — say so and stop.
 

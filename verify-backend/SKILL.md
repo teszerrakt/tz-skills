@@ -1,6 +1,6 @@
 ---
 name: verify-backend
-description: "Live-verify a backend change end-to-end against a running app — drive the real endpoints in a client-like flow and assert on responses and persisted state. Use after implementing server/API work, when asked to e2e-test an endpoint or flow, or when /ship's backend track needs its live proof."
+description: "Live-verify a backend change end-to-end against a running app — drive the real endpoints in a client-like flow and assert on responses and persisted state. Use after implementing server/API work, when asked to e2e-test an endpoint or flow, or when /tz-skills:ship's backend track needs its live proof."
 ---
 
 # Verify backend end-to-end

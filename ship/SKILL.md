@@ -19,35 +19,13 @@ Write no new config file. Read, in this order:
 1. `.claude/delivery.md` — the `## Delivery` section. An older install kept it inside `.claude/fe-design-map.md`; when `delivery.md` is absent and that section exists there, read it and offer to move it.
 2. `.claude/fe-design-map.md`, when present — the tracker prefix, the ticket URL base, the ADR and RFC paths, the Figma file, and `## Sources`.
 3. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-4. Ask the user for what no file states, as a **questions section** (CONTEXT.md).
+4. Ask the user for what no file states, as a **questions section**, in the shape step 1 shows.
 
-`## Delivery` names the project's half of every phase:
-
-| Key | Holds |
-|---|---|
-| Tracks | the paths that put a ticket on the frontend track, the backend track, or both |
-| Worktree root | where step 0 puts the tree |
-| Per-worktree opt-outs | the hooks or plugins step 0 disables in the worktree |
-| Typecheck / Lint / Tests | the two commands, and the skill that decides what a test may assert |
-| Backend URL override | the env var that points the frontend dev server at another backend |
-| Backend keys, marked `(BE)` | the backend track's half of steps 4–10b — [`references/backend-track.md`](references/backend-track.md) |
-| Visual verification | the skill that diffs the running app against the design, and edits code |
-| Smoke | the skill that boots the app and reads the console on the changed route |
-| Adversarial review | the reviewer step 8 drives |
-| Screenshots | the skill that owns shot selection |
-| Design assertion | the skill and flag that assert computed style against tokens |
-| Live verification | the skill and flag that record a flow against the real API |
-| Verification bundle | the branch and directory a recording's artifacts are committed to |
-| Token file | where a colour token resolves to its name |
-| PR body sections | the allowed headings, in order, and the caps |
-| PR body write path | how to write a body, and how to prove it landed |
-| Spec-review BLOCK | `strict` or `lenient` — whether step 9 may fix a stray-only `BLOCK` once |
-| Finding | the command that shows a judge's finding to the user — Briefs |
-| Environment traps | the machine-specific gotchas a delegate must be told |
+`## Delivery` names the project's half of every phase. What each key holds: [`references/config.md`](references/config.md).
 
 **A phase whose config line is absent reports `SKIPPED`.** It never disappears from the report.
 
-A repo with no `## Delivery` section at all: offer `/setup-tz-skills` once, then ask for the values the phases you are about to run need.
+A repo with no `## Delivery` section at all: offer `/tz-skills:setup-tz-skills` once, then ask for the values the phases you are about to run need.
 
 ## Tracks
 
@@ -73,17 +51,7 @@ Every delegate gets its brief in `$ARGUMENTS`: **the ticket id, the diff range, 
 
 **A phase that judges the code never runs in the author's context.** The author anchors on its own conversation and grades its own reading. Step 8 is a fresh subagent, step 9 a fresh session, and a disputed bot thread in step 12 gets a fresh second opinion.
 
-Fresh means three things, and each has its guard:
-
-- **No history.** Never a `fork` subagent, a skill with `context: fork`, `claude -p --continue` or `--resume`, or an agent continued with `SendMessage` from before it saw the diff. Each of those carries the author's conversation in.
-- **A clean brief.** A judge's brief is its template with the slots filled: ticket id, diff range, file paths, schema. Add no prose — no summary of what was built, no "this fixes", no reason the code is right. A brief is the one door into a fresh context, and a sentence of the author's framing through it is the anchoring the fresh context exists to avoid. The refusal re-check is the one exception: it carries the author's reason, labelled as the author's.
-- **The canary.** Step 0 puts a random word in the author's context, and every judge must echo whatever canary it can see. A fresh judge sees none.
-
-**Every subagent judge is `tz-fresh-reviewer`** — step 1's row check, step 8, its refusal re-check, step 9's fallback, step 12's fallback reviewer, address-review's second opinion and ship-epic's reviewer. It has no shell, no write tool and no Skill tool, so it cannot change what it judges; a tool list naming a restricted shell still grants the whole shell. So before spawning it, save what it needs as files outside the worktree and name those paths in the brief: `git diff <range>` as `diff.patch`, and `git log <range>` as `log.txt` when commits carry decisions. A skill it must apply is passed as the path of that skill's `SKILL.md`, which sits beside this skill's own folder.
-
-**Every judge's findings reach the user, not only the author.** When `## Delivery` names a `Finding` command, run it as the config writes it, once per finding with its own `--id F<n>`, and again with the same id whenever its outcome changes — `open`, then `fixed`, `refused`, `held` or `withdrawn`. Run it once per review with `--verdict` too, for a verdict such as step 9's. A finding the author fixed silently is the same hidden judgement as one it refused silently.
-
-**The canary check.** The judge's answer carries a `canary` value: the rest of any line in its context that begins `CANARY:`, or `none`. The brief names the prefix, never the word. A missing value, or the word itself, voids that answer as an unparsed one is voided: re-run once with a new spawn, and a second leak fails the phase through that step's own abort. Never write the word to a file, a commit, the PR or any brief — anywhere a judge can read it, it proves nothing.
+**Before spawning any judge, read [`references/judges.md`](references/judges.md)**: what fresh means and how each part is guarded, the files `tz-skills:tz-fresh-reviewer` needs, showing every finding through `Finding`, and the canary check.
 
 ## Process
 
@@ -103,7 +71,7 @@ Write the worktree's own `settings.local.json` holding the per-worktree opt-outs
 
 Then install dependencies. Stop the run on a failed install: every later phase rests on it.
 
-Plant the canary (see Briefs) by printing it into this context only:
+Plant the canary (`references/judges.md`) by printing it into this context only:
 
 ```bash
 echo "CANARY: $(head -c 6 /dev/urandom | od -An -tx1 | tr -d ' \n')"
@@ -123,7 +91,7 @@ Then diff the criteria against the frames, the code and the migrations. On the b
 
 **Apply documented precedence first.** The config and the repo's own docs settle most conflicts — a rule that says the design file wins over ticket prose resolves every colour and spacing disagreement without asking anyone. What survives precedence is the **residue**.
 
-Put the residue to the user as a **questions section** (CONTEXT.md) and write nothing until it is answered:
+Put the residue to the user as a **questions section** and write nothing until it is answered:
 
 ```markdown
 ## ❓ Needs your call
@@ -138,17 +106,17 @@ Put the residue to the user as a **questions section** (CONTEXT.md) and write no
 Asked because: the ticket says 0 places, the currency migration seeds 2. No precedence rule covers ticket-versus-migration.
 ```
 
-The caps are in the term, and so is the reason it is not a table. A conflict a precedence rule already settles is **not** a question: resolve it silently and record it with its rule. A settled conflict in the section trains the reader to skim it.
+At most four questions, never a table: a terminal renders `<br>` literally. **The section closes the reply, with nothing after it**, not even what happens once it is answered: a reader looks at the end of a reply, and text below the section reads as more explanation. A conflict a precedence rule already settles is **not** a question: resolve it silently and record it with its rule. A settled conflict in the section trains the reader to skim it.
 
 An empty residue continues the run unattended and writes no section.
 
 Record every decision, rule-settled and asked alike, in the **commit message and the PR body**. Not on the ticket: a tracker comment goes unread, and posting one unprompted is refused by the user's own standing preference.
 
-The acceptance criteria stay exactly as written, wherever the record lands. `/spec-review` builds one ledger row per criterion and demands an anchor, so criteria edited to match what was built make every row pass by construction. A commit is append-only and is itself an anchor.
+The acceptance criteria stay exactly as written, wherever the record lands. `/tz-skills:spec-review` builds one ledger row per criterion and demands an anchor, so criteria edited to match what was built make every row pass by construction. A commit is append-only and is itself an anchor.
 
-**Write the ledger rows here, before any code exists**, in `/spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, then append a `## Decisions` section holding every answer and precedence ruling from this step — without it step 9 reads each one as a stray. **Give each decision its own row quoting it**: step 9's row check counts a decision's must and must-not sentences as requirements. Keep both outside the worktree: a file inside it is a stray to step 9. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
+**Write the ledger rows here, before any code exists**, in `/tz-skills:spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, then append a `## Decisions` section holding every answer and precedence ruling from this step — without it step 9 reads each one as a stray. **Give each decision its own row quoting it**: step 9's row check counts a decision's must and must-not sentences as requirements. Keep both outside the worktree: a file inside it is a stray to step 9. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
 
-Then run the row check now, where a failure costs a rewrite rather than a finished build. Spawn `tz-fresh-reviewer` with the paths of `rows.json` and `ticket.md`, the path of spec-review's `SKILL.md` naming its Driven-mode bullet "Check the rows against the ticket", and this answer shape: `{"pass": true|false, "failures": ["<row id or ticket line, and what is wrong>"], "canary": "<rest of any CANARY: line in your context, or none>"}`. Fix the rows until it passes, and gate on its canary as Briefs says.
+Then run the row check now, where a failure costs a rewrite rather than a finished build. Spawn `tz-skills:tz-fresh-reviewer` with the paths of `rows.json` and `ticket.md`, the path of spec-review's `SKILL.md` naming its Driven-mode bullet "Check the rows against the ticket", and this answer shape: `{"pass": true|false, "failures": ["<row id or ticket line, and what is wrong>"], "canary": "<rest of any CANARY: line in your context, or none>"}`. Fix the rows until it passes, and gate on its canary as `references/judges.md` says.
 
 **A criterion the build departs from is reported, never quietly reconciled.** Say so in the PR body, in its own paragraph, naming the criterion and what replaced it — that is the one place a reviewer looks for it.
 
@@ -213,8 +181,8 @@ Two agents in parallel, each told to report and never edit (both hold a shell, s
 
 | Agent | Looks for |
 |---|---|
-| `tz-simplify-reviewer` | code that can be deleted or collapsed |
-| `tz-altitude-reviewer` | work sitting at the wrong layer, and root causes worth their own ticket |
+| `tz-skills:tz-simplify-reviewer` | code that can be deleted or collapsed |
+| `tz-skills:tz-altitude-reviewer` | work sitting at the wrong layer, and root causes worth their own ticket |
 
 Both briefs carry the diff range, the standards doc paths from `.claude/fe-design-map.md` — and on the backend track, the backend's own conventions file — and the **comment budget**: a comment exists only to state a constraint the code cannot show; flag every comment that restates its next line.
 
@@ -226,7 +194,7 @@ The one local quality pass, and the last phase that may change code. Invocation,
 
 **Gate on the parsed findings, never on the exit code.** A blocked review has exited 0 with nothing reviewed.
 
-**A fix is applied only inside files the diff already touches** — the schema's `in_scope` field says which. Everything else goes through 11b's admission bar: a real bug a user can hit becomes a follow-up, and the rest one line under `Considered, not proposed`. `/spec-review` returns `BLOCK` on any stray, and a correctness fix outside the ticket's scope is a stray, so an unscoped reviewer would make the run strangle itself on its own best findings.
+**A fix is applied only inside files the diff already touches** — the schema's `in_scope` field says which. Everything else goes through 11b's admission bar: a real bug a user can hit becomes a follow-up, and the rest one line under `Considered, not proposed`. `/tz-skills:spec-review` returns `BLOCK` on any stray, and a correctness fix outside the ticket's scope is a stray, so an unscoped reviewer would make the run strangle itself on its own best findings.
 
 **A refused `blocker` or `major` goes back to the same reviewer once**, with the refusal reason — the re-check brief is in `adversarial-review.md`. If the reviewer holds, the finding stays open. The author refusing its own reviewer's finding is the self-grading this step exists to prevent. A `minor` may be refused outright.
 
@@ -236,38 +204,13 @@ Done when every finding is fixed in scope, recorded as a follow-up or a `Conside
 
 ### 9. Spec review — last, so it audits everything above
 
-Run `/spec-review` in driven mode, in a fresh headless session, with the rows step 1 wrote:
+Run `/tz-skills:spec-review` in driven mode, in a fresh headless session, with the rows step 1 wrote. **Read [`references/spec-review-gate.md`](references/spec-review-gate.md) before running it**: the command, the fallback when the spawn is refused, the lines the gate reads, `lenient`, and how a ruling on a `BLOCK` resumes the run.
 
-```bash
-claude -p "/spec-review --driven <base>...<head> --rows <dir>/rows.json --ticket <dir>/ticket.md" \
-  --add-dir <dir> --allowedTools "Read,Grep,Glob,Agent,Bash(git:*),Bash(awk:*),Bash(head:*),Bash(gh pr list:*)" > <dir>/spec-review.md
-```
-
-A session, not a subagent: spec-review spawns its own two agents, and a subagent cannot spawn agents. A `-p` session cannot ask for a tool, so the grant covers every command spec-review runs. **When the spawn is refused** — an auto-mode parent cannot always start a child with its own grant (`docs/ship-epic-design.md`) — give `tz-fresh-reviewer` the same driven arguments instead, plus the path of spec-review's `SKILL.md`, `log.txt`, and the diff saved three ways — `diff.patch`, `git diff --unified=0 <range>` as `diff-u0.patch`, and `git diff --name-only <range>` as `names.txt` — and capture its answer the same way. Fresh context is what this step needs; the session only buys spec-review its own two agents. Gate on the first line of that file, `VERDICT: <verdict>`, never on the exit code, as step 8 gates on parsed JSON, and on its second, `CANARY: none` (Briefs). A missing verdict line — both spawns refused, a crash, or none printed — or a leaked canary after the one re-run, is a failed review, and so are `NEEDS_ROWS` and `NO_CONTRACT`: all abort 9. Every `AMBIGUOUS` row the report returns goes to the run report's questions section, never to the PR.
-
-It runs **after** every code-mutating phase. Run before simplify, it computed its verdict against a diff that no longer existed: the anchors it cited could be deleted by the time the PR opened, and simplify's own edits were never audited by anything.
-
-The two local reviews are the two a bot cannot do. The spec axis, because CodeRabbit never sees the ticket; and step 8, because the CodeRabbit seat that reviews the PR for free allows three CLI reviews an hour. Everything else waits for the push, where step 12 works CodeRabbit's comments.
-
-A `BLOCK` verdict aborts the run. Opening a PR that carries a known `MISSING` row is the failure the gate in step 1 exists to prevent, arriving eight phases later.
-
-**`Spec-review BLOCK: lenient` buys one fix-and-rerun, for strays only.** When every row behind the `BLOCK` is a stray the ticket never asked for, delete those changes, re-run step 4's typecheck, lint and tests, then run step 9's command once more — never `/spec-review` in this session. A second `BLOCK` aborts. A `MISSING` criterion aborts at once, lenient or not: deleting code cannot supply a criterion. An absent key reads as `strict`. Name every deleted stray in the PR body, so the reviewer sees what the run took back out.
-
-**A `BLOCK` the user rules on resumes here.** Add the ruling to `ticket.md`'s `## Decisions` with its own row, and record it in an empty commit (`git commit --allow-empty`) whose message carries the ruling, since `ticket.md` lives outside the worktree. A ruling that only settles scope re-runs step 9's command at once. A ruling that asks for code goes back to step 3, and every step from there runs again. Rename the blocked report to `spec-review.run1.md` beside the new one: it is the run's record of what the gate caught. Remove the draft's abort line once the run resumes.
+Done when the report's first line reads `VERDICT: PASS` or `VERDICT: PASS_WITH_NOTES` and its second `CANARY: none`. Every other outcome is abort 4 or abort 9.
 
 ### 10. Shoot and assert — frontend track
 
-Invoke the skill `## Delivery` names for screenshots, forked, so the images stay out of this context. The same run asserts computed geometry and style against the design's own numbers.
-
-Three rules keep the assertion honest:
-
-- **The report names its own coverage.** "Asserted vs tokens: 2 elements × {color, font-size, line-height} — 6/6 pass. Not checked: spacing, borders, radius, hover." That sentence, not "verified against the design".
-- **A story with no assert spec reports `UNASSERTED`.** It is a third state beside pass and fail.
-- **Assert token identity.** A browser reports a colour as `oklch(…)`, never as the hex the design names, so resolve against the token file from `## Delivery`. That proves the right token was used, which is the stronger claim anyway.
-
-**On a `FAIL`, re-check the expectation before believing the defect.** An assertion measured against a padded cell or a bordered harness fails while the code is right.
-
-Nothing after this step changes code, so these shots stand. Re-shoot if an earlier step is revisited: a stale image misrepresents the diff as confidently as a fresh one.
+On the frontend track, read [`references/frontend-proof.md`](references/frontend-proof.md), Step 10, and run it: the screenshot skill `## Delivery` names, forked, asserting computed style against the design.
 
 Done when every state the change built has a shot, and every shot is `PASS`, `FAIL`, or `UNASSERTED` with a reason.
 
@@ -277,16 +220,7 @@ On the backend track this step re-runs step 5's flow against the final head and 
 
 **Runs when the ticket's acceptance turns on what the server sends**: a data-driven menu, a permission the API decides, an optimistic-lock version, a refetch that has to land before a count moves. Every other ticket reports `SKIPPED`, and the phase still appears in the report.
 
-Invoke the skill `## Delivery` names for live verification, forked. It drives a flow through the running app against the real API and answers with a recording, a wire log, and a verdict per step. A clip proves the flow works end to end, so take as many as the flow needs — one recording carrying three unrelated claims is worse than three recordings.
-
-**A claim in the body needs a line in the wire log.** That is what separates this from a demo: a reviewer checks "the app runs no capability check of its own" against a log showing the reasons came off the wire, not against footage they are asked to trust.
-
-Two rules the report lives by:
-
-- **A step with no expectation reports `UNOBSERVED`** — a third state beside pass and fail, for the same reason an unasserted story is.
-- **The clip owns its path.** A state the recording walks through earns no separate still from step 10; a state the flow never reaches still earns one, and computed style stays step 10's job because no recording can prove it.
-
-The artifacts go to the branch and directory `## Delivery` names, never to the PR branch: `/spec-review` greps the diff for an anchor per criterion, and binary evidence is noise to that pass. **A run that mutated anything says so** — the ids it created, and what was not done to them. Financial data is never deleted, only reversed, so every row a recording creates is permanent.
+On the frontend track, the flow, the wire log behind every claim, and where the artifacts go: [`references/frontend-proof.md`](references/frontend-proof.md), Step 10b.
 
 Done when every claim the body will make has a step behind it, and every step is `PASS`, `FAIL` or `UNOBSERVED` with a reason.
 
@@ -294,49 +228,7 @@ Done when every claim the body will make has a step behind it, and every step is
 
 Write the body to the sections `## Delivery` allows, in that order, carrying the shots from step 10, any clip or backend proof table from step 10b, the step-1 decisions, the out-of-scope findings from step 8, every finding refused in steps 5, 7 and 8, and any `UNASSERTED` or `UNOBSERVED` state.
 
-**A refusal is one `Refused:` line**: the finding's claim word for word, then the reason in one clause. A refusal the reviewer of the PR never sees is the author's word closing its own finding. `Refused:` lines and `Considered, not proposed` lines go under the section `## Delivery` names for out-of-scope work, `Out of scope` when it names none. The markdown for a shot and for a clip is printed by the skill that produced it; paste what it gives you, reshaped only where `## Delivery`'s body rules forbid its form.
-
-**Every artifact offered as proof is uploaded, or it is not proof.** A file on a local branch, in a worktree, or at a path in a report is invisible to the person being asked to believe it — they cannot open it, so the claim it backs reverts to your word. This bites hardest on the artifact that cost the most to make: a recorded clip is the strongest evidence a run produces and the easiest to leave sitting on disk, because recording it feels like the finish line.
-
-So the producing skill runs with its upload flag, and the returned URL goes in the body or a comment. `uploads.github.com/user-attachments/assets` takes an mp4 on the same endpoint as a PNG — only the declared content type differs, and a video renders as a player. The URLs inherit repo visibility, so a private repo's evidence stays private, and it is the only host whose media renders in a PR there; a raw or blob URL needs auth the image proxy cannot supply. An artifact already recorded can be uploaded on its own rather than re-shot.
-
-Keeping the bundle off the remote is about **branches**, not evidence. Commit the flow module, the wire log and the frames wherever the config says, and upload the thing a reviewer has to see regardless.
-
-**Aim for 300 words, or 550 with a live-verification section**, counting prose only: an image or clip line and its one-line label add no words. A longer body is one nobody reads, and an unread body fails at the only thing it is for. Two measured bodies came in at 1016 and 808 words and lost nothing at 335 and 300.
-
-A recorded body runs longer for a reason that is not padding: each clip costs a caption, and the section costs a pointer to the wire log. One measured at 551 with nothing to cut. Trimming a caption to reach 300 makes the clip *less* likely to be played, which is the failure the aim exists to prevent.
-
-Plain words, too. The same rule as a question: name what changed and what a reader would see, not the reasoning that got there. The reasoning belongs in the commit messages, which is where a reviewer goes for it.
-
-**Write it in CodeRabbit's shape.** Its summary is the one reviewers read to the end, because every line is a claim and none is an argument:
-
-```markdown
-## Summary
-
-- **Fix:** bill exception amounts show the bill's currency, e.g. `IDR 14.500.000,00`
-- **Change:** the exception count is gone from the panel header
-
-## Changes
-
-| Area | Files | What changed |
-|---|---|---|
-| **Exception copy** | `utils/bill-exception-copy.ts` | Returns text and money parts |
-| **Panel** | `components/bill-exceptions-panel.tsx` | Takes a currency code; restyled to Figma |
-
-## Merge risk
-
-⚪ Minimal: styling and one new prop, both hosts pass it.
-
-## Test plan
-
-- [x] Bills suite green, typecheck and lint clean
-```
-
-- `Summary`: one line per bullet, labelled `**Fix:**`, `**Feature:**` or `**Change:**`, saying what a user sees. No file names, token names or pixel values — those are the diff's job.
-- `Changes`: one row per area, one sentence per row. Skip it when one file moved.
-- `Merge risk`: one of `⚪ Minimal`, `🔵 Low`, `🟡 Moderate`, `🔴 High`, and one sentence naming what could break. Rate by what a user loses if it is wrong.
-
-The sections `## Delivery` names win over this example where the two differ.
+**Read [`references/pr-body.md`](references/pr-body.md) before writing it**: the `Refused:` line, uploading every artifact offered as proof, the word aim, and CodeRabbit's shape.
 
 Write the body through the config's write path and **read the body back to prove it changed** — a write can report success and silently leave the body untouched.
 
@@ -348,28 +240,7 @@ Done when the re-read body matches what you wrote.
 
 **Most runs should propose zero or one.** A follow-up is admitted only when a user can notice the problem today — wrong copy on screen, a broken or degraded flow, an accessibility failure, data at risk — or when a real bug is known and unfixed. Name that user-visible consequence in one sentence, or drop the item.
 
-Not admitted, however true: refactors ("move X into a module", "one path for Y"), missing or weak tests for code that works, "a future change could break this", cosmetic nits the design already accepted, and anything the ticket or the user already ruled on. These get at most one line in the PR body under `Considered, not proposed`, with no fields and never in the run report's follow-ups. A measured run proposed 16 follow-ups; the user judged 2 real and the rest noise, and the noise cost more reading than the two were worth.
-
-A follow-up written as prose cannot be triaged. The reader's questions are always the same five, and a line that answers none of them gets re-derived by hand or dropped: **is this mine, how bad, why does it exist, what breaks if it never ships, and what would it cost.**
-
-So each one carries an index row and five fields, on their own lines:
-
-| Field | Holds |
-|---|---|
-| Surface | `FE`, `BE`, or `BE→FE` — which half owns the fix |
-| Severity | `High`, `Med`, `Low` — by what a user loses, not by how ugly the code is |
-| Why it exists | the condition that produced it, in plain words |
-| If it never ships | the consequence, concretely. No consequence means no follow-up |
-| Effort | an `/estimate-effort` figure **and the one-line reason** |
-| Anchor | `file:line` proving the claim |
-
-**The anchor is not decoration — it is the check on your own summary.** Two claims in a measured run ("three copies", "seven callers") were plausible, survived drafting, and died to a grep. Write the anchor by looking, not by recalling.
-
-**Plain words in the description, exact terms in the anchor.** A reader deciding whether to take a ticket is not yet reading the code.
-
-**Then say what merges.** Follow-ups from one ticket usually are not independent: one often dissolves another. Name the merge, give the combined estimate against the separate ones, and name the cost of merging — a high-severity item folded into a refactor ships later than it would alone. Five follow-ups that are really three tickets should say so; that is the judgment the list exists to support.
-
-**Where each copy lives.** The PR body carries the index table and one line per item, because a reviewer scans. The full five fields go in the run report, which has no word budget and is what `/mattpocock-skills:to-tickets` reads. Never the tracker — posting there unprompted is refused by the user's own standing preference.
+**Read [`references/follow-ups.md`](references/follow-ups.md) before proposing one**: what is not admitted, the five fields each one carries, the anchor check, the merges, and where each copy lives.
 
 Done when every proposed follow-up passes the admission bar above and names its surface, its severity, its consequence, its cost and its anchor, and the merges are stated. Zero proposed follow-ups is a normal, good outcome.
 
@@ -377,24 +248,9 @@ Done when every proposed follow-up passes the admission bar above and names its 
 
 Runs only when no abort fired. `gh pr ready <n>`.
 
-**Wait on the `CodeRabbit` check's description, never its state.** The check reads `pass` for `Review completed` and for `Review rate limited` alike, and a rate-limited review posts no threads — read as clean, it passes a PR nothing looked at. Watch CI in the same wait (`gh pr checks <n> --watch`): CI takes about ten minutes, CodeRabbit about five. `--watch` can exit while the `CodeRabbit` check still reads `Review in progress`, so keep polling that check's description (`gh pr checks <n> --json name,description`, once a minute) until it reads `Review completed` or `Review rate limited`, or CI has finished ten minutes after `gh pr ready` with no `CodeRabbit` check at all.
+**When your brief says the command center holds your review wait**, run the config's `Status` command right after, with `--step 12/12`, `--stopped review` and `--pr <url>`, and end your turn. A session that waits in its turn still counts against the run's `Max sessions`, so the next ticket cannot start. The orchestrator resumes you with a `resume <ticket>: …` line once the bot and CI have finished: read the bot's check once then, and go on from `review-loop.md`. Only this first wait is handed over; every later one runs in your turn.
 
-- `Review completed` — work the threads.
-- `Review rate limited` on a re-review, after the bot already completed one on this PR — ignore it. A push that only answers the bot's threads needs no second review.
-- `Review rate limited` before the bot ever completed one — wait the time the bot's own comment names, then post `@coderabbitai review` once. Still limited: report `RATE_LIMITED`, a third state beside reviewed and clean, and run the fallback reviewer below.
-- No `CodeRabbit` check at all — the repo runs no review bot. Report `NO_BOT` and run the fallback reviewer below.
-
-**A PR the bot never reviewed gets step 8's reviewer instead.** Run it against the final head, with the same prompt, schema and scope rule, and work its findings exactly as step 8 does, two rounds included: fix in scope under this step's push rules, send a refused `blocker` or `major` back for the re-check, and add each refusal to the body as a `Refused:` line, then read the body back. A `blocker` or `major` still open after the second round is abort 10. The PR stays ready, and the run report may suggest posting `@coderabbitai review` once the limit lifts: the bot never re-tries on its own, and a session that re-asks only spends the shared limit. **The fallback review stands in for the bot's.** Once its findings are worked and none it raised is still open, the run reports the PR as **ready for review, backup-reviewed**, and names CodeRabbit as rate limited. While any finding is still open, it reports what is open, never "waiting on CodeRabbit": nothing is left to wait for.
-
-Work the threads through `/address-review --driven <n>`: one pass, no question per thread, the fix committed and pushed by you, replies carrying the real SHA, nothing resolved. The brief carries the diff range and step 8's scope rule — a fix lands only in files the diff already touches, and anything else becomes a reply plus, only if it passes 11b's admission bar, a `Follow-ups` line in 11b's shape.
-
-Re-run step 4's commands before each push, and on the backend track the migration check. A fix that changes a shot's state re-runs step 10 for that state, and a fix to an endpoint re-runs its step-10b flow: stale proof misrepresents the diff.
-
-CI red gets two self-fix attempts, as in step 4. **Flake guard:** the same test failing twice with different error text is load, not a bug — stop rather than fix it a third time.
-
-Two review rounds; CodeRabbit re-reviews each push. Threads still open after the second keep their reply and wait for the human.
-
-Every `DISPUTED→REPLY` thread goes in the run report under what needs the user: a second opinion sided with the code, but a bug report the author argued down is still the user's to read.
+Then wait for CodeRabbit and CI, and work what they return: **read [`references/review-loop.md`](references/review-loop.md) first**. It holds how to read the bot's check, the four outcomes, the fallback reviewer, `/tz-skills:address-review --driven`, the push rules and the two rounds.
 
 Done when CI is green and either the `CodeRabbit` check reads `Review completed` with every thread answered, or the run reports `RATE_LIMITED` or `NO_BOT` with the fallback reviewer's findings worked.
 
@@ -407,7 +263,7 @@ Each stops the run with a report. Aborts 1–2 fire before step 4b and leave **n
 | 1 | Residue from step 1 unanswered — park the run |
 | 2 | Typecheck, lint or tests still failing after two self-fix attempts |
 | 3 | Two adversarial rounds with findings still open |
-| 4 | `/spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
+| 4 | `/tz-skills:spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
 | 5 | An assert `FAIL` that survives the expectation re-check |
 | 6 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
 | 7 | CI still red after two self-fix attempts in step 12 |

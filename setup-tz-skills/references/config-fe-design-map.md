@@ -2,8 +2,8 @@
 
 Read by `fe-design-map`. Nine sections. The tag on each says where the value comes from.
 
-**[detect]** — exploration already found it. Propose it; do not ask.
-**[ask]** — no file states it. Ask.
+- **[detect]** — exploration already found it. Propose it; do not ask.
+- **[ask]** — no file states it. Ask.
 
 Drop a section the repo has no use for. A frontend-only repo needs no `Sources` entry for a backend permissions file.
 
@@ -12,7 +12,7 @@ Drop a section the repo has no use for. A frontend-only repo needs no `Sources` 
 ```markdown
 # fe-design-map project config ({{REPO}})
 
-Consumed by the `/fe-design-map` skill. Per-developer config, not tracked.
+Consumed by the `/tz-skills:fe-design-map` skill. Per-developer config, not tracked.
 
 ## Docs
 
@@ -81,7 +81,7 @@ Names the tracker conventions for the map. `fe-design-map` reads this to create 
   `needs-info`                                                                    [ask]
 - **Blocking**: {{how this tracker records a blocking relation}}                    [ask]
 - **Fact base**: `~/.claude/fe-design-map/{{repo}}/<slug>/` — never pushed to a remote, deleted by
-  `/fe-design-cleanup` once the build tickets close
+  `/tz-skills:fe-design-cleanup` once the build tickets close
 - Refer to a map or a ticket by its title, never by its id
 - **One Decisions-so-far entry per session, under 250 words.** The map body is usually the only
   tracker surface the author reads, so it earns brevity rather than being exempt from it. A

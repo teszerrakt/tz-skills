@@ -20,7 +20,7 @@ Run `git remote -v` for the repo owner and name. Then check the user's recent br
 ```markdown
 # standup config ({{REPO}})
 
-Consumed by the `/standup` skill. Per-developer config, not tracked.
+Consumed by the `/tz-skills:standup` skill. Per-developer config, not tracked.
 
 - Standup channel: `{{#name}}` = `{{channel id}}`
 - My GitHub login: `{{login}}`

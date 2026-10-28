@@ -1,0 +1,6 @@
+[
+  { "name": "typecheck", "state": "SUCCESS", "description": "" },
+  { "name": "lint", "state": "SUCCESS", "description": "" },
+  { "name": "test", "state": "SUCCESS", "description": "" },
+  { "name": "build", "state": "SUCCESS", "description": "" }
+]

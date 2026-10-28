@@ -1,0 +1,25 @@
+{
+  "name": "tz-skills",
+  "version": "0.2.0",
+  "description": "Ticket-to-PR delivery (ship, ship-epic, spec-review, address-review), the frontend design-doc pipeline, and standup drafting.",
+  "author": {
+    "name": "teszerrakt"
+  },
+  "homepage": "https://github.com/teszerrakt/tz-skills#readme",
+  "repository": "https://github.com/teszerrakt/tz-skills",
+  "license": "MIT",
+  "keywords": ["skills", "delivery", "code-review", "design-docs", "standup"],
+  "skills": [
+    "./address-review",
+    "./ask-stakeholders",
+    "./estimate-effort",
+    "./fe-design-cleanup",
+    "./fe-design-map",
+    "./setup-tz-skills",
+    "./ship",
+    "./ship-epic",
+    "./spec-review",
+    "./standup",
+    "./verify-backend"
+  ]
+}

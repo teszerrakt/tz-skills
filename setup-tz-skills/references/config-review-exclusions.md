@@ -26,7 +26,7 @@ Ask the user to confirm each list before writing. A glob in the wrong list makes
 ```markdown
 ## Review exclusions
 
-Consumed by `/spec-review`.
+Consumed by `/tz-skills:spec-review`.
 
 - Generated, never reviewed: {{globs}}
 - Implied by convention, reviewed but not a stray by default: {{globs}}

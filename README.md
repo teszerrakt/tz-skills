@@ -31,9 +31,9 @@ The pipeline also calls the grilling and domain-modeling skills from the [mattpo
 | Skill | Trigger |
 | ----- | ------- |
 | `address-review` | "address review", "respond to CodeRabbit", PR triage |
-| `spec-review` | you type it — `/spec-review`, `/spec-review 650`, `/spec-review <branch>` |
-| `ship` | model or you — `/ship TRA-470` |
-| `ship-epic` | you type it — `/ship-epic TRA-415` |
+| `spec-review` | you type it — `/tz-skills:spec-review`, `/tz-skills:spec-review 650` |
+| `ship` | model or you — `/tz-skills:ship TRA-470` |
+| `ship-epic` | you type it — `/tz-skills:ship-epic TRA-415` |
 | `verify-backend` | model or you — after server work, or from `ship` |
 
 `spec-review` judges a diff against one contract and nothing else. Every requirement of the ticket becomes a ledger row, and a row is met only with an anchor into the diff — a `file:line` the diff actually touched. Every change the ticket did not ask for is classed a **stray** (it blocks), **implied** (a named ADR or RFC requires it), or **ambiguous** (the reviewer quotes two readings of one ticket line, so the ticket is the defect, not the diff). The strays go to the PR and the ambiguities go to the ticket, each behind its own confirmation.
@@ -56,55 +56,28 @@ It never reviews code quality — `/code-review` owns that axis — and it never
 
 Type it with the plugin prefix — `/mattpocock-skills:teach`. It is user-invoked, so no other skill can reach it and a bare `/teach` does not resolve.
 
-## Mods
+## Install
 
-Mods are Claude Code plugins with hooks, installed from this repo's plugin marketplace rather than linked by `setup`.
+```
+/plugin marketplace add teszerrakt/tz-skills
+/plugin install tz-skills@tz-skills
+```
+
+Every command carries the plugin's name: `/tz-skills:ship TRA-470`, `/tz-skills:spec-review 650`. A bare `/ship` does not resolve. The reviewer agents are named the same way, `tz-skills:tz-fresh-reviewer`. Why a plugin rather than symlinks: [ADR-0003](./docs/adr/0003-ship-as-a-claude-code-plugin.md).
+
+Then run `/tz-skills:setup-tz-skills` once per repo to write the per-repo config below.
+
+### Mods
+
+Mods are Claude Code plugins with hooks, installed from the same marketplace.
 
 | Mod | What it does |
 | --- | ------------ |
 | [`show-media`](plugins/show-media/README.md) | Shows images, videos and GIFs in a pane beside the chat (kitty or Ghostty) |
 
 ```
-/plugin install show-media --marketplace teszerrakt/tz-skills
+/plugin install show-media@tz-skills
 ```
-
-## Install
-
-Requires [bun](https://bun.sh/). Works on macOS, Linux and Windows. On Windows,
-skills link as junctions, but the agents are file symlinks, which need
-Developer Mode or an admin shell; the gate runner needs Git for Windows.
-
-### Recommended — one-liner via bunx
-
-```bash
-bunx @teszerrakt/skills
-```
-
-Clones the repo to `~/.local/share/tz-skills` (override with `$TZ_SKILLS_DIR`)
-and symlinks every skill subdirectory into `~/.claude/skills/`. Idempotent —
-re-running pulls the latest from `main` and refreshes symlinks.
-
-To remove our symlinks (clone stays put):
-
-```bash
-bunx @teszerrakt/skills --uninstall
-```
-
-### Alternative — clone + run setup
-
-Useful if you want the repo somewhere you'll edit frequently (e.g. `~/Codes/`).
-
-```bash
-git clone https://github.com/teszerrakt/tz-skills ~/Codes/tz-skills
-cd ~/Codes/tz-skills
-bun run setup
-```
-
-`bun run uninstall` removes the symlinks.
-
-Both installers discover skills by scanning for a directory holding a `SKILL.md`, so a new skill needs no registration.
-
-Then run `/setup-tz-skills` once per repo to write the per-repo config below.
 
 ## Per-repo config
 
@@ -118,16 +91,20 @@ Several skills read config from the repository you invoke them in. Every file is
 | `.claude/standup.md` | `standup` | standup channel id, my Slack user id, GitHub login, and which ticket system to link |
 | `.claude/estimate-calibration.md` | `estimate-effort` | the repo's estimated-versus-actual table, its floor and step size, and the diagnosed cause per miss |
 
-Run `/setup-tz-skills` in a new repo to scaffold these. It detects what the repo already states — the remote, the token command, the ADR and RFC directories, the shared UI package — and asks only for what no file holds. It writes each ignore line **before** the file it covers, so a config file cannot exist unignored, and it ends by grepping its own output for leftover placeholders.
+Run `/tz-skills:setup-tz-skills` in a new repo to scaffold these. It detects what the repo already states — the remote, the token command, the ADR and RFC directories, the shared UI package — and asks only for what no file holds. It writes each ignore line **before** the file it covers, so a config file cannot exist unignored, and it ends by grepping its own output for leftover placeholders.
 
 A skill whose config file is missing also asks for the values itself, then offers to write the file so the next run skips the questions. `estimate-effort` also labels its output **uncalibrated** until the file exists — an estimate calibrated on another codebase is a guess wearing a number.
 
 `fe-design-map` writes its harvested facts to `~/.claude/fe-design-map/<repo>/<slug>/`. That directory is throwaway and is never pushed to a remote. `fe-design-cleanup` deletes it once the build tickets close.
 
-## Updating skills
+## Developing
 
-```bash
-cd ~/Codes/tz-skills && git pull
-```
+Load this checkout instead of the installed copy with `claude --plugin-dir .`. `bun install` turns on the pre-push hook, which runs:
 
-Symlinks resolve to the repo so changes apply immediately. No re-link needed.
+| Check | Command | Where else |
+| ----- | ------- | ---------- |
+| Skill linter | `bun run lint:skills` | CI |
+| Unit tests | `bun test` | CI |
+| Eval cases of every changed or affected skill | `bun run evals` | pre-push only: it runs on your Claude login |
+
+How a skill is laid out, what the linter enforces and how to write an eval case: [docs/authoring.md](./docs/authoring.md).
