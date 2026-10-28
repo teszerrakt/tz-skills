@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: ship-asks-before-changing-callers
+description: "The other half of reuse: when a shared helper would change what another caller shows, the trade goes to the user instead of being made silently either way."
+tags: [ship]
+execution:
+  prompt: |
+    /tz-skills:ship TRA-860 has finished step 6 on branch feat/tra-860. The ticket: the item form checks SKU and name against `GET /items-duplicate-check` as you type, and shows a retry link when the check fails.
+
+    The diff adds `hooks/use-item-duplicates.ts`, a near-copy of `hooks/use-vendor-duplicates.ts` and `hooks/use-customer-duplicates.ts`. The vendor and customer forms render whatever error state their hook returns, so a shared hook would make them show the retry link too, and there's no way to hide it without redesigning both forms. The vendor and customer hooks are not in this ticket.
+
+    Step 7's `tz-skills:tz-simplify-reviewer` returned one finding: "remove the item copy and add one shared helper".
+
+    What do you do with this finding? Don't run anything.
+  max_turns: 12
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: regex
+    name: asks-in-section
+    pattern: "## ❓"
+  - type: llm
+    name: asks-the-trade
+    criteria: "PASS when the reply puts the choice to the user as a question, keeping the item copy versus sharing the hook and having vendors and customers show the retry link, and changes neither the vendor nor the customer hook before it is answered. FAIL when it shares the hook without asking, or refuses or defers the finding without asking."

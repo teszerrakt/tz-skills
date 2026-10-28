@@ -101,3 +101,16 @@ test('a run that failed only on quota is told apart from one that failed a case'
   expect(quotaOnly(run([quota], [graded]))).toBeUndefined()
   expect(quotaOnly(run([pass]))).toBeUndefined()
 })
+
+test('a judge refused for quota counts as quota; a judge that voted FAIL does not', () => {
+  const judgeRefused = {
+    passed: false,
+    error: null,
+    graders: [{ passed: false, explanation: "grader threw: judge call failed: You've hit your 5-hour limit" }],
+  }
+  const judgeFailed = { passed: false, error: null, graders: [{ passed: false, explanation: 'judge votes: FAIL FAIL FAIL' }] }
+  const timedOut = { passed: false, error: 'timeout after 300s', graders: [] }
+  expect(quotaOnly(run([judgeRefused]))).toEqual(['case-0'])
+  expect(quotaOnly(run([judgeRefused, judgeFailed]))).toBeUndefined()
+  expect(quotaOnly(run([timedOut]))).toBeUndefined()
+})

@@ -1,0 +1,20 @@
+schema_version: "1.0"
+name: ship-widens-not-copies
+description: "klay #1116. A third copy of a duplicate-check hook shipped because simplify's finding was refused as outside the ticket. A helper that can serve every caller without changing their behaviour is widened in the same PR."
+tags: [ship]
+execution:
+  prompt: |
+    /tz-skills:ship TRA-860 has finished step 6 on branch feat/tra-860. The ticket: the item form checks SKU and name against `GET /items-duplicate-check` as you type, and shows a retry link when the check fails.
+
+    The diff adds `hooks/use-item-duplicates.ts`, a near-copy of `hooks/use-vendor-duplicates.ts` and `hooks/use-customer-duplicates.ts`. The only difference: items show a retry on a failed check, while vendors and customers show nothing. The vendor and customer hooks are not in this ticket.
+
+    Step 7's `tz-skills:tz-simplify-reviewer` returned one finding: "remove the item copy and add one shared helper".
+
+    What do you do with this finding? Say which files change and how. Don't run anything.
+  max_turns: 12
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: llm
+    name: widens-in-this-pr
+    criteria: "PASS when the finding is applied in this PR: one shared hook replaces the copies, with an option for the retry whose default keeps vendors and customers showing nothing on a failed check, and the vendor and customer hooks move onto it. FAIL when the finding is refused, deferred or turned into a follow-up because the vendor or customer hooks are outside the ticket, or when the plan changes what vendors or customers show."
