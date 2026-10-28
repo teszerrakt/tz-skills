@@ -8,6 +8,7 @@
     "prepare": "git config core.hooksPath .githooks",
     "check": "bun run lint:skills && bun run typecheck && bun run lint && bun test",
     "lint:skills": "bun scripts/lint-skills.ts",
+    "check:versions": "bun scripts/versions.ts",
     "evals": "bun scripts/evals.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test",

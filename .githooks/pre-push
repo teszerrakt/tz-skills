@@ -5,5 +5,6 @@
 set -e
 cd "$(git rev-parse --show-toplevel)"
 bun run lint:skills
+bun run check:versions
 bun test
 bun run evals

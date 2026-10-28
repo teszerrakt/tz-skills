@@ -57,6 +57,7 @@ A skill change is done when these pass:
 
 - `bun run check`: the linter, typecheck, oxlint and unit tests;
 - `claude plugin validate . --strict`: the manifests, as CI checks them;
+- `bun run check:versions`: a change to a skill or an agent raises `version` in `.claude-plugin/plugin.json` and `package.json` together, since `claude plugin update` skips a change that keeps the version;
 - `bun run evals`: the cases of every skill the branch changes or affects.
 
 The pre-push hook runs the linter, the unit tests and the evals. A run refused only for quota warns and lets the push through; run `bun run evals` once the quota resets.
