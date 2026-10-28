@@ -51,7 +51,7 @@ Read `## Delivery` from `.claude/delivery.md` — the same section `/tz-skills:s
 | Run context | the command that tells the command center what the run ships | send nothing |
 | Finding | the command a session or the orchestrator runs to show a judge's finding and its outcome on the page | findings reach the user only through the PR body and the report |
 
-A repo with no `## Delivery` section: offer `/tz-skills:setup-tz-skills` once, then ask for the values with a **questions section** (CONTEXT.md).
+A repo with no `## Delivery` section: offer `/tz-skills:setup-tz-skills` once, then ask for the values with a **questions section**: one `## ❓ Needs your call` section closing the reply, a block per question with one option per bullet, a `✨` recommendation and one `Asked because:` line; at most four, never a table.
 
 ## Selection
 
@@ -139,7 +139,7 @@ The last row is the one a stall-only watch misses. Under the `auto` permission m
 
 **Your own questions go on the command center too, when the config names `Ask`.** Run it yourself in the background with `--ticket RUN`, one call per question, in the same shape a session uses; it pops up and waits under "Needs you", and its answer is printed back to you. A question left only in this chat is one the user never sees: an unattended user reads the command center, not this session. Write the questions section here as well, for the record.
 
-Put the parked questions to the user as one **questions section** (CONTEXT.md), at most four across the whole run, then `SendMessage` each answer to the session that asked. A parked session resumes with its context intact, so parking costs one round trip rather than a re-run.
+Put the parked questions to the user as one **questions section**, at most four across the whole run, then `SendMessage` each answer to the session that asked. A parked session resumes with its context intact, so parking costs one round trip rather than a re-run.
 
 **Where the config names an `Ask` command, the session asks through it, not you.** The command goes in the spawn prompt. The session runs it in the background when its gate finds a question, one call per question: the question, its options with what the user would see, the recommended one, the `Asked because:` line, and a diff or JSON example where one makes the choice easier to picture. The command blocks until the user answers, and prints the answer into the session that asked, so the answer is the user's own and there is nothing to relay. Never put the same question on screen yourself: two cards for one question collect two answers. The questions section is still written for a question the command could not deliver, and `SendMessage` stays the route for those.
 

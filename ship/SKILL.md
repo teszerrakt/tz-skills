@@ -19,7 +19,7 @@ Write no new config file. Read, in this order:
 1. `.claude/delivery.md` — the `## Delivery` section. An older install kept it inside `.claude/fe-design-map.md`; when `delivery.md` is absent and that section exists there, read it and offer to move it.
 2. `.claude/fe-design-map.md`, when present — the tracker prefix, the ticket URL base, the ADR and RFC paths, the Figma file, and `## Sources`.
 3. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-4. Ask the user for what no file states, as a **questions section** (CONTEXT.md).
+4. Ask the user for what no file states, as a **questions section**, in the shape step 1 shows.
 
 `## Delivery` names the project's half of every phase. What each key holds: [`references/config.md`](references/config.md).
 
@@ -91,7 +91,7 @@ Then diff the criteria against the frames, the code and the migrations. On the b
 
 **Apply documented precedence first.** The config and the repo's own docs settle most conflicts — a rule that says the design file wins over ticket prose resolves every colour and spacing disagreement without asking anyone. What survives precedence is the **residue**.
 
-Put the residue to the user as a **questions section** (CONTEXT.md) and write nothing until it is answered:
+Put the residue to the user as a **questions section** and write nothing until it is answered:
 
 ```markdown
 ## ❓ Needs your call

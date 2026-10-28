@@ -24,7 +24,7 @@ Write no new config file. Read, in this order:
 
 1. `.claude/fe-design-map.md` — the tracker, the team prefix, the ticket URL base, the ADR and RFC paths, the docs platform, and the `## Review exclusions` section.
 2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-3. Ask the user for what neither file states, as a **questions section** (CONTEXT.md).
+3. Ask the user for what neither file states, as a **questions section**, in the shape step 8 shows.
 
 A missing `## Review exclusions` section is not a blocker. Fall back to the defaults in step 4, name the fallback in the report, and offer `/tz-skills:setup-tz-skills` once.
 
@@ -78,7 +78,7 @@ A ticket in prose is normal. Convert it to rows, and **quote on every row**. A r
 
 A **prohibition row** is a first-class row. A prose ticket states what the diff must not do more often than an AC list does.
 
-Print the rows and wait for the user to correct them, under a **questions section** (CONTEXT.md) asking exactly that. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix — and a paraphrase printed without a visible question reads as a statement and goes unchecked. **Driven mode** skips this step: its rows arrive confirmed.
+Print the rows and wait for the user to correct them, under a **questions section** (step 8's shape) asking exactly that. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix — and a paraphrase printed without a visible question reads as a statement and goes unchecked. **Driven mode** skips this step: its rows arrive confirmed.
 
 For a PR that declares several tickets, build one ledger per ticket.
 
@@ -188,7 +188,7 @@ Those two tables are the record. **They are not how a question reaches the user*
 
 Never post anywhere automatically. The findings split by audience, and one half is a question rather than feedback.
 
-**Close the reply with a questions section** (CONTEXT.md). Every `AMBIGUOUS` row, and every `MISSING` row the user must rule on, one block each — after the verdict, the ledger and the prose, as the last thing in the reply. The reader needs the ledger to answer, and a chat client leaves the reply scrolled to its end: a question at the top is scrolled past before it can be answered, and one in the middle reads as part of the explanation.
+**Close the reply with a questions section**. Every `AMBIGUOUS` row, and every `MISSING` row the user must rule on, one block each — after the verdict, the ledger and the prose, as the last thing in the reply. The reader needs the ledger to answer, and a chat client leaves the reply scrolled to its end: a question at the top is scrolled past before it can be answered, and one in the middle reads as part of the explanation.
 
 ```markdown
 ## ❓ Needs your call
