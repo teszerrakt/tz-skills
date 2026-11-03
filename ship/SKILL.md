@@ -19,7 +19,7 @@ Write no new config file. Read, in this order:
 1. `.claude/delivery.md` — the `## Delivery` section. An older install kept it inside `.claude/fe-design-map.md`; when `delivery.md` is absent and that section exists there, read it and offer to move it.
 2. `.claude/fe-design-map.md`, when present — the tracker prefix, the ticket URL base, the ADR and RFC paths, the Figma file, and `## Sources`.
 3. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-4. Ask the user for what no file states, as a **questions section**, in the shape step 1 shows.
+4. Ask the user for what no file states, as a **question dialog**, in the shape step 1 shows.
 
 `## Delivery` names the project's half of every phase. What each key holds: [`references/config.md`](references/config.md).
 
@@ -91,24 +91,21 @@ Then diff the criteria against the frames, the code and the migrations. On the b
 
 **Apply documented precedence first.** The config and the repo's own docs settle most conflicts — a rule that says the design file wins over ticket prose resolves every colour and spacing disagreement without asking anyone. What survives precedence is the **residue**.
 
-Put the residue to the user as a **questions section** and write nothing until it is answered:
+Put the residue to the user as a **question dialog** and write nothing until it is answered. Print the conflicting sources first, then call the question tool with this input:
 
-```markdown
-## ❓ Needs your call
-
-**Q1 — Show decimals on a rupiah amount?**
-
-- **No** — reads `82.850.000`, as the ticket writes it
-- **Yes** — reads `82.850.000,00`, as the currency master seeds it
-
-✨ **Yes** — the master owns this
-
-Asked because: the ticket says 0 places, the currency migration seeds 2. No precedence rule covers ticket-versus-migration.
+```yaml
+header: Q1
+question: Show decimals on a rupiah amount? The ticket writes 0 places, the currency master seeds 2, and no precedence rule covers ticket-versus-migration.
+options:
+  - label: Yes (Recommended)
+    description: Reads 82.850.000,00, as the currency master seeds it. The master owns this.
+  - label: No
+    description: Reads 82.850.000, as the ticket writes it.
 ```
 
-At most four questions, never a table: a terminal renders `<br>` literally. **The section closes the reply, with nothing after it**, not even what happens once it is answered: a reader looks at the end of a reply, and text below the section reads as more explanation. A conflict a precedence rule already settles is **not** a question: resolve it silently and record it with its rule. A settled conflict in the section trains the reader to skim it.
+At most four questions per dialog. With no question tool in the session, write the same questions as text closing the reply, with nothing after them: one option per bullet, the recommended one first, never a table and never this YAML. A conflict a precedence rule already settles is **not** a question: resolve it silently and record it with its rule. A settled conflict in the dialog trains the reader to skim it.
 
-An empty residue continues the run unattended and writes no section.
+An empty residue continues the run unattended and asks nothing.
 
 Record every decision, rule-settled and asked alike, in the **commit message and the PR body**. Not on the ticket: a tracker comment goes unread, and posting one unprompted is refused by the user's own standing preference.
 

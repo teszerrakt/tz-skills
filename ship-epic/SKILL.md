@@ -46,12 +46,12 @@ Read `## Delivery` from `.claude/delivery.md` — the same section `/tz-skills:s
 | Opt-out check | the command that proves the worktree opt-outs inert | assert nothing, and say so in the report |
 | Concurrency pin | the flag that caps one session's task runner | run serial |
 | Alarm | the command run when no session can progress | report quietly |
-| Ask | the command a session runs to put its own question on the user's screen; it blocks, and prints the answer into that session | ask in the questions section only |
+| Ask | the command a session runs to put its own question on the user's screen; it blocks, and prints the answer into that session | ask in a question dialog only |
 | Status | the command a session runs at each `/tz-skills:ship` step and when it stops | watch from `claude agents --json` alone |
 | Run context | the command that tells the command center what the run ships | send nothing |
 | Finding | the command a session or the orchestrator runs to show a judge's finding and its outcome on the page | findings reach the user only through the PR body and the report |
 
-A repo with no `## Delivery` section: offer `/tz-skills:setup-tz-skills` once, then ask for the values with a **questions section**: one `## ❓ Needs your call` section closing the reply, a block per question with one option per bullet, a `✨` recommendation and one `Asked because:` line; at most four, never a table.
+A repo with no `## Delivery` section: offer `/tz-skills:setup-tz-skills` once, then ask for the values with a **question dialog**: the question tool, never text in the reply; the context in each question, the trade-off in each option's description, the recommended option first with `(Recommended)`; at most four per dialog.
 
 ## Selection
 
@@ -137,11 +137,11 @@ The last row is the one a stall-only watch misses. Under the `auto` permission m
 
 **Alarm only when no session can progress** — every live session parked on a question. Run the config's alarm command then, and only then. Waking the user for a question two other sessions are working around trains them to ignore the alarm, which costs every later run.
 
-**Your own questions go on the command center too, when the config names `Ask`.** Run it yourself in the background with `--ticket RUN`, one call per question, in the same shape a session uses; it pops up and waits under "Needs you", and its answer is printed back to you. A question left only in this chat is one the user never sees: an unattended user reads the command center, not this session. Write the questions section here as well, for the record.
+**Your own questions go on the command center too, when the config names `Ask`.** Run it yourself in the background with `--ticket RUN`, one call per question, in the same shape a session uses; it pops up and waits under "Needs you", and its answer is printed back to you. A question left only in this chat is one the user never sees: an unattended user reads the command center, not this session. List the questions here as well, for the record, without asking them a second time.
 
-Put the parked questions to the user as one **questions section**, at most four across the whole run, then `SendMessage` each answer to the session that asked. A parked session resumes with its context intact, so parking costs one round trip rather than a re-run.
+Put the parked questions to the user as one **question dialog**, at most four across the whole run, then `SendMessage` each answer to the session that asked. A parked session resumes with its context intact, so parking costs one round trip rather than a re-run.
 
-**Where the config names an `Ask` command, the session asks through it, not you.** The command goes in the spawn prompt. The session runs it in the background when its gate finds a question, one call per question: the question, its options with what the user would see, the recommended one, the `Asked because:` line, and a diff or JSON example where one makes the choice easier to picture. The command blocks until the user answers, and prints the answer into the session that asked, so the answer is the user's own and there is nothing to relay. Never put the same question on screen yourself: two cards for one question collect two answers. The questions section is still written for a question the command could not deliver, and `SendMessage` stays the route for those.
+**Where the config names an `Ask` command, the session asks through it, not you.** The command goes in the spawn prompt. The session runs it in the background when its gate finds a question, one call per question: the question, its options with what the user would see, the recommended one, the conflict the answer turns on, and a diff or JSON example where one makes the choice easier to picture. The command blocks until the user answers, and prints the answer into the session that asked, so the answer is the user's own and there is nothing to relay. Never put the same question on screen yourself: two cards for one question collect two answers. A question the command could not deliver is still asked here, in a question dialog, and `SendMessage` stays the route for those.
 
 **A session that doubts a relayed answer is answered by the user, in that session.** It was told nothing reaches it mid-run, so it may refuse to take another session's word that an answer is the user's. Do not argue or re-send: tell the user which session to attach to, and what to type.
 

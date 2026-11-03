@@ -14,13 +14,11 @@ _Avoid_: cache, scratch dir, workspace
 A file of runnable checks, written before the work starts, that decides whether the work is done. A ticked box with no evidence is unmet.
 _Avoid_: checklist, definition of done
 
-**Questions section**:
-The one shape a skill uses to ask a human anything: its own section closing the reply, under a `❓` heading, after the context the reader needs to answer, with nothing after it. It holds one block per question. A block is the question in under 15 words, then **one option per bullet** — the choice bolded, then what a person would see, under 15 words each — then a `✨` line recommending one, then a single `Asked because:` line carrying only what the answer turns on. Questions are labelled `Q1`, `Q2`, the labels `/grilling` already uses. At most four. No field names, no file paths, no review vocabulary.
+**Question dialog**:
+The one shape a skill uses to ask a human anything: a call to the question tool (`AskUserQuestion`), never a question written into the reply. A host that runs many sessions, such as T3 Code, marks a session as waiting only for a question asked through the tool; a question written as text looks like a finished run and goes unseen. Each question's text carries the context needed to answer it and the conflict the answer turns on, because the dialog may be all the reader sees. Each option has a label of one to five words, a description of what a person would see and what it costs, and, where a diff, JSON or mockup makes the choice easier to picture, a `preview`. The recommended option comes first with `(Recommended)` after its label. The header carries the label `Q1`, `Q2`, the labels `/grilling` already uses. At most four questions per dialog and two to four options each. No field names, no file paths, no review vocabulary.
 
-**Not a table.** A terminal renders `<br>` literally, so a table cell cannot hold one option per line, and options crammed onto one line are the failure this shape exists to fix.
-
-Four ways a question goes unread, all measured rather than assumed: written as prose, written as a data structure, placed where the reader is not looking, or padded past a glance. Where the reader looks is the end: a chat client leaves a long reply scrolled to its last line, and the reader wants the context before the ask, so a section at the top scrolls away unanswered and one in the middle reads as part of the explanation. A fifth wastes the reader instead: asking without recommending, which offloads the asker's own judgment. Never write an empty one; when nothing needs the reader, end with one line saying so.
-_Avoid_: questions table, open questions section, clarifications, blockers list
+Print what the reader needs to answer before the dialog opens: the dialog holds the question, the reply holds the evidence. Asking without recommending offloads the asker's own judgment. Ask nothing when nothing needs the reader; end with one line saying so. A session with no reader, such as a driven run, asks nothing and routes its questions to its driver. A session with a reader but no question tool (a headless or `-p` run) writes the same questions as text closing the reply, with nothing after them: each question in plain words, then one option per bullet with its description, the recommended one first marked `(Recommended)`. Never a table.
+_Avoid_: questions section, questions table, open questions section, clarifications, blockers list
 
 **Build ticket**:
 A tracker issue that one coding session implements.

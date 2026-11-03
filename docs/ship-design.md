@@ -228,7 +228,7 @@ about the residue:
 Write nothing until the residue is answered. If the residue is empty, continue
 unattended.
 
-**The residue is asked as a questions section**, defined in `CONTEXT.md`. The
+**The residue is asked as a question dialog**, defined in `CONTEXT.md`. The
 earlier design printed it as a JSONC block keyed by field name — the wrong
 artefact for the one step here that stops and waits for a person. A reader who
 must decode `{"field": "IDR decimal_places", "rule": null}` to learn they are
@@ -252,6 +252,15 @@ per question. The recommendation is the part doing real work: it converts the
 reader's job from weighing options they have not seen into a yes or a
 correction. A skill that asks without recommending has offloaded its own
 judgment.
+
+A fourth failure retired the section for the question tool. In a host that runs
+many sessions side by side, a question written into a reply looks like a
+finished turn: T3 Code marks a session as waiting only for a question asked
+through the tool, so a section closing a background session's reply went unseen
+until the user happened to open it. The dialog keeps the section's rules —
+plain words, one option per line, a recommendation — and moves the evidence
+into each option's description and preview, which hold long text without the
+terminal problems that ruled out the table.
 
 Record every gate decision in the **commit message and the PR body**. Never edit
 the acceptance criteria. `/spec-review` builds a ledger row per criterion and

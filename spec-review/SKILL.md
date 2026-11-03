@@ -16,7 +16,7 @@ This skill does not review code quality. `/code-review` (CodeRabbit) owns that a
 
 ## Vocabulary
 
-The terms below are defined in [CONTEXT.md](https://github.com/teszerrakt/tz-skills/blob/main/CONTEXT.md): **contract**, **ledger row**, **prohibition row**, **anchor**, **stray**, **implied**, **ambiguous**, **declared deferral**, **verdict**, **questions section**.
+The terms below are defined in [CONTEXT.md](https://github.com/teszerrakt/tz-skills/blob/main/CONTEXT.md): **contract**, **ledger row**, **prohibition row**, **anchor**, **stray**, **implied**, **ambiguous**, **declared deferral**, **verdict**, **question dialog**.
 
 ## Config
 
@@ -24,7 +24,7 @@ Write no new config file. Read, in this order:
 
 1. `.claude/fe-design-map.md` — the tracker, the team prefix, the ticket URL base, the ADR and RFC paths, the docs platform, and the `## Review exclusions` section.
 2. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
-3. Ask the user for what neither file states, as a **questions section**, in the shape step 8 shows.
+3. Ask the user for what neither file states, as a **question dialog**, in the shape step 8 shows.
 
 A missing `## Review exclusions` section is not a blocker. Fall back to the defaults in step 4, name the fallback in the report, and offer `/tz-skills:setup-tz-skills` once.
 
@@ -78,7 +78,7 @@ A ticket in prose is normal. Convert it to rows, and **quote on every row**. A r
 
 A **prohibition row** is a first-class row. A prose ticket states what the diff must not do more often than an AC list does.
 
-Print the rows and wait for the user to correct them, under a **questions section** (step 8's shape) asking exactly that. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix — and a paraphrase printed without a visible question reads as a statement and goes unchecked. **Driven mode** skips this step: its rows arrive confirmed.
+Print the rows, then ask the user to correct them with a **question dialog** (step 8's shape) asking exactly that. The rows are the reviewer's paraphrase, so this is the one step where a wrong reading is cheap to fix — and a paraphrase printed without a visible question reads as a statement and goes unchecked. **Driven mode** skips this step: its rows arrive confirmed.
 
 For a PR that declares several tickets, build one ledger per ticket.
 
@@ -184,28 +184,25 @@ Write the report to the scratchpad, never into the repo. It is session output.
 
 Those two tables are the record. **They are not how a question reaches the user** — see step 8.
 
-### 8. The ledger, then the questions section last
+### 8. The ledger, then the question dialog
 
 Never post anywhere automatically. The findings split by audience, and one half is a question rather than feedback.
 
-**Close the reply with a questions section**. Every `AMBIGUOUS` row, and every `MISSING` row the user must rule on, one block each — after the verdict, the ledger and the prose, as the last thing in the reply. The reader needs the ledger to answer, and a chat client leaves the reply scrolled to its end: a question at the top is scrolled past before it can be answered, and one in the middle reads as part of the explanation.
+**Then ask with a question dialog**. Every `AMBIGUOUS` row, and every `MISSING` row the user must rule on, one question each — once the verdict, the ledger and the prose are printed. The reader needs the ledger to answer, so it goes out before the dialog opens. With no question tool in the session, write the same questions as text closing the reply, with nothing after them: one option per bullet, the recommended one first, never a table.
 
-```markdown
-## ❓ Needs your call
-
-**Q1 — On an empty list, show nothing or "no results"?**
-
-- **Nothing** — blank area, as the ticket's wording implies
-- **Message** — says the search worked and found none, as the frame draws
-
-✨ **Message** — the frame is the later word
-
-Asked because: the ticket says "handle no rows", which reads both ways.
+```yaml
+header: Q1
+question: On an empty list, show nothing or a "no results" message? The ticket says "handle no rows", which reads both ways.
+options:
+  - label: Message (Recommended)
+    description: Says the search worked and found none, as the frame draws. The frame is the later word.
+  - label: Nothing
+    description: A blank area, as the ticket's wording implies.
 ```
 
 The row's file, class and both quoted readings stay in the ledger tables above, never in the question. A reader who cannot picture the choice at a glance cannot make it, and deciding it is the only reason the row exists.
 
-The offer to post goes in that same section, as its last block — never as a line of prose:
+The offer to post goes in that same dialog, as its last question — never as a line of prose:
 
 - **To the PR** — the `MISSING` rows and the `STRAY` rows. These are feedback on the diff. Offer it and take one confirmation.
   ```bash
@@ -215,7 +212,7 @@ The offer to post goes in that same section, as its last block — never as a li
 
 An `AMBIGUOUS` row on the PR blames the author for the ticket's defect. Keep the split.
 
-Write no `❓` section when nothing needs deciding; end with one line saying nothing needs the reader. An empty section trains the reader to ignore the heading.
+Ask nothing when nothing needs deciding; end with one line saying nothing needs the reader.
 
 ---
 
