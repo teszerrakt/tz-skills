@@ -1,6 +1,6 @@
 # Template: `.claude/fe-design-map.md`
 
-Read by `fe-design-map`. Nine sections. The tag on each says where the value comes from.
+Read by `fe-design-map`, and by `ship` for `Sources` and `Precedence`. Ten sections. The tag on each says where the value comes from.
 
 - **[detect]** — exploration already found it. Propose it; do not ask.
 - **[ask]** — no file states it. Ask.
@@ -33,6 +33,10 @@ Consumed by the `/tz-skills:fe-design-map` skill. Per-developer config, not trac
 - Endpoint contracts: {{path}} (source of truth over code comments) [detect docs/rfc]
 - FE conventions: {{path}}                                          [detect docs/adr]
 - UI package for reuse verdicts: {{path}}, then app-local components under {{path}}   [detect]
+
+## Precedence
+
+- Handover vs staging: {{which one the build follows for data, and which for what the screen shows}}   [ask]
 
 ## Figma
 

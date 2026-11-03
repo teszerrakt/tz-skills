@@ -12,4 +12,6 @@ Fresh means three things, and each has its guard:
 
 **Every judge's findings reach the user, not only the author.** When `## Delivery` names a `Finding` command, run it as the config writes it, once per finding with its own `--id F<n>`, and again with the same id whenever its outcome changes — `open`, then `fixed`, `refused`, `held` or `withdrawn`. Run it once per review with `--verdict` too, for a verdict such as step 9's. A finding the author fixed silently is the same hidden judgement as one it refused silently.
 
+**A fix a judge asked for joins the decisions.** When a finding applied in steps 5–8 adds or changes behaviour the ticket does not name, append it to `ticket.md`'s `## Decisions` with its own row quoting the finding, its id and the judge. Step 9 then reads the fix as settled, and spec review never reverses the run's own reviewer.
+
 **The canary check.** The judge's answer carries a `canary` value: the rest of any line in its context that begins `CANARY:`, or `none`. The brief names the prefix, never the word. A missing value, or the word itself, voids that answer as an unparsed one is voided: re-run once with a new spawn, and a second leak fails the phase through that step's own abort. Never write the word to a file, a commit, the PR or any brief — anywhere a judge can read it, it proves nothing.

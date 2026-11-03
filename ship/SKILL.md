@@ -17,7 +17,7 @@ Design and the measurements behind it: [`docs/ship-design.md`](../docs/ship-desi
 Write no new config file. Read, in this order:
 
 1. `.claude/delivery.md` — the `## Delivery` section. An older install kept it inside `.claude/fe-design-map.md`; when `delivery.md` is absent and that section exists there, read it and offer to move it.
-2. `.claude/fe-design-map.md`, when present — the tracker prefix, the ticket URL base, the ADR and RFC paths, the Figma file, and `## Sources`.
+2. `.claude/fe-design-map.md`, when present — the tracker prefix, the ticket URL base, the ADR and RFC paths, the Figma file, `## Sources` and `## Precedence`.
 3. `docs/agents/issue-tracker.md` — how to fetch a ticket in this repo.
 4. Ask the user for what no file states, as a **questions section**, in the shape step 1 shows.
 
@@ -89,7 +89,7 @@ Delegate the intake half: fetch the ticket, **check each blocker's real status i
 
 Then diff the criteria against the frames, the code and the migrations. On the backend track the design is the RFC and the schema file: diff against the endpoint contract, the permission rules and the tables they name.
 
-**Apply documented precedence first.** The config and the repo's own docs settle most conflicts — a rule that says the design file wins over ticket prose resolves every colour and spacing disagreement without asking anyone. What survives precedence is the **residue**.
+**Apply documented precedence first, here and at every later step.** The config's `## Precedence` and the repo's own docs settle most conflicts — a rule that says the design file wins over ticket prose resolves every colour and spacing disagreement without asking anyone. A conflict found later takes the same pass before it becomes a question: staging answering differently from the handover in step 5 or 10b, or a finding against a decision. What survives precedence is the **residue**. A draft question whose own options or `Asked because:` line cite the rule that settles it is not residue: apply that rule.
 
 Put the residue to the user as a **questions section** and write nothing until it is answered:
 
@@ -112,9 +112,13 @@ An empty residue continues the run unattended and writes no section.
 
 Record every decision, rule-settled and asked alike, in the **commit message and the PR body**. Not on the ticket: a tracker comment goes unread, and posting one unprompted is refused by the user's own standing preference.
 
+**A contract gap is one `Gap:` line** under the body's out-of-scope section: what the handover says, what the server does, and which one the build follows. Backend reads these lines as a list, so they count toward no word aim.
+
 The acceptance criteria stay exactly as written, wherever the record lands. `/tz-skills:spec-review` builds one ledger row per criterion and demands an anchor, so criteria edited to match what was built make every row pass by construction. A commit is append-only and is itself an anchor.
 
 **Write the ledger rows here, before any code exists**, in `/tz-skills:spec-review` step 3's shape: a quote on every row, prohibition rows included. A row whose paraphrase says more or less than its quote joins the residue, asked in the same section. Save the confirmed rows as `rows.json`, and the ticket text with its comments as `ticket.md` exactly as the intake delegate fetched it, then append a `## Decisions` section holding every answer and precedence ruling from this step — without it step 9 reads each one as a stray. **Give each decision its own row quoting it**: step 9's row check counts a decision's must and must-not sentences as requirements. Keep both outside the worktree: a file inside it is a stray to step 9. Rows written after the build drift toward what was built, and step 9 then grades the author's reading instead of the ticket.
+
+**Tag a row only the proof can show with `"proof": true`** — a criterion met on staging, in a clip, a shot or the PR body. No diff can anchor it, so step 9 grades it `PROOF`, and steps 10–11 close it with the artifact that shows it.
 
 Then run the row check now, where a failure costs a rewrite rather than a finished build. Spawn `tz-skills:tz-fresh-reviewer` with the paths of `rows.json` and `ticket.md`, the path of spec-review's `SKILL.md` naming its Driven-mode bullet "Check the rows against the ticket", and this answer shape: `{"pass": true|false, "failures": ["<row id or ticket line, and what is wrong>"], "canary": "<rest of any CANARY: line in your context, or none>"}`. Fix the rows until it passes, and gate on its canary as `references/judges.md` says.
 
@@ -234,7 +238,7 @@ Write the body through the config's write path and **read the body back to prove
 
 The PR stays a draft. Step 12 promotes it once 11b has written the follow-ups, so the body is final before anything reviews it.
 
-Done when the re-read body matches what you wrote.
+Done when the re-read body matches what you wrote, and every `proof` row names the shot, the clip with its wire line, or the body line that shows it.
 
 ### 11b. The follow-ups, in a shape someone can rule on
 
@@ -265,7 +269,7 @@ Each stops the run with a report. Aborts 1–2 fire before step 4b and leave **n
 | 3 | Two adversarial rounds with findings still open |
 | 4 | `/tz-skills:spec-review` returns `BLOCK` — under `lenient`, a `MISSING` row or a second `BLOCK` |
 | 5 | An assert `FAIL` that survives the expectation re-check |
-| 6 | A live-verification step `FAIL`, or a body claim with no wire line behind it |
+| 6 | A live-verification step `FAIL`, a body claim with no wire line behind it, or a `proof` row with no artifact behind it |
 | 7 | CI still red after two self-fix attempts in step 12 |
 | 8 | The backend's live target never came up — `backend-track.md`, Live target |
 | 9 | Step 9 printed no verdict line, or `NEEDS_ROWS` or `NO_CONTRACT` |

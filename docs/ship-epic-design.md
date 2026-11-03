@@ -1,6 +1,6 @@
 # `/ship-epic` — design
 
-Status: built, apart from the reordered `/ship` phase list. Decided 2026-09-09
+Status: built. Decided 2026-09-09
 in a grilling session, against capability probes run on the machine rather than
 documentation. Every claim below that a tool can or cannot do something was
 tested; where it was not, it says so.
@@ -427,6 +427,5 @@ which is the case that changes abort 6.
 
 - `ship-epic/command-center/` — the page, its server, the session-side command, the Windows toast and the Linux card, with `Status` and `Run context` added to the parallel-run keys.
 
-Not built: the reordered `/ship` phase list. It is a change to `/ship`, and
-`/ship-epic` delegates whatever order `/ship` holds, so the two land
-independently.
+The reordered `/ship` phase list is built too, in `/ship` itself
+(`docs/ship-design.md`, Built).

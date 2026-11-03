@@ -98,6 +98,10 @@ _Avoid_: acceptance criterion, AC, requirement
 A ledger row that states what the diff must not do.
 _Avoid_: negative requirement, non-goal
 
+**Proof row**:
+A ledger row only the run's proof can show — staging, a clip, a shot or the PR body — so no diff can anchor it. The driver tags it before the build, and its proof artifact closes it.
+_Avoid_: evidence row, manual row
+
 **Anchor**:
 A `file:line` inside the reviewed diff that proves a ledger row is met. A line the diff did not touch is not an anchor.
 _Avoid_: evidence, reference, proof
