@@ -1,0 +1,21 @@
+schema_version: "1.0"
+name: spec-review-grades-proof-row
+description: "#75. A driven review grades a row tagged proof as PROOF, which does not block, instead of MISSING for want of an anchor no diff can hold."
+tags: [spec-review, ship]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: |
+    /tz-skills:spec-review --driven main...feat/tra-40 --rows rows.json --ticket ticket.md
+
+    You have no shell and no subagents: diff.patch, diff-u0.patch, names.txt and log.txt in this folder stand in for git. The refs are checked.
+  max_turns: 30
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: regex
+    name: passes-with-notes
+    pattern: "VERDICT: PASS_WITH_NOTES"
+  - type: llm
+    name: grades-proof
+    criteria: "PASS when the report grades the clip row (R2) `PROOF`, lists it with its quote, and does not count it toward a block, while the Archive button row (R1) is met with an anchor in `src/components/project-header.tsx`. FAIL when R2 is graded MISSING or PARTIAL, when the verdict is BLOCK or NEEDS_ROWS, or when R1 is not met."

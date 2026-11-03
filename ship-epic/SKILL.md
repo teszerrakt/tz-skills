@@ -105,6 +105,7 @@ Everything a session cannot negotiate later goes in its prompt, after the `/tz-s
 - for a backend session, the **migration numbers it owns**, one per service it will migrate, reserved above the base branch, every open PR, and every sibling's reservation,
 - for a frontend session blocked by this run's backend PR, that backend: the PR number, and its preview URL or its worktree and backend port,
 - under `--stack`, its base: the parent ticket's branch and PR number,
+- the path of the run's hints file, with the rule under *Hints*,
 - the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*, and the line `The command center holds your review wait.`,
 - under `--afk`, the rule quoted in `references/afk.md`,
 - that a reviewer's design finding is refused only with the frame that settles it. "No frame draws it" needs a search of the ticket's frames and their siblings first; when the search finds nothing, the session asks through `Ask` and does not refuse.
@@ -130,6 +131,12 @@ Poll `claude agents --json` and read only the sessions you named. It lists your 
 The last row is the one a stall-only watch misses. Under the `auto` permission mode a session never stalls: an unlisted command is **denied outright**, and the session either works around it or stops and explains. So the abort signal is a branch that reached the end with no PR, not only a session sitting still.
 
 `kind` separates a session you spawned from the user's own interactive one. Never act on a session you did not name.
+
+## Hints
+
+A fact one session finds about the environment goes into `~/.claude/orchestrate/<repo>/<epic>/hints.md` as one line: the fact, its entity, the date and the ticket that found it. A staging gap, the entity or account that works around it, and a missing seed all qualify. Add one whenever a session's question, answer or stop reason names such a fact. Each session reads the file at `/tz-skills:ship` step 1 and again before step 10b, so a hint found after it started still reaches it.
+
+A hint is a lead. Staging changes under a run, so a session re-checks a hint before its proof relies on it. On a measured run, four sessions asked the same staging question, and the fourth found the workaround only in an earlier ticket's notes.
 
 ## Human contact
 
@@ -204,6 +211,8 @@ A ready PR passed every phase. A draft one did not, and its body says which.
 Write it to `~/.claude/orchestrate/<repo>/<epic>/<timestamp>.md`. Never inside the repo.
 
 One row per child of the epic: the ticket, its verdict, its PR, and for anything short of ready, the abort number and a one-line reason. Skipped tickets carry the reason they were skipped.
+
+Then the decisions and held findings, split by who should read them. **First, the ones a person should look at:** a product rule, words a user reads, scope beyond the ticket, and anything that cannot be undone. Give each one its `D<n>` or `O<n>`, its ticket, the question and the choice. **Then one line counting the rest**, the answers a written rule settled and the engineering choices inside a branch, with the full list in an appendix at the end. On a measured run, 31 decisions and 38 held findings sat in one list, the user stopped reading it, and the few that mattered were inside it.
 
 Then the **merge order**: every `Merge after #N` pair, backend first. A frontend PR merged ahead of its backend ships calls to an endpoint that does not exist yet. Under `--stack`, the chain merges bottom-up, and each PR is retargeted to the base once its parent merges. GitHub does that by itself only when the repo deletes merged branches, so name the setting (`delete_branch_on_merge`) when it is off.
 

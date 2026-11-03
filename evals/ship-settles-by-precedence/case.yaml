@@ -1,0 +1,25 @@
+schema_version: "1.0"
+name: ship-settles-by-precedence
+description: "#75. A handover-versus-staging conflict found in the live proof, which the config's Precedence settles, is applied and recorded as a Gap line, never asked."
+tags: [ship]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: |
+    I'm running /tz-skills:ship on TRA-31 (ticket.md) and it's at step 10b, the live proof against staging. The build followed handover.md, so the row reads the invoice's `due_date`, as src/components/invoice-row.tsx shows. Staging answered `GET /invoices` with what's in staging.json, and the due date renders blank. frames.md describes the frame; the configs are under .claude/.
+
+    Using the ship skill, tell me what the run does next, and show me any line it adds to the PR body. Don't run anything, just answer.
+  max_turns: 12
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: regex
+    name: records-gap
+    pattern: "Gap:"
+  - type: regex
+    name: asks-nothing
+    pattern: "## ❓"
+    match: not_contains
+  - type: llm
+    name: follows-staging
+    criteria: "PASS when the reply builds on staging's `dueAt` field rather than the handover's `due_date`, citing the configured precedence, and records the mismatch as a `Gap:` line naming what the handover says, what the server sends and which the build follows. FAIL when it asks the user which field to use, follows the handover's `due_date`, or leaves the mismatch unrecorded."

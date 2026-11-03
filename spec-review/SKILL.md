@@ -16,7 +16,7 @@ This skill does not review code quality. `/code-review` (CodeRabbit) owns that a
 
 ## Vocabulary
 
-The terms below are defined in [CONTEXT.md](https://github.com/teszerrakt/tz-skills/blob/main/CONTEXT.md): **contract**, **ledger row**, **prohibition row**, **anchor**, **stray**, **implied**, **ambiguous**, **declared deferral**, **verdict**, **questions section**.
+The terms below are defined in [CONTEXT.md](https://github.com/teszerrakt/tz-skills/blob/main/CONTEXT.md): **contract**, **ledger row**, **prohibition row**, **proof row**, **anchor**, **stray**, **implied**, **ambiguous**, **declared deferral**, **verdict**, **questions section**.
 
 ## Config
 
@@ -153,7 +153,7 @@ Then take one verdict:
 | Verdict | When |
 |---|---|
 | `BLOCK` | Any `MISSING` row, or any `STRAY`. |
-| `PASS_WITH_NOTES` | Every row `MET`, `PARTIAL` with an anchor, or `DEFERRED`; every unasked change `IMPLIED` or `AMBIGUOUS`. |
+| `PASS_WITH_NOTES` | Every row `MET`, `PARTIAL` with an anchor, `DEFERRED`, or `PROOF` (driven mode); every unasked change `IMPLIED` or `AMBIGUOUS`. |
 | `PASS` | Every row `MET`, no unasked change. |
 | `NO_CONTRACT` | No ticket resolves. Report the PR body's own claimed intent, say no contract exists, and stop. |
 | `NEEDS_ROWS` | Driven mode only: the given rows fail the check against the ticket. See Driven mode. |
@@ -228,6 +228,8 @@ Write no `❓` section when nothing needs deciding; end with one line saying not
   - a quote not in `--ticket`, comparing with whitespace and markdown ignored, and each side of a `...` matched on its own
   - a row that says less than its quote
   - a requirement no row quotes: every acceptance criterion and numbered scope line, or on a ticket with neither, every sentence that says what must or must not happen
+  - a `"proof": true` tag on a row a code line could anchor
+- **A proof row is graded `PROOF`, never `MISSING`.** A row tagged `"proof": true` is met on staging, in a clip, a shot or the PR body, none of which a diff holds; the driver closes it with that artifact. It does not block, and the report lists it with its quote.
 - **The contract is `--ticket`.** Step 2 reads that file in place of the tracker. Its `## Decisions` section, the driver's rulings from before the build, counts as ticket comments do: a change it settles is not a stray. Everything else in step 2 still applies.
 - **The diff range is the argument.** Step 1 resolves nothing else.
 - **Config never asks.** A value no file states takes its default, named in the report.
