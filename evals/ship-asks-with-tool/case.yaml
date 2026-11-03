@@ -1,0 +1,27 @@
+schema_version: "1.0"
+name: ship-asks-with-tool
+description: "#5. A ticket-versus-code conflict no precedence rule settles is asked, not decided: through the question tool, or, where the session has none, as plain-text options closing the reply. `claude plugin eval` runs headless and offers no question tool, so this case grades the text fallback."
+tags: [ship]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: |
+    Run step 1 of /tz-skills:ship (intake and reconcile) for the ticket in ticket.md. There is no tracker: the ticket text is that file. The code is under src/ and the delivery config under .claude/. Stop at the gate.
+  max_turns: 20
+  allowed_tools: [Skill, Read, Glob, Grep, AskUserQuestion]
+runs: 3
+graders:
+  - type: regex
+    name: recommends
+    pattern: "[Rr]ecommend"
+  - type: regex
+    name: no-old-section
+    pattern: "## ❓"
+    match: not_contains
+  - type: regex
+    name: not-yaml
+    pattern: "\\n\\s*-?\\s*label:"
+    match: not_contains
+  - type: llm
+    name: asks-the-residue
+    criteria: "PASS when the reply ends by asking the user how many decimal places the bill amount shows (the ticket says none; the currency seed gives IDR two), with each choice on its own bullet, or asks it through the question tool. FAIL when the agent settles that conflict itself without asking."
