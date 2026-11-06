@@ -9,5 +9,12 @@
     "skipLibCheck": true,
     "types": ["bun"]
   },
-  "include": ["ship-epic/command-center/**/*.ts", "ship-epic/scripts/**/*.ts", "scripts/**/*.ts"]
+  "include": [
+    "ship-epic/command-center/**/*.ts",
+    "ship-epic/scripts/**/*.ts",
+    "scripts/**/*.ts",
+    "figma-map/scripts/**/*.ts",
+    "plugins/t3-question-marker/**/*.ts"
+  ],
+  "exclude": ["figma-map/scripts/figma/**"]
 }
