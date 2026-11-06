@@ -1,0 +1,8 @@
+{
+  "name": "t3-question-marker",
+  "version": "0.1.0",
+  "description": "Marks a T3 Code thread's title with ❓ while the agent's last reply ends with open questions",
+  "author": { "name": "teszerrakt" },
+  "repository": "https://github.com/teszerrakt/tz-skills",
+  "license": "MIT"
+}

@@ -12,6 +12,11 @@
       "name": "show-media",
       "source": "./plugins/show-media",
       "description": "Show images, videos and GIFs in a pane beside the chat, drawn with kitty's graphics protocol"
+    },
+    {
+      "name": "t3-question-marker",
+      "source": "./plugins/t3-question-marker",
+      "description": "Marks a T3 Code thread's title with ❓ while the agent's last reply ends with open questions"
     }
   ]
 }
