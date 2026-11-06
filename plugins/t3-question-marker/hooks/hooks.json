@@ -1,0 +1,16 @@
+{
+  "description": "Keeps a T3 Code thread's title marked with ❓ while the agent's last reply ends with open questions.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/hooks/stop.ts\" || true",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}
