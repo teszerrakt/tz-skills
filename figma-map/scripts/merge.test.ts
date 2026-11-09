@@ -68,7 +68,7 @@ test('same layout: identical, variant-only and text states are told apart; a new
   const records = expand(
     dump(
       delta('1:2'),
-      delta('1:3', { instances: { add: [{ key: 'Input: State=Filled @Panel', id: '3:5' }], del: ['Input: State=Empty @Panel'] } }),
+      delta('1:3', { instances: { add: [{ key: 'Input: State=Filled @Panel' }], del: ['Input: State=Empty @Panel'] } }),
       delta('1:4', { texts: { add: [[1, 'IDR 3.000.000']], del: [[1, 'Select a payment']] } }),
       delta('1:8', { outline: [{ 'Panel#8:4': ['Input#8:5', 'Result#8:9'] }, 'Bar#8:7'] }),
     ),
@@ -119,8 +119,8 @@ test('clicks and counted instances are rebuilt from the base and the delta', () 
     deltas: [delta('1:2', { clicks: { add: [save], del: ['Button|Back|NODE/NAVIGATE|null'] } })],
   }
   expect(expand(withBack)[1].clicks).toEqual([save])
-  const rows = delta('1:3', { instances: { add: [{ key: 'Row @List', id: '3:1', n: 5 }], del: [] } })
-  const groups = group(expand(dump(delta('1:2', { instances: { add: [{ key: 'Row @List', id: '2:1', n: 4 }], del: [] } }), rows)))
+  const rows = delta('1:3', { instances: { add: [{ key: 'Row @List', n: 5 }], del: [] } })
+  const groups = group(expand(dump(delta('1:2', { instances: { add: [{ key: 'Row @List', n: 4 }], del: [] } }), rows)))
   expect(groups[0].members.map((m) => m.instances.add)).toEqual([['Row @List ×4'], ['Row @List ×5']])
 })
 
@@ -132,6 +132,15 @@ test('the digest names shared components on the outline and lists each state as 
   )
   const text = digest('edit', records, group(records), new Map([['1:1', 'Add Threshold']]), shared)
   expect(text).toContain('# edit: 2 screens → 1 layouts, 1 states')
-  expect(text).toContain('  Panel 1:4 = Side panel (shared)')
-  expect(text).toContain('- 1:2 "Screen", page "(no page label)": state · +"IDR 3.000.000" · −"Select a payment"')
+  expect(text).toContain('  Panel 1:4 = Side panel (shared): Input 1:5')
+  expect(text).toContain('- 1:2 "Screen", page "(no page label)", from 1:1: +"IDR 3.000.000" · −"Select a payment"')
+})
+
+test('a delta from an earlier screen builds on that screen, not on the base', () => {
+  const step1 = delta('1:2', { texts: { add: [[3, 'Draft']], del: [] } })
+  const step2 = delta('1:3', { ref: '1:2', texts: { add: [[4, 'Saved']], del: [] }, instances: { add: [], del: ['Button: Primary @Bar'] } })
+  const [, , last] = expand(dump(step1, step2))
+  expect(last.texts).toEqual(['Title', 'Select a payment', 'Save', 'Draft', 'Saved'])
+  expect(last.instances.map((i) => i.key)).toEqual(['Input: State=Empty @Panel'])
+  expect(() => expand(dump(delta('1:3', { ref: '7:7' })))).toThrow('does not hold')
 })

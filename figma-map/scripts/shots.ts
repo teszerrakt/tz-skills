@@ -1,13 +1,13 @@
 #!/usr/bin/env bun
 // Downloads get_screenshot images without the agent retyping their URLs: finds the newest get_screenshot result for
-// each node id in the session transcript and saves its image as <dir>/<name>.png.
+// each node id across recent transcripts and saves its image as <dir>/<name>.png.
 //   bun scripts/shots.ts --dir <dir> <node id>=<name> [<node id>=<name> …]
 // Run it outside the sandbox: inside it, Figma's CDN answers with an empty HTTP 202.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { blocksOf, recentTranscripts, resultText, transcriptRoot } from './save-result.ts'
 
-export type Shot = { url: string; width: number; height: number }
+export type Shot = { url: string; width: number; height: number; at: string }
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
 
@@ -17,12 +17,13 @@ export function findShots(transcript: string, nodeIds: Set<string>): Map<string,
   const shots = new Map<string, Shot>()
   for (const line of transcript.split('\n')) {
     if (!line.includes('get_screenshot') && !line.includes('image_url')) continue
-    for (const block of blocksOf(line)) {
+    const { blocks, at } = blocksOf(line)
+    for (const block of blocks) {
       const nodeId = block.input?.nodeId
       if (block.type === 'tool_use' && block.name?.endsWith('get_screenshot') && block.id && nodeId && nodeIds.has(nodeId)) {
         calls.set(block.id, nodeId)
       } else if (block.type === 'tool_result' && block.tool_use_id && calls.has(block.tool_use_id)) {
-        const shot = parseShot(resultText(block.content))
+        const shot = parseShot(resultText(block.content), at)
         if (shot) shots.set(calls.get(block.tool_use_id)!, shot)
       }
     }
@@ -30,11 +31,11 @@ export function findShots(transcript: string, nodeIds: Set<string>): Map<string,
   return shots
 }
 
-function parseShot(text: string): Shot | null {
+function parseShot(text: string, at: string): Shot | null {
   const json = text.match(/\{"image_url"[^}]*\}/)?.[0]
   if (!json) return null
   const { image_url: url, width, height } = JSON.parse(json) as { image_url: string; width: number; height: number }
-  return { url, width, height }
+  return { url, width, height, at }
 }
 
 export function parsePairs(args: string[]): Map<string, string> {
@@ -57,10 +58,12 @@ async function main(argv: string[]) {
   }
   const pairs = parsePairs(rest)
   const shots = new Map<string, Shot>()
+  // The newest screenshot of a node wins: an older run's URL has expired.
+  const wanted = new Set(pairs.keys())
   for (const path of recentTranscripts(transcriptRoot())) {
-    const missing = new Set([...pairs.keys()].filter((id) => !shots.has(id)))
-    if (missing.size === 0) break
-    for (const [id, shot] of findShots(readFileSync(path, 'utf8'), missing)) shots.set(id, shot)
+    for (const [id, shot] of findShots(readFileSync(path, 'utf8'), wanted)) {
+      if (!shots.has(id) || shot.at > shots.get(id)!.at) shots.set(id, shot)
+    }
   }
   mkdirSync(dir, { recursive: true })
   let failed = false

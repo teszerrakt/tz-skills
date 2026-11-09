@@ -9,6 +9,7 @@ const call = (id: string, nodeId: string) =>
 const result = (id: string, url: string) =>
   JSON.stringify({
     type: 'user',
+    timestamp: '2026-11-09T10:00:00Z',
     message: {
       content: [
         {
@@ -30,7 +31,7 @@ test('each node id gets its newest screenshot; nodes not asked for are skipped',
     result('c', 'u-new'),
   ].join('\n')
   const shots = findShots(transcript, new Set(['1:2']))
-  expect([...shots]).toEqual([['1:2', { url: 'u-new', width: 800, height: 450 }]])
+  expect([...shots]).toEqual([['1:2', { url: 'u-new', width: 800, height: 450, at: '2026-11-09T10:00:00Z' }]])
 })
 
 test('pairs are <node id>=<name>, with an optional .png', () => {

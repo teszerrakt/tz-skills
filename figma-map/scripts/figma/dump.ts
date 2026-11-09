@@ -160,7 +160,7 @@ function grouped(instances: InstanceRef[]): InstanceRef[] {
 
 const isMissing = (read: ScreenRead | MissingScreen): read is MissingScreen => 'error' in read
 
-function deltaAgainst(base: ScreenRead, screen: ScreenRead, outline: ScreenDelta['outline']): ScreenDelta {
+function deltaAgainst(base: ScreenRead, screen: ScreenRead, outline: ScreenDelta['outline'], ref?: string): ScreenDelta {
   const baseInstances = new Set(base.instances.map(countedKey))
   const screenInstances = new Set(screen.instances.map(countedKey))
   const baseClicks = new Set(base.clicks.map(clickKey))
@@ -170,9 +170,10 @@ function deltaAgainst(base: ScreenRead, screen: ScreenRead, outline: ScreenDelta
     name: screen.name,
     h: screen.h,
     sig: screen.sig,
+    ...(ref ? { ref } : {}),
     texts: diffTexts(base.texts, screen.texts),
     instances: {
-      add: screen.instances.filter((i) => !baseInstances.has(countedKey(i))),
+      add: screen.instances.filter((i) => !baseInstances.has(countedKey(i))).map(({ id: _id, ...rest }) => rest),
       del: base.instances.filter((i) => !screenInstances.has(countedKey(i))).map((i) => i.key),
     },
     outline,
@@ -182,6 +183,22 @@ function deltaAgainst(base: ScreenRead, screen: ScreenRead, outline: ScreenDelta
       del: base.clicks.filter((c) => !screenClicks.has(clickKey(c))).map(clickKey),
     },
   }
+}
+
+/** The candidate this screen differs least from, by texts and instances changed. */
+function closest(screen: ScreenRead, candidates: (ScreenRead | null)[]): ScreenRead {
+  let best = candidates[0]!
+  let bestSize = Infinity
+  for (const candidate of candidates) {
+    if (!candidate) continue
+    const texts = diffTexts(candidate.texts, screen.texts)
+    const keys = new Set(candidate.instances.map(countedKey))
+    const own = new Set(screen.instances.map(countedKey))
+    const size =
+      texts.add.length + texts.del.length + [...own].filter((k) => !keys.has(k)).length + [...keys].filter((k) => !own.has(k)).length
+    if (size < bestSize) [best, bestSize] = [candidate, size]
+  }
+  return best
 }
 
 function withoutBare(read: ScreenRead): ScreenDump {
@@ -194,6 +211,8 @@ async function dumpFlow(flow: DumpFlow): Promise<DumpResult['flows'][string]> {
   if (isMissing(base)) return { deltas: [base] }
   // A screen whose layout an earlier screen in this call already returned points at it instead of repeating it.
   const layouts = new Map<string, string>()
+  const lastOfLayout = new Map<string, ScreenRead>()
+  let previous: ScreenRead | null = null
   const deltas: (ScreenDelta | MissingScreen)[] = []
   for (const id of flow.ids) {
     if (id === flow.base) continue
@@ -205,7 +224,10 @@ async function dumpFlow(flow: DumpFlow): Promise<DumpResult['flows'][string]> {
     const earlier = layouts.get(read.bare)
     const outline = read.bare === base.bare ? 'same' : earlier ? (`sameAs:${earlier}` as const) : read.outline
     if (outline === read.outline) layouts.set(read.bare, id)
-    deltas.push(deltaAgainst(base, read, outline))
+    const ref = closest(read, [base, previous, lastOfLayout.get(read.bare) ?? null])
+    deltas.push(deltaAgainst(ref, read, outline, ref === base ? undefined : ref.id))
+    previous = read
+    lastOfLayout.set(read.bare, read)
   }
   return flow.withBase === false ? { deltas } : { base: withoutBare(base), deltas }
 }

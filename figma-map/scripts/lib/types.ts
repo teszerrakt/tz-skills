@@ -75,19 +75,25 @@ export type ScreenDump = {
 /** [index, text] pairs: a positional diff against the base's texts, since texts repeat. */
 export type TextDelta = { add: [number, string][]; del: [number, string][] }
 
+/**
+ * A screen as its difference from `ref`: the earlier screen in the same call it differs least from, or the base when
+ * `ref` is absent. Consecutive states differ by a few texts, so each pays only for what it changes.
+ */
 export type ScreenDelta = {
   id: string
   name: string
   h: number
   sig: string
+  ref?: string
   texts: TextDelta
-  /** `del` names keys the base has and this screen lacks; a key whose count changed is in both. */
-  instances: { add: InstanceRef[]; del: string[] }
+  /** `del` names keys the ref has and this screen lacks; a key whose count changed is in both. Node ids are in the
+   * outline, so added instances carry none. */
+  instances: { add: Omit<InstanceRef, 'id'>[]; del: string[] }
   /** "same" when the outline matches the base's once ids are stripped; "sameAs:<id>" when it matches an earlier screen
    * returned in the same call. */
   outline: 'same' | `sameAs:${string}` | Outline
   annotations: Annotation[]
-  /** Against the base's clicks, matched by layer name, text, action and destination; `del` holds those keys. */
+  /** Against the ref's clicks, matched by layer name, text, action and destination; `del` holds those keys. */
   clicks: { add: Click[]; del: string[] }
 }
 

@@ -12,6 +12,8 @@ import { clickKey, countedKey } from './lib/keys.ts'
 import { bareOutline } from './lib/outline.ts'
 import { applyTextDelta } from './lib/text-diff.ts'
 import type {
+  Annotation,
+  Click,
   FlowDump,
   FlowInventory,
   LayoutGroup,
@@ -37,11 +39,11 @@ export function expand(dump: FlowDump): ScreenRecord[] {
   const byId = new Map(records.map((r) => [r.id, r]))
   for (const delta of dump.deltas) {
     if (isMissing(delta)) continue
+    const ref = delta.ref ? byId.get(delta.ref) : records[0]
+    if (!ref) throw new Error(`${delta.id} is a difference from ${delta.ref}, which this flow's dump does not hold`)
     const removed = new Set(delta.instances.del)
     // An instance shared with the base keeps the base's id: the screen's own id needs locate.ts.
-    const shared = base.instances
-      .filter((i) => !removed.has(i.key))
-      .map((i) => ({ key: i.key, id: null, baseId: i.id, ...(i.n ? { n: i.n } : {}) }))
+    const shared = ref.instances.filter((i) => !removed.has(i.key)).map((i) => ({ ...i, id: null, ...(i.id ? { baseId: i.id } : {}) }))
     const droppedClicks = new Set(delta.clicks.del)
     let outline: Outline = delta.outline as Outline
     let outlineFrom = delta.id
@@ -56,10 +58,10 @@ export function expand(dump: FlowDump): ScreenRecord[] {
       name: delta.name,
       h: delta.h,
       sig: delta.sig,
-      texts: applyTextDelta(base.texts, delta.texts),
+      texts: applyTextDelta(ref.texts, delta.texts),
       annotations: delta.annotations,
-      clicks: [...base.clicks.filter((c) => !droppedClicks.has(clickKey(c))), ...delta.clicks.add],
-      instances: [...shared, ...delta.instances.add],
+      clicks: [...ref.clicks.filter((c) => !droppedClicks.has(clickKey(c))), ...delta.clicks.add],
+      instances: [...shared, ...delta.instances.add.map((i) => ({ ...i, id: null }))],
       outline,
       outlineFrom,
     }
@@ -140,24 +142,79 @@ export function sharedNodeNames(candidates: SharedCandidate[], names: SharedName
 
 const quote = (texts: string[]) => texts.map((t) => `"${t}"`).join(' ')
 
+function nodeLabel(label: string, shared: Map<string, string>): string {
+  const at = label.lastIndexOf('#')
+  const id = label.slice(at + 1)
+  const name = shared.get(id)
+  return `${label.slice(0, at)} ${id}${name ? ` = ${name} (shared)` : ''}`
+}
+
+/** One line per container; a container whose children are all leaves lists them on its own line. */
 function outlineLines(outline: Outline, shared: Map<string, string>, depth = 1): string[] {
   const lines: string[] = []
   for (const node of outline) {
     const [label, kids] = typeof node === 'string' ? [node, []] : Object.entries(node)[0]
-    const at = label.lastIndexOf('#')
-    const id = label.slice(at + 1)
-    const name = shared.get(id)
-    lines.push(`${'  '.repeat(depth)}${label.slice(0, at)} ${id}${name ? ` = ${name} (shared)` : ''}`)
-    lines.push(...outlineLines(kids, shared, depth + 1))
+    const indent = '  '.repeat(depth)
+    if (kids.length && kids.every((k) => typeof k === 'string')) {
+      lines.push(`${indent}${nodeLabel(label, shared)}: ${(kids as string[]).map((k) => nodeLabel(k, shared)).join(', ')}`)
+    } else {
+      lines.push(`${indent}${nodeLabel(label, shared)}`, ...outlineLines(kids, shared, depth + 1))
+    }
   }
   return lines
 }
 
-function instanceLine(i: { key: string; n?: number; id: string | null; baseId?: string }): string {
-  return `${countedKey(i)} ${i.id ?? `${i.baseId} (in the base screen)`}`
+type OutlineEntry = [label: string, kids: Outline]
+const entryOf = (node: Outline[number]): OutlineEntry => (typeof node === 'string' ? [node, []] : (Object.entries(node)[0] as OutlineEntry))
+const nameOf = (label: string) => label.slice(0, label.lastIndexOf('#'))
+const idsIn = (outline: Outline): string[] =>
+  JSON.stringify(outline)
+    .match(/#[^"]+(?=")/g)
+    ?.map((m) => m.slice(1)) ?? []
+
+/**
+ * A later layout's outline, against the first layout's: a container whose subtree matches the first layout's at the
+ * same place and holds no shared component is left out, since only its node ids differ.
+ */
+function changedOutlineLines(outline: Outline, first: Outline, shared: Map<string, string>, depth = 1): string[] {
+  const lines: string[] = []
+  outline.forEach((node, i) => {
+    const [label, kids] = entryOf(node)
+    const twin = first[i] === undefined ? undefined : entryOf(first[i])
+    const sameName = twin !== undefined && nameOf(twin[0]) === nameOf(label)
+    if (sameName && bareOutline([node]) === bareOutline([first[i]]) && !idsIn([node]).some((id) => shared.has(id))) return
+    if (!sameName) return lines.push(...outlineLines([node], shared, depth))
+    lines.push(`${'  '.repeat(depth)}${nodeLabel(label, shared)}`, ...changedOutlineLines(kids, twin[1], shared, depth + 1))
+  })
+  return lines
 }
 
-/** The flow as the harvester reads it: each layout's tree and content, then each state as a difference. */
+/** "Button: Type=Primary, State=Disabled @Bar" → "Button: Primary, Disabled @Bar": the values say enough. */
+const shortKey = (key: string) => key.replace(/[\w ?]+=/g, (m) => (m.startsWith(' ') ? ' ' : ''))
+
+const clickLine = (c: Click) => `click ${c.on} "${c.text}" ${c.node} → ${c.to ?? 'nowhere'}`
+const noteLine = (a: Annotation) => `annotation on ${a.on} ${a.node} within ${a.within}: "${a.label}"`
+
+/** What `next` changes from `from`: texts, instances, and the clicks and annotations `from` lacks. */
+function difference(from: ScreenRecord, next: ScreenRecord): string[] {
+  const texts = setDiff(from.texts, next.texts)
+  const instances = setDiff(instanceKeys(from), instanceKeys(next))
+  const parts: string[] = []
+  if (texts.add.length) parts.push(`+${quote(texts.add)}`)
+  if (texts.del.length) parts.push(`−${quote(texts.del)}`)
+  if (instances.add.length) parts.push(`+instances ${instances.add.map(shortKey).join('; ')}`)
+  if (instances.del.length) parts.push(`−instances ${instances.del.map(shortKey).join('; ')}`)
+  const clicks = new Set(from.clicks.map(clickKey))
+  parts.push(...next.clicks.filter((c) => !clicks.has(clickKey(c))).map(clickLine))
+  const notes = new Set(from.annotations.map((a) => a.label))
+  parts.push(...next.annotations.filter((a) => !notes.has(a.label)).map(noteLine))
+  return parts
+}
+
+/**
+ * The flow as the harvester reads it. The first layout is printed in full; every later layout and every state is
+ * printed as what it changes from the screen before it, so nothing the reader has seen is printed twice.
+ */
 export function digest(
   slug: string,
   records: ScreenRecord[],
@@ -169,29 +226,29 @@ export function digest(
   const page = (id: string) => pages.get(id) ?? '(no page label)'
   const states = groups.reduce((n, g) => n + g.members.length, 0)
   const out = [`# ${slug}: ${records.length} screens → ${groups.length} layouts, ${states} states`]
+  const first = byId.get(groups[0].rep)!
   groups.forEach((g, i) => {
     const rep = byId.get(g.rep)!
     out.push('', `## Layout ${i + 1}: ${rep.id} "${rep.name}", page "${page(rep.id)}"`)
     if (rep.outlineFrom !== rep.id) out.push(`node ids below are from ${rep.outlineFrom}; locate them for this screen`)
-    out.push('outline:', ...outlineLines(rep.outline, shared))
-    out.push(`texts: ${quote(rep.texts)}`)
-    if (rep.instances.length) out.push('instances:', ...rep.instances.map((x) => `  ${instanceLine(x)}`))
-    for (const a of rep.annotations) out.push(`annotation on ${a.on} ${a.node} within ${a.within}: "${a.label}"`)
-    for (const c of rep.clicks) out.push(`click ${c.on} "${c.text}" ${c.node} → ${c.to ?? 'nowhere'}`)
+    if (i === 0) {
+      out.push('outline:', ...outlineLines(rep.outline, shared))
+      out.push(`texts: ${quote(rep.texts)}`)
+      if (rep.instances.length) out.push(`instances: ${instanceKeys(rep).map(shortKey).join('; ')}`)
+      out.push(...rep.annotations.map(noteLine), ...rep.clicks.map(clickLine))
+    } else {
+      out.push(
+        'outline, where it differs from layout 1 or names a shared component:',
+        ...changedOutlineLines(rep.outline, first.outline, shared),
+      )
+      out.push(`changes from layout 1 (${first.id}): ${difference(first, rep).join(' · ') || 'none'}`)
+    }
+    let previous = rep
     for (const m of g.members) {
       const record = byId.get(m.id)!
-      const parts = [`${m.id} "${record.name}", page "${page(m.id)}": ${m.kind}`]
-      if (m.texts.add.length) parts.push(`+${quote(m.texts.add)}`)
-      if (m.texts.del.length) parts.push(`−${quote(m.texts.del)}`)
-      if (m.instances.add.length) parts.push(`+instances ${m.instances.add.join('; ')}`)
-      if (m.instances.del.length) parts.push(`−instances ${m.instances.del.join('; ')}`)
-      const repClicks = new Set(rep.clicks.map(clickKey))
-      for (const click of record.clicks.filter((c) => !repClicks.has(clickKey(c))))
-        parts.push(`click ${click.on} "${click.text}" → ${click.to ?? 'nowhere'}`)
-      const repNotes = new Set(rep.annotations.map((a) => a.label))
-      for (const note of record.annotations.filter((a) => !repNotes.has(a.label)))
-        parts.push(`annotation on ${note.on} ${note.node} within ${note.within}: "${note.label}"`)
-      out.push(`- ${parts.join(' · ')}`)
+      const changes = difference(previous, record)
+      out.push(`- ${m.id} "${record.name}", page "${page(m.id)}", from ${previous.id}: ${changes.join(' · ') || 'same content'}`)
+      previous = record
     }
     if (g.identicalPairs.length) out.push(`same content, compare their images: ${g.identicalPairs.map(([a, b]) => `${a}=${b}`).join(', ')}`)
   })

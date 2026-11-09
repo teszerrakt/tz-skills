@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 // Saves a use_figma result to a file without the agent writing it out a second time. Claude Code logs every tool result
 // to the session's transcript; this finds the newest use_figma call whose script starts with "// figma-map-tag: <tag>"
-// (figma.ts --tag writes that line) and copies its result.
+// (figma.ts --tag writes that line) and copies its result. Every recent transcript is searched and the newest result wins,
+// so a tag an earlier run also used never returns that run's result.
 //   bun scripts/save-result.ts --tag <tag> --out <file>
 //   bun scripts/save-result.ts --tag <tag> --dump <fact-base>
 // --dump splits a dump call's result into raw/<flow>.json per flow: a flow whose base the call returned starts afresh,
@@ -24,7 +25,7 @@ type ContentBlock = {
   tool_use_id?: string
   content?: unknown
 }
-type TranscriptLine = { message?: { content?: unknown } }
+type TranscriptLine = { timestamp?: string; message?: { content?: unknown } }
 
 export function transcriptRoot(env: Record<string, string | undefined> = process.env): string {
   return join(env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude'), 'projects')
@@ -48,16 +49,22 @@ export function recentTranscripts(root: string, now = Date.now()): string[] {
   return found.toSorted((a, b) => b.mtime - a.mtime).map((f) => f.path)
 }
 
-export function blocksOf(line: string): ContentBlock[] {
+/** A transcript line's content blocks and when it was logged ("" when the line has no timestamp). */
+export function blocksOf(line: string): { blocks: ContentBlock[]; at: string } {
   let parsed: TranscriptLine
   try {
     parsed = JSON.parse(line) as TranscriptLine
   } catch {
-    return []
+    return { blocks: [], at: '' }
   }
   const content = parsed.message?.content
-  return Array.isArray(content) ? (content as ContentBlock[]) : []
+  return { blocks: Array.isArray(content) ? (content as ContentBlock[]) : [], at: parsed.timestamp ?? '' }
 }
+
+export type Found = { text: string; at: string }
+
+/** The newer of two finds; ISO timestamps compare as strings. */
+export const newer = (a: Found | null, b: Found | null) => (!a ? b : !b ? a : b.at > a.at ? b : a)
 
 export function resultText(content: unknown): string {
   if (typeof content === 'string') return content
@@ -69,19 +76,21 @@ export function resultText(content: unknown): string {
 }
 
 /** The result of the newest tagged use_figma call in one transcript, or null when it has none. */
-export function findTaggedResult(transcript: string, tag: string): string | null {
+export function findTaggedResult(transcript: string, tag: string): Found | null {
   const tagLine = `${TAG_PREFIX}${tag}`
   if (!transcript.includes(tagLine)) return null
   let callId: string | null = null
-  let result: string | null = null
+  let result: Found | null = null
   for (const line of transcript.split('\n')) {
-    for (const block of blocksOf(line)) {
+    const { blocks, at } = blocksOf(line)
+    for (const block of blocks) {
       const isTaggedCall = block.type === 'tool_use' && block.input?.code?.split('\n', 1)[0] === tagLine
-      if (isTaggedCall && block.id) {
+      // A transcript can log the same tool_use block again after its result; only a new call starts over.
+      if (isTaggedCall && block.id && block.id !== callId) {
         callId = block.id
         result = null
       } else if (block.type === 'tool_result' && callId && block.tool_use_id === callId) {
-        result = resultText(block.content)
+        result = { text: resultText(block.content), at }
       }
     }
   }
@@ -126,12 +135,10 @@ function main(argv: string[]) {
     process.exit(2)
   }
 
-  let text: string | null = null
-  for (const path of recentTranscripts(transcriptRoot())) {
-    text = findTaggedResult(readFileSync(path, 'utf8'), tag)
-    if (text !== null) break
-  }
-  if (text === null) fail(`no use_figma result tagged "${tag}" in ${transcriptRoot()}; save it by hand`)
+  let found: Found | null = null
+  for (const path of recentTranscripts(transcriptRoot())) found = newer(found, findTaggedResult(readFileSync(path, 'utf8'), tag))
+  if (found === null) fail(`no use_figma result tagged "${tag}" in ${transcriptRoot()}; save it by hand`)
+  const text = found.text
 
   let value: unknown
   try {
