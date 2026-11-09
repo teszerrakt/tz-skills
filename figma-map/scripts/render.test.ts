@@ -68,6 +68,11 @@ test('an anchor is the component name before its badge, marker or "(shared)"', (
   expect(anchorFor('Page: Transaction approval detail [4]')).toBe('transaction-approval-detail')
 })
 
+test('a page anchor keeps the whole name, so pages named "<flow> — <step>" do not collide', () => {
+  expect(anchorFor('Page: Edit workflow — add threshold [1] [2]')).toBe('edit-workflow-add-threshold')
+  expect(anchorFor('Page: Edit workflow — reorder approvers [3]')).toBe('edit-workflow-reorder-approvers')
+})
+
 test('the page carries its own title and a theme that redefines every color for dark mode', () => {
   const out = html('> banner', { title: 'Approval Workflow Design Map' })
   expect(out.startsWith('<title>Approval Workflow Design Map</title>')).toBe(true)

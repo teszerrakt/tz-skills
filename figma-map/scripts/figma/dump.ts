@@ -1,13 +1,25 @@
 // Figma side, read-only. Print the paste-ready script with:
-//   bun scripts/figma.ts dump --args '{"ids":["1:2","1:3"],"base":"1:2"}' --tag dump-<flow>-1
-// Returns the base screen in full and every other screen as a delta against it, so a flow's shared shell is paid for
-// once. With "sigOnly": true it returns only { id: signature }: the cheap check a refresh makes first.
+//   bun scripts/figma.ts dump --fb <fact-base> --flows <slug,slug> --part <n>
+// Per flow, returns the base screen in full (only in the call that holds it) and every other screen as a delta against
+// it, so a flow's shared shell is paid for once. With "sigOnly": true it returns only { flow: { id: signature } }: the
+// cheap check a refresh makes first.
+import { clickKey, countedKey } from '../lib/keys.ts'
 import { isGenericName, isIconName, hash } from '../lib/names.ts'
 import { bareOutline, buildOutline, type NodeLike } from '../lib/outline.ts'
 import { diffTexts } from '../lib/text-diff.ts'
-import type { Annotation, Click, FlowDump, InstanceRef, MissingScreen, ScreenDelta, ScreenDump, Signatures } from '../lib/types.ts'
+import type {
+  Annotation,
+  Click,
+  DumpFlow,
+  DumpResult,
+  InstanceRef,
+  MissingScreen,
+  ScreenDelta,
+  ScreenDump,
+  Signatures,
+} from '../lib/types.ts'
 
-export type DumpArgs = { ids: string[]; base: string; sigOnly?: boolean }
+export type DumpArgs = { flows: DumpFlow[]; sigOnly?: boolean }
 
 type ChainLink = { node: SceneNode; visible: boolean }
 type ScreenRead = ScreenDump & { bare: string }
@@ -121,28 +133,72 @@ async function readScreen(id: string): Promise<ScreenRead | MissingScreen> {
       clicks.map((c) => [c.text, c.action]),
     ]),
   )
-  return { id, name: screen.name, h: Math.round(screen.height), sig, texts: textList, annotations, clicks, instances, outline, bare }
+  return {
+    id,
+    name: screen.name,
+    h: Math.round(screen.height),
+    sig,
+    texts: textList,
+    annotations,
+    clicks,
+    instances: grouped(instances),
+    outline,
+    bare,
+  }
+}
+
+/** Repeats of one key (five member cards) become one entry with a count. */
+function grouped(instances: InstanceRef[]): InstanceRef[] {
+  const byKey = new Map<string, InstanceRef>()
+  for (const instance of instances) {
+    const seen = byKey.get(instance.key)
+    if (seen) seen.n = (seen.n ?? 1) + 1
+    else byKey.set(instance.key, { ...instance })
+  }
+  return [...byKey.values()]
 }
 
 const isMissing = (read: ScreenRead | MissingScreen): read is MissingScreen => 'error' in read
 
-function deltaAgainst(base: ScreenRead, screen: ScreenRead): ScreenDelta {
-  const baseKeys = new Set(base.instances.map((i) => i.key))
-  const screenKeys = new Set(screen.instances.map((i) => i.key))
+function deltaAgainst(base: ScreenRead, screen: ScreenRead, outline: ScreenDelta['outline'], ref?: string): ScreenDelta {
+  const baseInstances = new Set(base.instances.map(countedKey))
+  const screenInstances = new Set(screen.instances.map(countedKey))
+  const baseClicks = new Set(base.clicks.map(clickKey))
+  const screenClicks = new Set(screen.clicks.map(clickKey))
   return {
     id: screen.id,
     name: screen.name,
     h: screen.h,
     sig: screen.sig,
+    ...(ref ? { ref } : {}),
     texts: diffTexts(base.texts, screen.texts),
     instances: {
-      add: screen.instances.filter((i) => !baseKeys.has(i.key)),
-      del: [...baseKeys].filter((key) => !screenKeys.has(key)),
+      add: screen.instances.filter((i) => !baseInstances.has(countedKey(i))).map(({ id: _id, ...rest }) => rest),
+      del: base.instances.filter((i) => !screenInstances.has(countedKey(i))).map((i) => i.key),
     },
-    outline: screen.bare === base.bare ? 'same' : screen.outline,
+    outline,
     annotations: screen.annotations,
-    clicks: screen.clicks,
+    clicks: {
+      add: screen.clicks.filter((c) => !baseClicks.has(clickKey(c))),
+      del: base.clicks.filter((c) => !screenClicks.has(clickKey(c))).map(clickKey),
+    },
   }
+}
+
+/** The candidate this screen differs least from, by texts and instances changed. */
+function closest(screen: ScreenRead, candidates: (ScreenRead | null)[]): ScreenRead {
+  let best = candidates[0]!
+  let bestSize = Infinity
+  for (const candidate of candidates) {
+    if (!candidate) continue
+    const texts = diffTexts(candidate.texts, screen.texts)
+    const keys = new Set(candidate.instances.map(countedKey))
+    const own = new Set(screen.instances.map(countedKey))
+    const size =
+      texts.add.length + texts.del.length + [...own].filter((k) => !keys.has(k)).length + [...keys].filter((k) => !own.has(k)).length
+    if (size < bestSize) [best, bestSize] = [candidate, size]
+  }
+  return best
 }
 
 function withoutBare(read: ScreenRead): ScreenDump {
@@ -150,23 +206,45 @@ function withoutBare(read: ScreenRead): ScreenDump {
   return dump
 }
 
-export async function main(args: DumpArgs): Promise<FlowDump | Signatures | { error: string }> {
+async function dumpFlow(flow: DumpFlow): Promise<DumpResult['flows'][string]> {
+  const base = await readScreen(flow.base)
+  if (isMissing(base)) return { deltas: [base] }
+  // A screen whose layout an earlier screen in this call already returned points at it instead of repeating it.
+  const layouts = new Map<string, string>()
+  const lastOfLayout = new Map<string, ScreenRead>()
+  let previous: ScreenRead | null = null
+  const deltas: (ScreenDelta | MissingScreen)[] = []
+  for (const id of flow.ids) {
+    if (id === flow.base) continue
+    const read = await readScreen(id)
+    if (isMissing(read)) {
+      deltas.push(read)
+      continue
+    }
+    const earlier = layouts.get(read.bare)
+    const outline = read.bare === base.bare ? 'same' : earlier ? (`sameAs:${earlier}` as const) : read.outline
+    if (outline === read.outline) layouts.set(read.bare, id)
+    const ref = closest(read, [base, previous, lastOfLayout.get(read.bare) ?? null])
+    deltas.push(deltaAgainst(ref, read, outline, ref === base ? undefined : ref.id))
+    previous = read
+    lastOfLayout.set(read.bare, read)
+  }
+  return flow.withBase === false ? { deltas } : { base: withoutBare(base), deltas }
+}
+
+export async function main(args: DumpArgs): Promise<DumpResult | Record<string, Signatures>> {
   if (args.sigOnly) {
-    const signatures: Signatures = {}
-    for (const id of args.ids) {
-      const read = await readScreen(id)
-      signatures[id] = isMissing(read) ? 'missing' : read.sig
+    const signatures: Record<string, Signatures> = {}
+    for (const flow of args.flows) {
+      signatures[flow.slug] = {}
+      for (const id of flow.ids) {
+        const read = await readScreen(id)
+        signatures[flow.slug][id] = isMissing(read) ? 'missing' : read.sig
+      }
     }
     return signatures
   }
-
-  const base = await readScreen(args.base)
-  if (isMissing(base)) return { error: `base screen ${args.base} is missing` }
-  const deltas: (ScreenDelta | MissingScreen)[] = []
-  for (const id of args.ids) {
-    if (id === args.base) continue
-    const read = await readScreen(id)
-    deltas.push(isMissing(read) ? read : deltaAgainst(base, read))
-  }
-  return { base: withoutBare(base), deltas }
+  const result: DumpResult = { flows: {} }
+  for (const flow of args.flows) result.flows[flow.slug] = await dumpFlow(flow)
+  return result
 }

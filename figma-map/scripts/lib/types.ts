@@ -51,8 +51,9 @@ export type Click = {
   to: string | null
 }
 
-/** A component instance: `key` is "<set>: <variant> @<container>", stable across screens. */
-export type InstanceRef = { key: string; id: string }
+/** A component instance: `key` is "<set>: <variant> @<container>", stable across screens. `n` counts repeats of one key
+ * (five member cards), which share the first one's id. */
+export type InstanceRef = { key: string; id: string; n?: number }
 
 /** A named container: a leaf "<name>#<id>", or { "<name>#<id>": children }. */
 export type OutlineNode = string | { [nameAndId: string]: OutlineNode[] }
@@ -74,26 +75,41 @@ export type ScreenDump = {
 /** [index, text] pairs: a positional diff against the base's texts, since texts repeat. */
 export type TextDelta = { add: [number, string][]; del: [number, string][] }
 
+/**
+ * A screen as its difference from `ref`: the earlier screen in the same call it differs least from, or the base when
+ * `ref` is absent. Consecutive states differ by a few texts, so each pays only for what it changes.
+ */
 export type ScreenDelta = {
   id: string
   name: string
   h: number
   sig: string
+  ref?: string
   texts: TextDelta
-  instances: { add: InstanceRef[]; del: string[] }
-  /** "same" when the outline matches the base's once ids are stripped. */
-  outline: 'same' | Outline
+  /** `del` names keys the ref has and this screen lacks; a key whose count changed is in both. Node ids are in the
+   * outline, so added instances carry none. */
+  instances: { add: Omit<InstanceRef, 'id'>[]; del: string[] }
+  /** "same" when the outline matches the base's once ids are stripped; "sameAs:<id>" when it matches an earlier screen
+   * returned in the same call. */
+  outline: 'same' | `sameAs:${string}` | Outline
   annotations: Annotation[]
-  clicks: Click[]
+  /** Against the ref's clicks, matched by layer name, text, action and destination; `del` holds those keys. */
+  clicks: { add: Click[]; del: string[] }
 }
 
 export type MissingScreen = { id: string; error: string }
 
-/** `raw/<flow>.json`: what scripts/figma/dump.ts returns. */
+/** `raw/<flow>.json`: one flow's screens, the base in full and every other screen as a delta against it. */
 export type FlowDump = { base: ScreenDump; deltas: (ScreenDelta | MissingScreen)[] }
 
+/** One flow's share of a dump call: `withBase: false` when an earlier call already returned its base. */
+export type DumpFlow = { slug: string; base: string; ids: string[]; withBase?: boolean }
+
+/** What one dump call returns: per flow, the base (only in the call that holds the flow's first screen) and deltas. */
+export type DumpResult = { flows: Record<string, { base?: ScreenDump; deltas: (ScreenDelta | MissingScreen)[] }> }
+
 /** An instance in an expanded record; one shared with the base keeps only the base's id. */
-export type RecordInstance = { key: string; id: string | null; baseId?: string }
+export type RecordInstance = { key: string; id: string | null; baseId?: string; n?: number }
 
 /** `frames/<id>.json`: one screen rebuilt in full from its flow's dump. */
 export type ScreenRecord = {
@@ -140,17 +156,35 @@ export type LocatedNode = {
   via: 'path' | 'name'
 }
 
-/** A container whose structure repeats across flows: one entry of `candidates.json`. */
-export type SharedCandidate = {
-  /** The container's name and its children's names, in order. */
-  signature: string
-  flows: string[]
+/** One look of a candidate: its containers with the same children and the same first text. */
+export type CandidateShape = {
+  /** The first text inside, which tells same-named containers apart: "Audit Trail" → "Trigger", "Approval Gate". */
+  text: string
+  children: string[]
+  /** "<w>×<h>" of the first node. */
+  size: string
   /** One node per screen it appears on. */
-  nodes: { screen: string; id: string; w: number; h: number }[]
+  ids: string[]
 }
 
-/** `shared-names.json`: the orchestrator's names for the candidates, written before the harvest. */
-export type SharedName = { name: string; signature: string; nodes: string[] }
+/**
+ * A container that repeats across flows: one entry of `candidates.json`. A designer-chosen layer name groups every
+ * container with that name, whatever its children; a generic one ("Container") groups only same-children containers.
+ */
+export type SharedCandidate = {
+  /** The layer name, or "<generic name> > <children>" for a generic one. */
+  signature: string
+  flows: string[]
+  /** Distinct shapes, most screens first; capped, with `moreShapes` counting the rest. */
+  shapes: CandidateShape[]
+  moreShapes?: number
+}
+
+/**
+ * `shared-names.json`: the orchestrator's names, written before the harvest. One candidate can hold several shared
+ * components, one per shape; `shape` omitted means every shape of the candidate.
+ */
+export type SharedName = { name: string; signature: string; shape?: number }
 
 /** One line of a `## Sources` block. */
 export type SourceLine = { n: number; url: string; label: string }
