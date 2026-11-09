@@ -2,19 +2,28 @@
 // Saves a use_figma result to a file without the agent writing it out a second time. Claude Code logs every tool result
 // to the session's transcript; this finds the newest use_figma call whose script starts with "// figma-map-tag: <tag>"
 // (figma.ts --tag writes that line) and copies its result.
-//   bun scripts/save-result.ts --tag <tag> --out <file> [--append-deltas]
-// --append-deltas adds a dump chunk's deltas to the flow dump already in <file>, for a flow dumped in several calls.
+//   bun scripts/save-result.ts --tag <tag> --out <file>
+//   bun scripts/save-result.ts --tag <tag> --dump <fact-base>
+// --dump splits a dump call's result into raw/<flow>.json per flow: a flow whose base the call returned starts afresh,
+// one continued from an earlier call gets the new deltas appended.
 // Transcripts are read from $CLAUDE_CONFIG_DIR/projects (default ~/.claude/projects), newest first.
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { TAG_PREFIX } from './figma.ts'
-import type { FlowDump } from './lib/types.ts'
+import type { DumpResult, FlowDump } from './lib/types.ts'
 
 /** Only transcripts touched this recently are searched: the call was made in this session. */
 const RECENT_MS = 24 * 60 * 60 * 1000
 
-type ContentBlock = { type: string; id?: string; name?: string; input?: { code?: string }; tool_use_id?: string; content?: unknown }
+type ContentBlock = {
+  type: string
+  id?: string
+  name?: string
+  input?: { code?: string; nodeId?: string }
+  tool_use_id?: string
+  content?: unknown
+}
 type TranscriptLine = { message?: { content?: unknown } }
 
 export function transcriptRoot(env: Record<string, string | undefined> = process.env): string {
@@ -39,7 +48,7 @@ export function recentTranscripts(root: string, now = Date.now()): string[] {
   return found.toSorted((a, b) => b.mtime - a.mtime).map((f) => f.path)
 }
 
-function blocksOf(line: string): ContentBlock[] {
+export function blocksOf(line: string): ContentBlock[] {
   let parsed: TranscriptLine
   try {
     parsed = JSON.parse(line) as TranscriptLine
@@ -50,7 +59,7 @@ function blocksOf(line: string): ContentBlock[] {
   return Array.isArray(content) ? (content as ContentBlock[]) : []
 }
 
-function resultText(content: unknown): string {
+export function resultText(content: unknown): string {
   if (typeof content === 'string') return content
   if (!Array.isArray(content)) return ''
   return content
@@ -79,11 +88,23 @@ export function findTaggedResult(transcript: string, tag: string): string | null
   return result
 }
 
-/** Adds a later chunk's deltas to a flow dump; a screen already present keeps its first reading. */
-export function appendDeltas(existing: FlowDump, chunk: FlowDump): FlowDump {
-  if (existing.base.id !== chunk.base.id) throw new Error(`chunk base ${chunk.base.id} is not the flow's base ${existing.base.id}`)
-  const known = new Set(existing.deltas.map((d) => d.id))
-  return { base: existing.base, deltas: [...existing.deltas, ...chunk.deltas.filter((d) => !known.has(d.id))] }
+/** Writes each flow of a dump call to raw/<flow>.json and returns one line per flow. */
+export function saveDump(factBase: string, result: DumpResult): string[] {
+  mkdirSync(join(factBase, 'raw'), { recursive: true })
+  const lines: string[] = []
+  for (const [slug, part] of Object.entries(result.flows)) {
+    const file = join(factBase, 'raw', `${slug}.json`)
+    let dump: FlowDump
+    if (part.base) dump = { base: part.base, deltas: part.deltas }
+    else if (existsSync(file)) {
+      const existing = JSON.parse(readFileSync(file, 'utf8')) as FlowDump
+      const known = new Set(existing.deltas.map((d) => d.id))
+      dump = { base: existing.base, deltas: [...existing.deltas, ...part.deltas.filter((d) => !known.has(d.id))] }
+    } else throw new Error(`raw/${slug}.json does not exist yet: save the call that holds the flow's first screen first`)
+    writeFileSync(file, JSON.stringify(dump))
+    lines.push(`raw/${slug}.json: ${dump.deltas.length + 1} screens`)
+  }
+  return lines
 }
 
 function flag(argv: string[], name: string): string | undefined {
@@ -99,8 +120,9 @@ function fail(message: string): never {
 function main(argv: string[]) {
   const tag = flag(argv, 'tag')
   const out = flag(argv, 'out')
-  if (!tag || !out) {
-    console.error('usage: bun scripts/save-result.ts --tag <tag> --out <file> [--append-deltas]')
+  const factBase = flag(argv, 'dump')
+  if (!tag || (!out && !factBase)) {
+    console.error('usage: bun scripts/save-result.ts --tag <tag> --out <file> | --dump <fact-base>')
     process.exit(2)
   }
 
@@ -118,11 +140,16 @@ function main(argv: string[]) {
     fail(`the result tagged "${tag}" is not JSON, so the call likely failed:\n${text.slice(0, 400)}`)
   }
 
-  if (argv.includes('--append-deltas') && existsSync(out)) {
-    value = appendDeltas(JSON.parse(readFileSync(out, 'utf8')) as FlowDump, value as FlowDump)
+  if (factBase) {
+    try {
+      console.log(saveDump(factBase, value as DumpResult).join('\n'))
+    } catch (error) {
+      fail((error as Error).message)
+    }
+    return
   }
-  writeFileSync(out, JSON.stringify(value))
-  console.log(`${out}: ${statSync(out).size} bytes from the call tagged "${tag}"`)
+  writeFileSync(out!, JSON.stringify(value))
+  console.log(`${out}: ${statSync(out!).size} bytes from the call tagged "${tag}"`)
 }
 
 if (import.meta.main) main(process.argv.slice(2))

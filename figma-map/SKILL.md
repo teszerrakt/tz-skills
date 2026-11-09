@@ -11,7 +11,9 @@ Reads a Figma section without dumping it into context, and publishes one design-
 
 - **Text before pictures.** A script reads each screen's text, annotations, prototype links and component variants as compact JSON, as a delta against its flow's first screen. Copy read off pixels picks up typos.
 - **Small pictures, on a budget.** Layer names usually say what a box is. When a designer left them generic ("Container", every card named "Audit Trail"), one 800px screenshot per layout names the parts. Nothing else is looked at.
-- **No result is typed twice.** A `use_figma` result is already in the session transcript. `scripts/save-result.ts` copies it to the fact base, so the agent never writes the JSON out again.
+- **No result is typed twice.** A `use_figma` result is already in the session transcript. `scripts/save-result.ts` copies it to the fact base, and `scripts/shots.ts` downloads a `get_screenshot` image the same way, so the agent never writes JSON or an image URL out again.
+- **Harvesters start small.** The harvest runs in `tz-skills:figma-map-harvester`, which carries only Bash, Read, Write and the two Figma tools. A general-purpose subagent carries every tool's definition, about 30k tokens more, before it reads a screen.
+- **Each fact enters a harvester once.** One dump call reads up to 15 screens across flows and returns each flow's shell once; `merge.ts` prints the digest a section is written from; `components.ts` prints the component index once, instead of folder listings.
 - **Never `get_design_context` on a whole screen.** On a full-size screen it returns only the node tree. Use it on one component's node, and only when a sub-component stays unclear.
 - **Images never enter context.** A crop is `get_screenshot` on the component's own node, downloaded to disk and built into the page.
 - **Shared components are named once, before the harvest.** Subagents that name them independently give one panel three names. The orchestrator names them up front and writes the Shared section alone.
@@ -31,9 +33,11 @@ All run with Bun from this skill's base directory. Each file's header gives its 
 
 | Script | Does |
 |---|---|
-| `scripts/figma.ts` | Prints a Figma-side script (`inventory`, `dump`, `locate`, `candidates`) ready to paste: arguments checked, compiled to plain JS. Paste its output verbatim as `use_figma`'s `code`. `--tag <tag>` marks the call for `save-result.ts`. |
-| `scripts/save-result.ts` | Copies the newest result tagged `<tag>` from the session transcript to a file. `--append-deltas` adds a dump chunk to a flow's dump. |
-| `scripts/merge.ts` | Expands a flow's dump into per-screen records and layout groups, and lists screens with the same content. |
+| `scripts/figma.ts` | Prints a Figma-side script (`inventory`, `dump`, `locate`, `candidates`) ready to paste: arguments checked, compiled and minified. Paste its output verbatim as `use_figma`'s `code`. `--tag <tag>` marks the call for `save-result.ts`; `dump --fb <fb> --flows <slugs> --part <n>` plans whole flows into calls and tags them itself. |
+| `scripts/save-result.ts` | Copies the newest result tagged `<tag>` from the session transcript to a file. `--dump <fb>` splits a dump call into `raw/<flow>.json` per flow. |
+| `scripts/merge.ts` | Expands each flow's dump into per-screen records and layout groups, and prints the digest a section is written from. |
+| `scripts/shots.ts` | Downloads `get_screenshot` images from the session transcript by node id. Runs outside the sandbox. |
+| `scripts/components.ts` | Prints the component index reuse verdicts are searched in: each component file and what it exports. |
 | `scripts/assemble.ts` | Joins the banner, the sections and the Shared section into `design-map.md`, renumbering every `[n]`. |
 | `scripts/render.ts` | Renders `design-map.md` to the page the Artifact tool publishes. Exits 1 on any warning. |
 
@@ -47,12 +51,14 @@ If `save-result.ts` cannot find a result, write that one result to its file by h
 meta.json             file key, section id, page id, pinned SHA, artifact URL, run dates
 flows.json            inventory: flows → screens (scripts/figma/inventory.ts)
 candidates.json       containers that repeat across flows (scripts/figma/candidates.ts)
-shared-names.json     the orchestrator's name for each shared candidate
+shared-names.json     the orchestrator's name for each shared candidate, or for one shape of it
 signatures/<flow>.json one hash per screen, for incremental runs
 runs.json             one entry per run: date, changed, added, removed, tokens
 raw/<flow>.json       a flow's dump, as returned
 frames/<id>.json      full per-screen records, rebuilt by merge.ts
 merge/<flow>.json     layout groups, their states, and same-content pairs
+merge/<flow>.md       the digest the harvester writes the section from
+locate/<flow>.json    node ids located in screens that share another screen's layout
 img/crops/*.png       crops, prefixed with the flow's slug
 sections/<flow>.md    one flow's pages, in the doc shape
 banner.md             the banner line; changed.md on a refresh
@@ -79,13 +85,13 @@ Run `bun scripts/figma.ts inventory --args '{"section":"<node id>"}' --tag inven
 
 The inventory places each screen (a frame at least 400px tall) under the label frames drawn above it. The outermost band names the flow; the bands and labels nested under it name the page (`Bill › 1 Approver`). A label with a row of screens between it and a screen does not name that screen. Labels that read like a sentence are copy, listed in `copyLabels`, and never name anything. A screen whose `page` is null is named from its content in the harvest. Screens with no label at all are grouped by row.
 
-If `meta.json` already lists a run, this is a **refresh**. For each flow, dump with `"sigOnly": true` and tag `sig-<flow>`, save it to `<fb>/sigs-<flow>.json`, then run `bun scripts/merge.ts --changed <fb> <flow> <fb>/sigs-<flow>.json`. A flow with no changed, added or removed screen is skipped in step 5.
+If `meta.json` already lists a run, this is a **refresh**. Print `bun scripts/figma.ts dump --fb <fb> --flows <every slug> --part 1 --sig-only`, paste it, run the save command its second line names (it writes `<fb>/sigs.json`), then run `bun scripts/merge.ts --changed <fb> <flow> <fb>/sigs.json` for each flow. A flow with no changed, added or removed screen is skipped in step 5.
 
 Done when `flows.json` lists every screen in the section, each under one flow.
 
 ### 3. Pick the flows
 
-Close the reply with a questions section: the flows as a numbered list with their screen count and a cost estimate (about 4k tokens per screen, plus about 1k per crop), and the question of which to run. On a refresh, list only the flows that changed, with what changed. Recommend all flows when the total is under about 60 screens, otherwise the flows a named ticket or the user's message points at.
+Close the reply with a questions section: the flows as a numbered list with their screen count and a cost estimate (about 4k tokens per screen, crops included), and the question of which to run. On a refresh, list only the flows that changed, with what changed. Recommend all flows when the total is under about 60 screens, otherwise the flows a named ticket or the user's message points at.
 
 The questions section is the one shape for asking: its own section at the end of the reply under a `❓` heading, one block per question. A block is the question in under 15 words, one option per bullet (the choice in bold, then what the reader would see), a `✨` line recommending one, and one `Asked because:` line. Nothing follows it.
 
@@ -93,21 +99,21 @@ Done when the user has answered. Do not start step 4 before.
 
 ### 4. Name the shared components
 
-Run `candidates` over every chosen screen (`--args '{"screens":[{"id":"…","flow":"<slug>"}, …]}' --tag candidates`) and save it to `<fb>/candidates.json`. Each candidate is a container whose name and children's names repeat, in order, across two or more flows.
+Run `candidates` over every chosen screen (`--args '{"screens":[{"id":"…","flow":"<slug>"}, …]}' --tag candidates`) and save it to `<fb>/candidates.json`. Each candidate is a layer name that repeats across two or more flows, whatever its children; a generic name ("Container") counts only with the same children. Its `shapes` split it by children and first text, so one name the designer reused for different cards ("Audit Trail" for the Trigger, Approval Gate and Outcome cards) comes back as one shape per card.
 
-For each candidate, decide whether the same code component would render it on every page it appears on. Name the ones that are, from their layer names, or, when those are generic, from one `get_screenshot` of one of its nodes at `maxDimension: 800`. Design-system primitives (Button, Badge, Tabs, Input, Avatar) are never shared entries. Write `shared-names.json`: one `{ name, signature, nodes }` per shared component. Its anchor is the name in kebab case (`Approval Gate card` → `#approval-gate-card`).
+For each candidate, or each shape of it, decide whether the same code component would render it on every page it appears on. Page layout (a navigation bar, a page header, a column) is not a shared component. Name the ones that are, from the layer name and the shape's first text, or, when both are generic, from one `get_screenshot` of the shape's first node at `maxDimension: 800`. Design-system primitives (Button, Badge, Tabs, Input, Avatar) are never shared entries. Write `shared-names.json`: one `{ name, signature, shape }` per shared component, with `shape` the index in the candidate's `shapes`, or left out when every shape is that component. `merge.ts` marks each named node in the harvesters' digests. A component's anchor is its name in kebab case (`Approval Gate card` → `#approval-gate-card`).
 
 Done when every candidate is named or dropped.
 
 ### 5. Harvest
 
-Dispatch subagents in parallel, each with flows totalling about 20 screens. A flow is never split; a flow over about 30 screens gets a subagent of its own. Each brief holds: this skill's base directory, the file key, the session id, the fact base path, its flows from `flows.json` (slugs, screen ids, page labels), the repo's component paths from config, the pinned SHA, and [references/harvest.md](references/harvest.md) and [references/doc-shape.md](references/doc-shape.md) by absolute path. Nothing else: the conversation is not a brief. `shared-names.json` is in the fact base.
+Dispatch `tz-skills:figma-map-harvester` subagents in parallel, each with flows totalling about 30 screens. A flow is never split; a flow over about 40 screens gets a subagent of its own. If that agent type is missing, a general-purpose subagent with the same brief works and costs about 30k more. Each brief holds: this skill's base directory, the file key, the session id, the fact base path, its flow slugs, the repo root and its component paths from config, and the pinned SHA. Nothing else: the conversation is not a brief, and the screens, page labels and shared names are in the fact base.
 
 Each subagent writes only its own flows' `raw/`, `frames/`, `merge/`, `signatures/`, `img/crops/` and `sections/` files, and returns what harvest.md asks for.
 
-On a refresh, a subagent gets only the changed flows, the changed screen ids, and the flow's previous `sections/<flow>.md` to edit in place.
+On a refresh, a subagent gets only the changed flows, the changed screen ids, and the flow's previous `sections/<flow>.md` to edit in place. It dumps each changed flow whole, so its records and signatures stay complete.
 
-Done when every chosen flow has a `sections/<flow>.md` and `merge.ts` printed its layout count.
+Done when every chosen flow has a `sections/<flow>.md` and a `merge/<flow>.md` digest.
 
 ### 6. Shared components
 
@@ -126,7 +132,7 @@ bun <base>/scripts/assemble.ts <fb>
 bun <base>/scripts/render.ts <fb> <fb>/design-map.md <fb>/design-map.html --file <file key> --gh <GitHub blob base>/<pinned SHA> --inline --title "<section name> Design Map"
 ```
 
-Append the run to `runs.json`, with the tokens the harvest subagents reported.
+Append the run to `runs.json`, with each harvest subagent's `subagent_tokens` from the `<usage>` block of its Agent result, per subagent and in total, and the tokens per screen. Never use a subagent's own estimate: it runs about 40% low.
 
 Done when both print no problem or warning. Render warns on an `[n]` with no Sources line, a crop missing from disk, and a link to an anchor no heading has. Its page holds at phone width by construction: tables scroll in their own box and four-column tables fold to two.
 

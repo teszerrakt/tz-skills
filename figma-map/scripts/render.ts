@@ -32,8 +32,11 @@ export function componentName(heading: string): string {
   return heading.split(/\s*(?:🟢|🟡|🔴|\(|\{|—|→)/u)[0].trim()
 }
 
+/** A page's anchor is its whole name, so "Edit workflow — add threshold" and "Edit workflow — reorder" stay apart. */
 export function anchorFor(heading: string): string {
-  return slugify(componentName(heading.replace(/^Page:\s*/, '').replace(/\[\d+\]/g, '')))
+  const withoutRefs = heading.replace(/\[\d+\]|\{[^}]*\}/g, '')
+  if (withoutRefs.startsWith('Page:')) return slugify(withoutRefs.replace(/^Page:\s*/, ''))
+  return slugify(componentName(withoutRefs))
 }
 
 export function parseSources(block: string): Map<string, SourceLine> {

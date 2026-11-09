@@ -1,9 +1,14 @@
 #!/usr/bin/env bun
-// Prints a Figma-side script ready to paste into use_figma: its arguments checked, bundled with its imports, compiled
-// to plain JS and wrapped so the result comes back as JSON. The compiled text is never saved.
+// Prints a Figma-side script ready to paste into use_figma: its arguments checked, bundled with its imports, minified
+// and wrapped so the result comes back as JSON. The compiled text is never saved.
 //   bun scripts/figma.ts <inventory|dump|locate|candidates> --args '<json>' [--tag <tag>]
+//   bun scripts/figma.ts dump --fb <fact-base> --flows <slug,slug> --part <n> [--sig-only]
 // --tag puts a "// figma-map-tag: <tag>" first line in the script, so save-result.ts can find this call's result.
+// The second form plans the dump of whole flows from flows.json, several flows to a call, and prints call <n>: its
+// tag and the save-result command to run after it are in its first two lines.
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import type { DumpFlow, FlowInventory } from './lib/types.ts'
 
 export const SCRIPTS = ['inventory', 'dump', 'locate', 'candidates'] as const
 export type ScriptName = (typeof SCRIPTS)[number]
@@ -24,10 +29,18 @@ function nodeIdProblems(field: string, ids: string[]): string[] {
 const CHECKS: Record<ScriptName, Check> = {
   inventory: (a) => (isString(a.section) ? nodeIdProblems('section', [a.section]) : ['section: a node id is required']),
   dump: (a) => {
-    if (!isStringList(a.ids)) return ['ids: a non-empty list of screen ids is required']
-    if (!isString(a.base)) return ["base: the flow's first screen id is required"]
     if (a.sigOnly !== undefined && typeof a.sigOnly !== 'boolean') return ['sigOnly: true or false']
-    return nodeIdProblems('ids', [...a.ids, a.base])
+    if (!Array.isArray(a.flows) || a.flows.length === 0) return ['flows: a non-empty list of { "slug", "base", "ids" } is required']
+    const flows = a.flows as Record<string, unknown>[]
+    for (const flow of flows) {
+      if (!isString(flow?.slug) || !isString(flow.base) || !isStringList(flow.ids)) {
+        return ['flows: each needs "slug", "base" (the flow\'s first screen) and a non-empty "ids"']
+      }
+    }
+    return nodeIdProblems(
+      'ids',
+      flows.flatMap((f) => [f.base as string, ...(f.ids as string[])]),
+    )
   },
   locate: (a) => {
     if (!isString(a.base)) return ['base: the screen whose node ids you hold is required']
@@ -50,7 +63,7 @@ export function checkArgs(script: ScriptName, args: unknown): string[] {
 /** Bundles the script with the lib modules it imports, as one plain-JS text. */
 async function bundle(script: ScriptName): Promise<string> {
   const entry = join(import.meta.dir, 'figma', `${script}.ts`)
-  const built = await Bun.build({ entrypoints: [entry], target: 'browser', format: 'esm', minify: { whitespace: true, syntax: true } })
+  const built = await Bun.build({ entrypoints: [entry], target: 'browser', format: 'esm', minify: true })
   if (!built.success) throw new AggregateError(built.logs, `could not compile ${entry}`)
   return built.outputs[0].text()
 }
@@ -74,6 +87,50 @@ export function wrapForFigma(bundled: string, args: unknown, tag?: string): stri
   return lines.join('\n')
 }
 
+/** Screens per dump call: a call's result enters the harvester's context in full. */
+export const SCREENS_PER_CALL = 15
+const SIG_SCREENS_PER_CALL = 60
+
+/** Splits whole flows into calls of at most `perCall` screens; a flow split across calls returns its base once. */
+export function planDump(inventory: FlowInventory, slugs: string[], perCall = SCREENS_PER_CALL): DumpFlow[][] {
+  const parts: DumpFlow[][] = []
+  let current: DumpFlow[] = []
+  let count = 0
+  for (const slug of slugs) {
+    const flow = inventory.flows.find((f) => f.slug === slug)
+    if (!flow) throw new Error(`no flow "${slug}" in flows.json`)
+    const ids = flow.screens.map((s) => s.id)
+    for (let i = 0; i < ids.length;) {
+      if (count === perCall) {
+        parts.push(current)
+        current = []
+        count = 0
+      }
+      const take = ids.slice(i, i + perCall - count)
+      current.push(i === 0 ? { slug, base: ids[0], ids: take } : { slug, base: ids[0], ids: take, withBase: false })
+      count += take.length
+      i += take.length
+    }
+  }
+  if (current.length) parts.push(current)
+  return parts
+}
+
+async function plannedDump(argv: string[]): Promise<string> {
+  const factBase = flag(argv, 'fb')!
+  const slugs = (flag(argv, 'flows') ?? '').split(',').filter(Boolean)
+  const part = Number(flag(argv, 'part') ?? '1')
+  const sigOnly = argv.includes('--sig-only')
+  const inventory = JSON.parse(readFileSync(join(factBase, 'flows.json'), 'utf8')) as FlowInventory
+  const parts = planDump(inventory, slugs, sigOnly ? SIG_SCREENS_PER_CALL : SCREENS_PER_CALL)
+  if (!(part >= 1 && part <= parts.length)) throw new Error(`--part must be 1 to ${parts.length}`)
+  const tag = `${sigOnly ? 'sig' : 'dump'}-${slugs[0]}-${part}`
+  const save = sigOnly ? `--out ${factBase}/sigs.json` : `--dump ${factBase}`
+  const script = await buildScript('dump', sigOnly ? { flows: parts[part - 1], sigOnly } : { flows: parts[part - 1] }, tag)
+  const [tagLine, ...rest] = script.split('\n')
+  return [tagLine, `// part ${part} of ${parts.length}; then: bun scripts/save-result.ts --tag ${tag} ${save}`, ...rest].join('\n')
+}
+
 export async function buildScript(script: ScriptName, args: unknown, tag?: string): Promise<string> {
   const problems = checkArgs(script, args)
   if (problems.length) throw new Error(`bad --args for ${script}:\n  ${problems.join('\n  ')}`)
@@ -88,8 +145,18 @@ function flag(argv: string[], name: string): string | undefined {
 async function main(argv: string[]) {
   const [script] = argv
   const rawArgs = flag(argv, 'args')
+  if (script === 'dump' && rawArgs === undefined && flag(argv, 'fb') && flag(argv, 'flows')) {
+    try {
+      console.log(await plannedDump(argv))
+    } catch (error) {
+      console.error((error as Error).message)
+      process.exit(1)
+    }
+    return
+  }
   if (!SCRIPTS.includes(script as ScriptName) || rawArgs === undefined) {
     console.error(`usage: bun scripts/figma.ts <${SCRIPTS.join('|')}> --args '<json>' [--tag <tag>]`)
+    console.error('       bun scripts/figma.ts dump --fb <fact-base> --flows <slug,slug> --part <n> [--sig-only]')
     process.exit(2)
   }
   let args: unknown

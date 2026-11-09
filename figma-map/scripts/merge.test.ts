@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { changed, expand, group } from './merge.ts'
+import { changed, digest, expand, group, sharedNodeNames } from './merge.ts'
 import type { FlowDump, ScreenDelta, ScreenDump } from './lib/types.ts'
 
 const base: ScreenDump = {
@@ -26,7 +26,7 @@ const delta = (id: string, over: Partial<ScreenDelta> = {}): ScreenDelta => ({
   instances: { add: [], del: [] },
   outline: 'same',
   annotations: [],
-  clicks: [],
+  clicks: { add: [], del: [] },
   ...over,
 })
 
@@ -101,4 +101,37 @@ test('signature comparison names changed, added and removed screens', () => {
     removed: ['c'],
     same: ['a'],
   })
+})
+
+test('a screen whose layout an earlier screen returned takes that outline and its node ids', () => {
+  const own = [{ 'Panel#8:4': ['Input#8:5', 'Result#8:9'] }, 'Bar#8:7']
+  const [, first, second] = expand(dump(delta('1:8', { outline: own }), delta('1:9', { outline: 'sameAs:1:8' })))
+  expect(second.outline).toEqual(first.outline)
+  expect(second.outlineFrom).toBe('1:8')
+  expect(() => expand(dump(delta('1:9', { outline: 'sameAs:7:7' })))).toThrow('does not hold')
+})
+
+test('clicks and counted instances are rebuilt from the base and the delta', () => {
+  const back = { node: '1:9', on: 'Button', text: 'Back', trigger: 'ON_CLICK', action: 'NODE/NAVIGATE', to: null }
+  const save = { ...back, text: 'Save', to: '1:3 Saved' }
+  const withBack: FlowDump = {
+    base: { ...base, clicks: [back] },
+    deltas: [delta('1:2', { clicks: { add: [save], del: ['Button|Back|NODE/NAVIGATE|null'] } })],
+  }
+  expect(expand(withBack)[1].clicks).toEqual([save])
+  const rows = delta('1:3', { instances: { add: [{ key: 'Row @List', id: '3:1', n: 5 }], del: [] } })
+  const groups = group(expand(dump(delta('1:2', { instances: { add: [{ key: 'Row @List', id: '2:1', n: 4 }], del: [] } }), rows)))
+  expect(groups[0].members.map((m) => m.instances.add)).toEqual([['Row @List ×4'], ['Row @List ×5']])
+})
+
+test('the digest names shared components on the outline and lists each state as a difference', () => {
+  const records = expand(dump(delta('1:2', { texts: { add: [[1, 'IDR 3.000.000']], del: [[1, 'Select a payment']] } })))
+  const shared = sharedNodeNames(
+    [{ signature: 'Panel', flows: ['a', 'b'], shapes: [{ text: 'Title', children: ['Input'], size: '360×600', ids: ['1:4'] }] }],
+    [{ name: 'Side panel', signature: 'Panel' }],
+  )
+  const text = digest('edit', records, group(records), new Map([['1:1', 'Add Threshold']]), shared)
+  expect(text).toContain('# edit: 2 screens → 1 layouts, 1 states')
+  expect(text).toContain('  Panel 1:4 = Side panel (shared)')
+  expect(text).toContain('- 1:2 "Screen", page "(no page label)": state · +"IDR 3.000.000" · −"Select a payment"')
 })

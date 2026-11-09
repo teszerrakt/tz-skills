@@ -2,7 +2,8 @@ import { expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { appendDeltas, findTaggedResult, recentTranscripts, transcriptRoot } from './save-result.ts'
+import { existsSync, readFileSync } from 'node:fs'
+import { findTaggedResult, recentTranscripts, saveDump, transcriptRoot } from './save-result.ts'
 import type { FlowDump } from './lib/types.ts'
 
 const call = (id: string, code: string) =>
@@ -47,19 +48,27 @@ test('the transcript root follows CLAUDE_CONFIG_DIR', () => {
   expect(transcriptRoot({ CLAUDE_CONFIG_DIR: '/home/me/.claude-work' })).toBe('/home/me/.claude-work/projects')
 })
 
-test('a later dump chunk adds its deltas to the flow; a screen read twice keeps its first reading', () => {
+test("a dump call splits into one raw file per flow; a continued flow appends, keeping a screen's first reading", () => {
+  const fb = mkdtempSync(join(tmpdir(), 'figma-map-fb-'))
   const base = { id: '1:1', name: 'S', h: 1, sig: 's', texts: [], annotations: [], clicks: [], instances: [], outline: [] }
-  const first: FlowDump = { base, deltas: [{ id: '1:2', error: 'missing' }] }
-  const second: FlowDump = {
-    base,
-    deltas: [
-      { id: '1:2', error: 'again' },
-      { id: '1:3', error: 'missing' },
-    ],
-  }
-  expect(appendDeltas(first, second).deltas).toEqual([
+  expect(
+    saveDump(fb, { flows: { a: { base, deltas: [{ id: '1:2', error: 'missing' }] }, b: { base: { ...base, id: '2:1' }, deltas: [] } } }),
+  ).toEqual(['raw/a.json: 2 screens', 'raw/b.json: 1 screens'])
+  saveDump(fb, {
+    flows: {
+      a: {
+        deltas: [
+          { id: '1:2', error: 'again' },
+          { id: '1:3', error: 'missing' },
+        ],
+      },
+    },
+  })
+  const a = JSON.parse(readFileSync(join(fb, 'raw', 'a.json'), 'utf8')) as FlowDump
+  expect(a.deltas).toEqual([
     { id: '1:2', error: 'missing' },
     { id: '1:3', error: 'missing' },
   ])
-  expect(() => appendDeltas(first, { base: { ...base, id: '9:9' }, deltas: [] })).toThrow()
+  expect(() => saveDump(fb, { flows: { c: { deltas: [] } } })).toThrow('raw/c.json does not exist yet')
+  expect(existsSync(join(fb, 'raw', 'c.json'))).toBe(false)
 })
