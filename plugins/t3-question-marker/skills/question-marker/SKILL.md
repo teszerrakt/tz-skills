@@ -37,7 +37,8 @@ No questions, no section. Never write a `❓` line for anything else.
 T3 Code shows a thread as waiting only when it holds a question, and shows only a turn's last message. So the thread's title carries a `❓ ` prefix while your last reply has open questions, and the reply itself must stay the turn's last message:
 
 - When the user's message arrives, a hook tells you the thread's title. If it is marked, the user has answered: rename it without the prefix before anything else.
-- Before writing a reply that ends with a `❓` section, rename the thread to `❓ <title>`.
+- Before writing a reply that ends with a `❓` section, rename the thread to `❓ <title>`. If the title is still your first message cut off with `...`, write a 3–6 word title instead.
+- Then call `PushNotification` with the first question (under 200 characters), so it reaches the user's phone when Remote Control is connected. The Stop hook already sends the desktop notification.
 - Rename with `mcp__t3-code__t3_thread_update` (action `rename`, no `threadId`).
 
 If you forget, a Stop hook blocks the stop and asks for the rename; do it, then repeat what it asks you to repeat, so the user still sees your reply.

@@ -3,9 +3,11 @@
 // T3 marks a thread as waiting only for AskUserQuestion; this lets a plain-text `❓` section show in the thread list.
 // The agent normally renames before it replies (prompt.ts tells it how); this hook is the fallback. It blocks the stop
 // once, and because T3 shows only a turn's last message, it asks the agent to repeat its reply after the rename.
+// A stop it allows ends the turn, so it also sends the desktop notification (notify.ts).
 // Every failure path allows the stop silently.
 import { existsSync, readFileSync } from 'node:fs'
-import { cliPath, isMarked, MARK, RENAME_TOOL, threadTitle, unmarked, type Env } from './t3.ts'
+import { noticeFor, notify, type Notice } from './notify.ts'
+import { cliPath, environmentId, isMarked, isPlaceholder, MARK, RENAME_TOOL, threadLink, threadTitle, unmarked, type Env } from './t3.ts'
 
 export type HookInput = { transcript_path?: string; stop_hook_active?: boolean; last_assistant_message?: string }
 export type Decision = { decision: 'block'; reason: string } | undefined
@@ -57,7 +59,10 @@ function textOf(entry: TranscriptEntry): string {
 export function decide(questions: boolean, title: string): Decision {
   const marked = isMarked(title)
   if (questions && !marked) {
-    return blockWith(`rename this thread to "${MARK}${title}"`, 'your closing ❓ section, word for word')
+    const target = isPlaceholder(title)
+      ? `"${MARK}<a 3–6 word title for this thread>" (its title is still the truncated first message)`
+      : `"${MARK}${title}"`
+    return blockWith(`rename this thread to ${target}`, 'your closing ❓ section, word for word')
   }
   if (!questions && marked) {
     return blockWith(`rename this thread back to "${unmarked(title)}"`, 'your reply in full')
@@ -81,15 +86,19 @@ function replyText(input: HookInput): string {
 }
 
 /** The whole hook: the stdin JSON in, the stdout JSON out (empty to allow the stop). */
-export function run(stdin: string, env: Env = process.env): string {
+export function run(stdin: string, env: Env = process.env, send: (notice: Notice) => void = (n) => notify(n, env)): string {
   const threadId = env.T3CODE_THREAD_ID
   if (!threadId) return ''
   const input = parseInput(stdin)
-  if (!input || input.stop_hook_active) return ''
+  if (!input) return ''
   const title = threadTitle(threadId, cliPath(env))
-  if (!title) return ''
-  const decision = decide(hasQuestions(replyText(input)), title)
-  return decision ? JSON.stringify(decision) : ''
+  const reply = replyText(input)
+  const questions = hasQuestions(reply)
+  const decision = title && !input.stop_hook_active ? decide(questions, title) : undefined
+  if (decision) return JSON.stringify(decision)
+  const environment = environmentId(env)
+  send(noticeFor(unmarked(title ?? 'T3 Code'), reply, questions, environment && threadLink(environment, threadId)))
+  return ''
 }
 
 function parseInput(stdin: string): HookInput | undefined {
