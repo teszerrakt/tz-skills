@@ -2,7 +2,7 @@
 // UserPromptSubmit hook: tells the agent how to keep a T3 Code thread's `❓ ` title mark right before it replies,
 // so the Stop hook rarely has to block (a blocked stop makes the agent's last message a rename, hiding its reply).
 // A marked title means the user just answered: the agent removes the mark first. Every failure path adds nothing.
-import { cliPath, isMarked, MARK, RENAME_TOOL, threadTitle, unmarked, type Env } from './t3.ts'
+import { cliPath, isMarked, isPlaceholder, MARK, RENAME_TOOL, threadTitle, unmarked, type Env } from './t3.ts'
 
 type Output = { hookSpecificOutput: { hookEventName: 'UserPromptSubmit'; additionalContext: string } }
 
@@ -14,8 +14,11 @@ export function contextFor(title: string): string {
       `Its ${MARK.trim()} mark is from questions the user has now answered: before anything else, rename it to "${unmarked(title)}" with ${RENAME_TOOL}.`,
     )
   }
+  const target = isPlaceholder(title)
+    ? `"${MARK}<a 3–6 word title for this thread>" (the current title is just the truncated first message)`
+    : `"${MARK}${unmarked(title)}"`
   lines.push(
-    `If this turn's reply will end with a ❓ section, rename the thread to "${MARK}${unmarked(title)}" with ${RENAME_TOOL} before you write that reply, so the reply stays the turn's last message.`,
+    `If this turn's reply will end with a ❓ section, rename the thread to ${target} with ${RENAME_TOOL} before you write that reply, so the reply stays the turn's last message.`,
   )
   return lines.join(' ')
 }

@@ -1,7 +1,8 @@
 import { afterAll, describe, expect, test } from 'bun:test'
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { Notice } from './notify.ts'
 import { decide, hasQuestions, lastAssistantText, run } from './stop.ts'
 
 const dir = mkdtempSync(join(tmpdir(), 't3-question-marker-'))
@@ -72,27 +73,46 @@ describe('decide', () => {
 
 describe('run', () => {
   const titled = fakeCli('t3', 'printf "Fix login\\nid  running\\n"')
-  const env = { T3CODE_THREAD_ID: 'thread-1', T3CODE_CLI_PATH: titled }
+  const home = join(dir, 't3home')
+  mkdirSync(join(home, 'userdata'), { recursive: true })
+  writeFileSync(join(home, 'userdata/environment-id'), 'env-1\n')
+  const env = { T3CODE_THREAD_ID: 'thread-1', T3CODE_CLI_PATH: titled, T3CODE_HOME: home }
+  let sent: Notice[] = []
+  const send = (notice: Notice) => sent.push(notice)
+  const runIt = (stdin: string, e: Record<string, string | undefined> = env) => {
+    sent = []
+    return run(stdin, e, send)
+  }
 
-  test('blocks with the rename when questions meet an unmarked title', () => {
-    const out = JSON.parse(run(input(), env))
+  test('blocks with the rename when questions meet an unmarked title, and sends no notice', () => {
+    const out = JSON.parse(runIt(input(), env))
     expect(out.decision).toBe('block')
     expect(out.reason).toContain('mcp__t3-code__t3_thread_update')
+    expect(sent).toEqual([])
+  })
+  test('a finished turn sends a done notice linking to the thread', () => {
+    expect(runIt(input({ last_assistant_message: 'All tests pass.' }), env)).toBe('')
+    expect(sent).toEqual([{ summary: '✓ Fix login', body: 'All tests pass.', link: 't3code://threads/env-1/thread-1' }])
+  })
+  test('a turn ending in questions, after the rename, sends a question notice', () => {
+    runIt(input({ stop_hook_active: true }), env)
+    expect(sent[0]?.summary).toBe('❓ Fix login')
   })
   test('prefers last_assistant_message over the transcript', () => {
-    expect(run(input({ last_assistant_message: 'no questions' }), env)).toBe('')
+    expect(runIt(input({ last_assistant_message: 'no questions' }), env)).toBe('')
   })
-  test('allows outside T3', () => {
-    expect(run(input(), { T3CODE_CLI_PATH: titled })).toBe('')
+  test('allows outside T3, without a notice', () => {
+    expect(runIt(input(), { T3CODE_CLI_PATH: titled })).toBe('')
+    expect(sent).toEqual([])
   })
   test('allows when the stop was already blocked once', () => {
-    expect(run(input({ stop_hook_active: true }), env)).toBe('')
+    expect(runIt(input({ stop_hook_active: true }), env)).toBe('')
   })
   test('allows when the CLI is missing or fails', () => {
-    expect(run(input(), { ...env, T3CODE_CLI_PATH: join(dir, 'missing') })).toBe('')
-    expect(run(input(), { ...env, T3CODE_CLI_PATH: fakeCli('broken', 'exit 1') })).toBe('')
+    expect(runIt(input(), { ...env, T3CODE_CLI_PATH: join(dir, 'missing') })).toBe('')
+    expect(runIt(input(), { ...env, T3CODE_CLI_PATH: fakeCli('broken', 'exit 1') })).toBe('')
   })
   test('allows on stdin that is not JSON', () => {
-    expect(run('nope', env)).toBe('')
+    expect(runIt('nope', env)).toBe('')
   })
 })

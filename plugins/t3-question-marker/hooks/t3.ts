@@ -1,5 +1,5 @@
 // What both hooks need from T3 Code: the thread's title, read with the `t3` CLI, and the `❓ ` mark on it.
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
@@ -31,6 +31,26 @@ export function threadTitle(threadId: string, cli: string): string | undefined {
   } catch {
     return undefined
   }
+}
+
+/** T3's id for this machine, which its thread links need; undefined when unreadable. */
+export function environmentId(env: Env): string | undefined {
+  const home = env.T3CODE_HOME || join(homedir(), '.t3')
+  try {
+    return readFileSync(join(home, 'userdata/environment-id'), 'utf8').trim() || undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Opens the thread in the T3 Code desktop app (its `promptLinkAppPath` route). */
+export function threadLink(environment: string, threadId: string): string {
+  return `t3code://threads/${encodeURIComponent(environment)}/${encodeURIComponent(threadId)}`
+}
+
+/** A title still equal to the truncated first message, which T3 shows until it generates a real one. */
+export function isPlaceholder(title: string): boolean {
+  return unmarked(title).endsWith('...')
 }
 
 export const RENAME_TOOL = 'the mcp__t3-code__t3_thread_update tool (action "rename", omit threadId)'
