@@ -91,7 +91,7 @@ Done when `flows.json` lists every screen in the section, each under one flow.
 
 ### 3. Pick the flows
 
-Close the reply with a questions section: the flows as a numbered list with their screen count and a cost estimate (about 4k tokens per screen, crops included), and the question of which to run. On a refresh, list only the flows that changed, with what changed. Recommend all flows when the total is under about 60 screens, otherwise the flows a named ticket or the user's message points at.
+Close the reply with a questions section: the flows as a numbered list with their screen count and a cost estimate (about 4k tokens per screen, plus about 0.6k per crop; expect about one crop per screen), and the question of which to run. On a refresh, list only the flows that changed, with what changed. Recommend all flows when the total is under about 60 screens, otherwise the flows a named ticket or the user's message points at.
 
 The questions section is the one shape for asking: its own section at the end of the reply under a `❓` heading, one block per question. A block is the question in under 15 words, one option per bullet (the choice in bold, then what the reader would see), a `✨` line recommending one, and one `Asked because:` line. Nothing follows it.
 

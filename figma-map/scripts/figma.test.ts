@@ -11,6 +11,15 @@ test('arguments are checked before anything is compiled', () => {
   expect(checkArgs('locate', { base: '1:1', nodes: ['nope'], targets: ['1:2'] })).toEqual([
     'ids: "nope" is not a Figma node id like "8118:43846"',
   ])
+  expect(
+    checkArgs('locate', {
+      groups: [
+        { base: '1:1', nodes: ['1:2'], targets: ['1:3'] },
+        { base: '2:1', nodes: ['2:2'], targets: ['2:3'] },
+      ],
+    }),
+  ).toEqual([])
+  expect(checkArgs('locate', { groups: [] })).toEqual(['groups: a non-empty list of { "base", "nodes", "targets" } is required'])
   expect(checkArgs('candidates', { screens: [{ id: '1:1' }] })).toEqual(['screens: a non-empty list of { "id", "flow" } is required'])
   expect(checkArgs('dump', [])).toEqual(['--args must be a JSON object'])
 })

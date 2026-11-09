@@ -1,11 +1,13 @@
 // Figma side, read-only. Print the paste-ready script with:
 //   bun scripts/figma.ts locate --args '{"base":"<screen id>","nodes":["<node id in base>"],"targets":["<screen id>"]}'
+// Several base screens in one call: '{"groups":[{"base":…,"nodes":[…],"targets":[…]}, …]}'.
 // A record whose outline came from another screen carries that screen's node ids. This finds the matching node in each
 // target screen: first by the same child-index path, accepted only when the node there has the same name and type;
 // otherwise by a search for that name and type, accepted only when exactly one node matches.
 import type { LocatedNode, LocateResult } from '../lib/types.ts'
 
-export type LocateArgs = { base: string; nodes: string[]; targets: string[] }
+export type LocateGroup = { base: string; nodes: string[]; targets: string[] }
+export type LocateArgs = LocateGroup | { groups: LocateGroup[] }
 
 type Found = { node: BaseNode; path: number[] }
 
@@ -51,10 +53,12 @@ async function locateIn(screenId: string, found: Found): Promise<LocatedNode | n
 
 export async function main(args: LocateArgs): Promise<LocateResult> {
   const result: LocateResult = {}
-  for (const nodeId of args.nodes) {
-    const found = await pathFrom(args.base, nodeId)
-    result[nodeId] = {}
-    for (const target of args.targets) result[nodeId][target] = found ? await locateIn(target, found) : null
+  for (const group of 'groups' in args ? args.groups : [args]) {
+    for (const nodeId of group.nodes) {
+      const found = await pathFrom(group.base, nodeId)
+      result[nodeId] = {}
+      for (const target of group.targets) result[nodeId][target] = found ? await locateIn(target, found) : null
+    }
   }
   return result
 }

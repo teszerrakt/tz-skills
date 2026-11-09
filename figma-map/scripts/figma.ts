@@ -43,10 +43,17 @@ const CHECKS: Record<ScriptName, Check> = {
     )
   },
   locate: (a) => {
-    if (!isString(a.base)) return ['base: the screen whose node ids you hold is required']
-    if (!isStringList(a.nodes)) return ['nodes: a non-empty list of node ids in the base screen is required']
-    if (!isStringList(a.targets)) return ['targets: a non-empty list of screen ids is required']
-    return nodeIdProblems('ids', [a.base, ...a.nodes, ...a.targets])
+    const groups = (Array.isArray(a.groups) ? a.groups : [a]) as Record<string, unknown>[]
+    if (groups.length === 0) return ['groups: a non-empty list of { "base", "nodes", "targets" } is required']
+    for (const g of groups) {
+      if (!isString(g?.base)) return ['base: the screen whose node ids you hold is required']
+      if (!isStringList(g.nodes)) return ['nodes: a non-empty list of node ids in the base screen is required']
+      if (!isStringList(g.targets)) return ['targets: a non-empty list of screen ids is required']
+    }
+    return nodeIdProblems(
+      'ids',
+      groups.flatMap((g) => [g.base as string, ...(g.nodes as string[]), ...(g.targets as string[])]),
+    )
   },
   candidates: (a) => {
     const screens = a.screens
