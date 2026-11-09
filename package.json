@@ -1,6 +1,6 @@
 {
   "name": "tz-skills",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "teszerrakt's Claude Code skills, shipped as the tz-skills plugin.",
   "type": "module",
@@ -10,11 +10,11 @@
     "lint:skills": "bun scripts/lint-skills.ts",
     "check:versions": "bun scripts/versions.ts",
     "evals": "bun scripts/evals.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p figma-map/scripts/figma",
     "test": "bun test",
-    "lint": "oxlint ship-epic/command-center ship-epic/scripts scripts",
-    "format": "oxfmt 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts' 'scripts/**/*.ts'",
-    "format:check": "oxfmt --check 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts' 'scripts/**/*.ts'"
+    "lint": "oxlint ship-epic/command-center ship-epic/scripts scripts figma-map/scripts plugins/t3-question-marker",
+    "format": "oxfmt 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts' 'scripts/**/*.ts' 'figma-map/scripts/**/*.ts' 'plugins/t3-question-marker/**/*.ts'",
+    "format:check": "oxfmt --check 'ship-epic/command-center/**/*.ts' 'ship-epic/scripts/**/*.ts' 'scripts/**/*.ts' 'figma-map/scripts/**/*.ts' 'plugins/t3-question-marker/**/*.ts'"
   },
   "engines": {
     "bun": ">=1.0.0"
@@ -30,6 +30,7 @@
   "author": "teszerrakt",
   "license": "MIT",
   "devDependencies": {
+    "@figma/plugin-typings": "^1.142.0",
     "@types/bun": "^1.4.4",
     "oxfmt": "^0.75.0",
     "oxlint": "^1.90.0",

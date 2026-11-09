@@ -18,6 +18,7 @@ Personal Claude Code skills:
 | Skill | Invocation | What it does |
 | ----- | ---------- | ------------ |
 | `fe-design-map` | you type it | Charts the map, then works its tickets |
+| `figma-map` | model or you | Turns a Figma section into a published design map — pages, components, variant tables, crops, reuse badges — refreshed incrementally as the design changes |
 | `ask-stakeholders` | model or you | Posts a batch of open questions as one public Slack thread, tailored per persona |
 | `fe-design-cleanup` | model or you | Lists the fact bases on this machine and suggests which are safe to delete |
 | `estimate-effort` | model or you | Sizes a ticket in man-days, calibrated on the repo's own estimated-versus-actual history |
@@ -74,9 +75,11 @@ Mods are Claude Code plugins with hooks, installed from the same marketplace.
 | Mod | What it does |
 | --- | ------------ |
 | [`show-media`](plugins/show-media/README.md) | Shows images, videos and GIFs in a pane beside the chat (kitty or Ghostty) |
+| [`t3-question-marker`](plugins/t3-question-marker/README.md) | In T3 Code, keeps a `❓ ` prefix on the thread title while the last reply ends with open questions |
 
 ```
 /plugin install show-media@tz-skills
+/plugin install t3-question-marker@tz-skills
 ```
 
 ## Per-repo config
@@ -85,7 +88,7 @@ Several skills read config from the repository you invoke them in. Every file is
 
 | File | Read by | Holds |
 | ---- | ------- | ----- |
-| `.claude/fe-design-map.md` | `fe-design-map` | docs platform and home doc, API base URL, permissions source, Figma workspace, PRD home, tracker teams, doc authoring preferences |
+| `.claude/fe-design-map.md` | `fe-design-map`, `figma-map` | docs platform and home doc, API base URL, permissions source, Figma workspace, PRD home, tracker teams, doc authoring preferences |
 | `.claude/delivery.md` | `ship`, `ship-epic` | the project's half of every phase, per track: commands, delegate skills, live target, migrations, parallel-run limits |
 | `.claude/stakeholders.md` | `ask-stakeholders` | per colleague: handle, public channel, role, what they answer, and the register to write in |
 | `.claude/standup.md` | `standup` | standup channel id, my Slack user id, GitHub login, and which ticket system to link |
@@ -95,7 +98,7 @@ Run `/tz-skills:setup-tz-skills` in a new repo to scaffold these. It detects wha
 
 A skill whose config file is missing also asks for the values itself, then offers to write the file so the next run skips the questions. `estimate-effort` also labels its output **uncalibrated** until the file exists — an estimate calibrated on another codebase is a guess wearing a number.
 
-`fe-design-map` writes its harvested facts to `~/.claude/fe-design-map/<repo>/<slug>/`. That directory is throwaway and is never pushed to a remote. `fe-design-cleanup` deletes it once the build tickets close.
+`fe-design-map` writes its harvested facts to `~/.claude/fe-design-map/<repo>/<slug>/`, and `figma-map` to `~/.claude/figma-map/<repo>/<slug>/`. That directory is throwaway and is never pushed to a remote. `fe-design-cleanup` deletes it once the build tickets close.
 
 ## Developing
 

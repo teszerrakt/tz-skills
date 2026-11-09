@@ -5,6 +5,7 @@
     "": {
       "name": "@teszerrakt/skills",
       "devDependencies": {
+        "@figma/plugin-typings": "^1.142.0",
         "@types/bun": "^1.4.4",
         "oxfmt": "^0.75.0",
         "oxlint": "^1.90.0",
@@ -13,6 +14,8 @@
     },
   },
   "packages": {
+    "@figma/plugin-typings": ["@figma/plugin-typings@1.142.0", "", {}, "sha512-Loa9P4bUZi/pQejic8OYQSU4Zz9izJdIiDUkkKddq5Bfc5JPRV6pCeg3C8owovbX9lKshaFym86PlMhKZgLeBw=="],
+
     "@oxfmt/binding-android-arm-eabi": ["@oxfmt/binding-android-arm-eabi@0.75.0", "", { "os": "android", "cpu": "arm" }, "sha512-zHJ7LcTN46/5mtoLxsUu14pdF9ixFwDURtmxZ0CeNwqom5qB5NRVqU6o2GRZ7QPdNBW8G6j9UTJzQ+EDevMH0w=="],
 
     "@oxfmt/binding-android-arm64": ["@oxfmt/binding-android-arm64@0.75.0", "", { "os": "android", "cpu": "arm64" }, "sha512-IdxsKZJvHZUvI7q6kLmzXdEFpFiBEDQw/WJtSp1QlzNXBw1JlLN3tY50WwWd4doPnq86XW4P+7BsQwu6meCW+w=="],

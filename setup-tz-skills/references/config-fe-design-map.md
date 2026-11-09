@@ -1,6 +1,6 @@
 # Template: `.claude/fe-design-map.md`
 
-Read by `fe-design-map`. Nine sections. The tag on each says where the value comes from.
+Read by `fe-design-map`, and by `figma-map` for `Sources` and `figma-map`. Ten sections. The tag on each says where the value comes from.
 
 - **[detect]** — exploration already found it. Propose it; do not ask.
 - **[ask]** — no file states it. Ask.
@@ -37,6 +37,11 @@ Consumed by the `/tz-skills:fe-design-map` skill. Per-developer config, not trac
 ## Figma
 
 - FE workspace file: {{file key}} ({{file name}})                     [ask]
+
+## figma-map
+
+- GitHub blob base: https://github.com/{{org}}/{{repo}}/blob          [detect from `git remote get-url origin`]
+- Fact base root: ~/.claude/figma-map/{{repo}}/                      [detect]
 
 ## Tracker
 
