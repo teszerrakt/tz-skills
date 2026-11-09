@@ -10,7 +10,7 @@
 // Transcripts are read from $CLAUDE_CONFIG_DIR/projects (default ~/.claude/projects), newest first.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { TAG_PREFIX } from './figma.ts'
 import type { DumpResult, FlowDump } from './lib/types.ts'
 
@@ -155,6 +155,7 @@ function main(argv: string[]) {
     }
     return
   }
+  mkdirSync(dirname(out!), { recursive: true })
   writeFileSync(out!, JSON.stringify(value))
   console.log(`${out}: ${statSync(out!).size} bytes from the call tagged "${tag}"`)
 }
