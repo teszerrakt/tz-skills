@@ -20,7 +20,8 @@ Outside T3 Code the hook does nothing.
 ## How it works
 
 - **The `question-marker` skill** tells the agent to put every open question in a closing `❓` section rather than calling AskUserQuestion.
-- **The Stop hook** (`hooks/stop.ts`) reads the agent's last reply and the thread's title (`t3 thread show`). When the reply has a line starting with `❓` and the title is unmarked, it blocks the stop once and asks the agent to rename the thread to `❓ <title>`. When the title is marked and the reply has no questions, it asks for the rename back. The agent renames with the `mcp__t3-code__t3_thread_update` tool.
+- **The UserPromptSubmit hook** (`hooks/prompt.ts`) reads the thread's title (`t3 thread show`) and tells the agent: remove the mark first if it is there (the user has answered), and add it before writing a reply that ends with a `❓` section. Renaming before the reply keeps the reply as the turn's last message, the only one T3 shows.
+- **The Stop hook** (`hooks/stop.ts`) is the fallback. It reads the agent's last reply and the title; when they disagree (questions but no mark, or a mark but no questions), it blocks the stop once, asks for the rename, and asks the agent to repeat its `❓` section (or its reply) so the user still sees it. The agent renames with the `mcp__t3-code__t3_thread_update` tool.
 
 The hook never blocks twice in a row (`stop_hook_active`), and allows the stop silently if the CLI is missing, fails or takes over 10 seconds.
 
