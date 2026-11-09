@@ -55,10 +55,14 @@ describe('lastAssistantText', () => {
 
 describe('decide', () => {
   test('asks to mark an unmarked thread when the reply has questions', () => {
-    expect(decide(true, 'Fix login')?.reason).toContain('"❓ Fix login"')
+    const reason = decide(true, 'Fix login')?.reason
+    expect(reason).toContain('"❓ Fix login"')
+    expect(reason).toContain('repeating your closing ❓ section')
   })
   test('asks to unmark a marked thread when the reply has none', () => {
-    expect(decide(false, '❓ Fix login')?.reason).toContain('back to "Fix login"')
+    const reason = decide(false, '❓ Fix login')?.reason
+    expect(reason).toContain('back to "Fix login"')
+    expect(reason).toContain('repeating your reply in full')
   })
   test('allows when title and reply agree', () => {
     expect(decide(true, '❓ Fix login')).toBeUndefined()

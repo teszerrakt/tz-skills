@@ -34,4 +34,10 @@ No questions, no section. Never write a `❓` line for anything else.
 
 ## In T3 Code
 
-T3 Code shows a thread as waiting only when it holds a question. When your reply ends, a Stop hook checks the thread's title against your reply. If it asks you to rename the thread (to add the `❓ ` prefix, or to remove it), do that with `mcp__t3-code__t3_thread_update` (action `rename`, no `threadId`), then stop without repeating your reply.
+T3 Code shows a thread as waiting only when it holds a question, and shows only a turn's last message. So the thread's title carries a `❓ ` prefix while your last reply has open questions, and the reply itself must stay the turn's last message:
+
+- When the user's message arrives, a hook tells you the thread's title. If it is marked, the user has answered: rename it without the prefix before anything else.
+- Before writing a reply that ends with a `❓` section, rename the thread to `❓ <title>`.
+- Rename with `mcp__t3-code__t3_thread_update` (action `rename`, no `threadId`).
+
+If you forget, a Stop hook blocks the stop and asks for the rename; do it, then repeat what it asks you to repeat, so the user still sees your reply.
