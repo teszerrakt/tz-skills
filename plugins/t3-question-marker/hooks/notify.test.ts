@@ -10,8 +10,21 @@ describe('notice text', () => {
     expect(noticeFor('❓ Fix login', REPLY, true)).toEqual({ summary: '❓ Fix login', body: 'Q1. Ship it now?', link: undefined })
   })
   test('a done notice shows the first line, without Markdown', () => {
-    expect(firstLine('## **Done.** All `5` tests pass')).toBe('Done. All 5 tests pass')
-    expect(noticeFor('Fix login', 'x'.repeat(300), false).body.length).toBe(140)
+    expect(firstLine('## **Done.** All `5` tests pass')).toBe('Done.')
+    expect(firstLine('## **Done** with all `5` tests passing')).toBe('Done with all 5 tests passing')
+    expect(noticeFor('Fix login', 'x'.repeat(300), false).body.length).toBe(100)
+  })
+  test('links show as their text, and a # with no space after it stays', () => {
+    expect(firstLine('[#1264](https://github.com/o/r/pull/1264) is ready for review.')).toBe('#1264 is ready for review.')
+    expect(firstLine('#1263 CI is green on b35bdeb.')).toBe('#1263 CI is green on b35bdeb.')
+  })
+  test('keeps the first sentence, not cutting at a colon', () => {
+    expect(firstLine('#1264: CodeRabbit left 2 minor comments; both were right, so I fixed them.')).toBe('#1264: CodeRabbit left 2 minor comments.')
+  })
+  test('cuts a long sentence at the last whole word, within 100 characters', () => {
+    const body = firstLine(`All four PRs are ready for review: ${'green checks and answered threads '.repeat(4)}`)
+    expect(body.length).toBeLessThanOrEqual(100)
+    expect(body).toMatch(/ready for review: .*[a-z]…$/)
   })
 })
 

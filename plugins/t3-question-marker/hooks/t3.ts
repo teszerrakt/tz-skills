@@ -20,14 +20,19 @@ export function cliPath(env: Env): string {
   return env.T3CODE_CLI_PATH || join(homedir(), '.t3/bin/t3')
 }
 
-/** The thread's title, or undefined when the CLI is missing, fails or times out. */
-export function threadTitle(threadId: string, cli: string): string | undefined {
+/** A thread delegated by another (a ship-epic worker) has a parent; its parent reports for it. */
+export type ThreadInfo = { title: string; parentThreadId?: string }
+
+/** The thread's title and parent, or undefined when the CLI is missing, fails or times out. */
+export function threadInfo(threadId: string, cli: string): ThreadInfo | undefined {
   if (!existsSync(cli)) return undefined
   try {
-    const result = Bun.spawnSync([cli, 'thread', 'show', threadId], { timeout: CLI_TIMEOUT_MS, stderr: 'ignore' })
+    const result = Bun.spawnSync([cli, 'thread', 'show', threadId, '--json', '--messages', '0'], { timeout: CLI_TIMEOUT_MS, stderr: 'ignore' })
     if (!result.success) return undefined
-    const title = result.stdout.toString().split('\n')[0]?.trim()
-    return title || undefined
+    const thread = (JSON.parse(result.stdout.toString()) as { thread?: { title?: string; parentThreadId?: string | null } }).thread
+    const title = thread?.title?.trim()
+    if (!title) return undefined
+    return thread?.parentThreadId ? { title, parentThreadId: thread.parentThreadId } : { title }
   } catch {
     return undefined
   }

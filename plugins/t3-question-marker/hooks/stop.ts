@@ -6,13 +6,39 @@
 // A stop it allows ends the turn, so it also sends the desktop notification (notify.ts).
 // Every failure path allows the stop silently.
 import { existsSync, readFileSync } from 'node:fs'
-import { noticeFor, notify, type Notice } from './notify.ts'
-import { cliPath, environmentId, isMarked, isPlaceholder, MARK, RENAME_TOOL, threadLink, threadTitle, unmarked, type Env } from './t3.ts'
+import { firstLine, firstQuestion, noticeFor, notify, type Notice } from './notify.ts'
+import { cliPath, environmentId, isMarked, isPlaceholder, MARK, RENAME_TOOL, threadInfo, threadLink, unmarked, type Env } from './t3.ts'
 
 export type HookInput = { transcript_path?: string; stop_hook_active?: boolean; last_assistant_message?: string }
 export type Decision = { decision: 'block'; reason: string } | undefined
 
-type TranscriptEntry = { type?: string; message?: { id?: string; content?: unknown } }
+type TranscriptEntry = { type?: string; isMeta?: boolean; message?: { id?: string; content?: unknown } }
+
+// Openings of the prompts T3 Code sends by itself (ProviderContinuationService, Orchestrator, pullRequestWatch).
+// The transcript marks them like typed prompts, so the wording is the only tell.
+const AUTOMATIC_PROMPT = /^(?:Delegated tasks? |Update on pull request #\d+)/
+
+export type Turn = { prompt: string; earlierReply: string }
+
+/** The prompt that started the transcript's last turn (its last user entry that is neither meta nor tool results), and the reply before it. */
+export function lastTurn(jsonl: string): Turn {
+  const lines = jsonl.split('\n').filter((line) => line.trim() !== '')
+  const start = lines.findLastIndex((line) => {
+    const entry = parseEntry(line)
+    return entry?.type === 'user' && entry.isMeta !== true && textOf(entry) !== ''
+  })
+  if (start < 0) return { prompt: '', earlierReply: '' }
+  return { prompt: textOf(parseEntry(lines[start]!)!), earlierReply: lastAssistantText(lines.slice(0, start).join('\n')) }
+}
+
+/** A worker report or PR-watch update notifies only for a new question or a PR ready for review. */
+export function worthNotifying(turn: Turn, reply: string): boolean {
+  if (!AUTOMATIC_PROMPT.test(turn.prompt)) return true
+  // A question still waiting on the user is repeated by every progress report; only a new one is news.
+  if (hasQuestions(reply) && firstQuestion(reply) !== firstQuestion(turn.earlierReply)) return true
+  const lead = firstLine(reply)
+  return /ready for review/i.test(lead) && !/\bnot (?:yet )?ready for review/i.test(lead)
+}
 
 /** True when some line opens with `❓`, optionally after Markdown heading `#`s or `**`. */
 export function hasQuestions(text: string): boolean {
@@ -79,10 +105,9 @@ function blockWith(rename: string, repeat: string): Decision {
   }
 }
 
-function replyText(input: HookInput): string {
-  if (input.last_assistant_message) return input.last_assistant_message
+function readTranscript(input: HookInput): string {
   if (!input.transcript_path || !existsSync(input.transcript_path)) return ''
-  return lastAssistantText(readFileSync(input.transcript_path, 'utf8'))
+  return readFileSync(input.transcript_path, 'utf8')
 }
 
 /** The whole hook: the stdin JSON in, the stdout JSON out (empty to allow the stop). */
@@ -91,11 +116,14 @@ export function run(stdin: string, env: Env = process.env, send: (notice: Notice
   if (!threadId) return ''
   const input = parseInput(stdin)
   if (!input) return ''
-  const title = threadTitle(threadId, cliPath(env))
-  const reply = replyText(input)
+  const thread = threadInfo(threadId, cliPath(env))
+  const title = thread?.title
+  const transcript = readTranscript(input)
+  const reply = input.last_assistant_message || lastAssistantText(transcript)
   const questions = hasQuestions(reply)
   const decision = title && !input.stop_hook_active ? decide(questions, title) : undefined
   if (decision) return JSON.stringify(decision)
+  if (thread?.parentThreadId || !worthNotifying(lastTurn(transcript), reply)) return ''
   const environment = environmentId(env)
   send(noticeFor(unmarked(title ?? 'T3 Code'), reply, questions, environment && threadLink(environment, threadId)))
   return ''

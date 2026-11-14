@@ -3,7 +3,7 @@ import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Notice } from './notify.ts'
-import { decide, hasQuestions, lastAssistantText, run } from './stop.ts'
+import { decide, hasQuestions, lastAssistantText, lastTurn, run, worthNotifying } from './stop.ts'
 
 const dir = mkdtempSync(join(tmpdir(), 't3-question-marker-'))
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
@@ -72,7 +72,8 @@ describe('decide', () => {
 })
 
 describe('run', () => {
-  const titled = fakeCli('t3', 'printf "Fix login\\nid  running\\n"')
+  const titled = fakeCli('t3', `printf '%s' '{"thread":{"title":"Fix login","parentThreadId":null}}'`)
+  const worker = fakeCli('t3-worker', `printf '%s' '{"thread":{"title":"TRA-1 worker","parentThreadId":"epic-1"}}'`)
   const home = join(dir, 't3home')
   mkdirSync(join(home, 'userdata'), { recursive: true })
   writeFileSync(join(home, 'userdata/environment-id'), 'env-1\n')
@@ -112,7 +113,53 @@ describe('run', () => {
     expect(runIt(input(), { ...env, T3CODE_CLI_PATH: join(dir, 'missing') })).toBe('')
     expect(runIt(input(), { ...env, T3CODE_CLI_PATH: fakeCli('broken', 'exit 1') })).toBe('')
   })
+  test('a worker thread sends no notice, but still gets its title fixed', () => {
+    expect(runIt(input({ last_assistant_message: 'All tests pass.' }), { ...env, T3CODE_CLI_PATH: worker })).toBe('')
+    expect(sent).toEqual([])
+    expect(JSON.parse(runIt(input(), { ...env, T3CODE_CLI_PATH: worker })).decision).toBe('block')
+  })
   test('allows on stdin that is not JSON', () => {
     expect(runIt('nope', env)).toBe('')
+  })
+  test("a PR-watch update's progress note sends no notice", () => {
+    const path = transcript(prompt('Update on pull request #12 (https://x), which T3 Code is watching for you:'), assistant('m1', 'CI is still running.'))
+    expect(runIt(JSON.stringify({ transcript_path: path }), env)).toBe('')
+    expect(sent).toEqual([])
+  })
+})
+
+const prompt = (text: string) => ({ type: 'user', message: { content: text } })
+const toolResult = { type: 'user', message: { content: [{ type: 'tool_result', content: 'ok' }] } }
+const meta = { type: 'user', isMeta: true, message: { content: 'Stop hook feedback: rename' } }
+
+describe('lastTurn', () => {
+  test('takes the last typed or sent prompt, skipping tool results and meta entries, and the reply before it', () => {
+    const jsonl = [prompt('first'), assistant('a', 'earlier'), prompt('Delegated task t-1 [completed]:'), toolResult, meta, assistant('b', 'now')]
+      .map((e) => JSON.stringify(e))
+      .join('\n')
+    expect(lastTurn(jsonl)).toEqual({ prompt: 'Delegated task t-1 [completed]:', earlierReply: 'earlier' })
+  })
+})
+
+const asking = (q: string) => `Worker is mid-run.\n\n## ❓ Questions\n\n**${q}**\n`
+
+const update = (earlierReply = '') => ({ prompt: 'Update on pull request #1264 (https://x), which T3 Code is watching for you:', earlierReply })
+
+describe('worthNotifying', () => {
+  test('a turn you started always notifies', () => {
+    expect(worthNotifying({ prompt: 'okay', earlierReply: '' }, 'Merged main.')).toBe(true)
+  })
+  test('an automatic progress note stays quiet', () => {
+    expect(worthNotifying(update(), 'CodeRabbit left 2 minor comments.')).toBe(false)
+    expect(worthNotifying({ prompt: 'Delegated task t-1 (TRA-1) [completed]:', earlierReply: '' }, 'Worker is mid-run.')).toBe(false)
+  })
+  test('an automatic turn notifies for a new question, not one the previous reply already asked', () => {
+    expect(worthNotifying(update('All green.'), asking('Keep the old path?'))).toBe(true)
+    expect(worthNotifying(update(asking('Keep the old path?')), asking('Keep the old path?'))).toBe(false)
+    expect(worthNotifying(update(asking('Keep the old path?')), asking('Merge now?'))).toBe(true)
+  })
+  test('an automatic turn notifies when its first line says a PR is ready for review, not "not ready"', () => {
+    expect(worthNotifying(update(), '**#1264 is ready for review:** all 4 checks passed.')).toBe(true)
+    expect(worthNotifying(update(), '#1263: CI green. Still not ready for review.')).toBe(false)
   })
 })
