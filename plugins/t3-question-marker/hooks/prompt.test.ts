@@ -7,9 +7,10 @@ import { contextFor, run } from './prompt.ts'
 const dir = mkdtempSync(join(tmpdir(), 't3-question-marker-prompt-'))
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
-function fakeCli(title: string): string {
+function fakeCli(title: string, parent: string | null = null): string {
   const path = join(dir, `t3-${Math.random()}`)
-  writeFileSync(path, `#!/bin/sh\nprintf '%s\\nid  completed\\n' '${title}'\n`)
+  const json = JSON.stringify({ thread: { title, parentThreadId: parent } })
+  writeFileSync(path, `#!/bin/sh\nprintf '%s' '${json}'\n`)
   chmodSync(path, 0o755)
   return path
 }
@@ -28,11 +29,17 @@ describe('contextFor', () => {
   })
 })
 
+const contextOf = (cli: string) => JSON.parse(run({ T3CODE_THREAD_ID: 't1', T3CODE_CLI_PATH: cli })).hookSpecificOutput.additionalContext
+
 describe('run', () => {
   test('adds the context as UserPromptSubmit output in a T3 thread', () => {
     const out = JSON.parse(run({ T3CODE_THREAD_ID: 't1', T3CODE_CLI_PATH: fakeCli('❓ Fix login') }))
     expect(out.hookSpecificOutput.hookEventName).toBe('UserPromptSubmit')
     expect(out.hookSpecificOutput.additionalContext).toContain('rename it to "Fix login"')
+  })
+  test('asks for a short headline, except in a worker thread', () => {
+    expect(contextOf(fakeCli('Fix login'))).toContain('at most 100 characters')
+    expect(contextOf(fakeCli('TRA-1 worker', 'epic-1'))).not.toContain('at most 100 characters')
   })
   test('adds nothing outside T3 or when the CLI is missing', () => {
     expect(run({ T3CODE_CLI_PATH: fakeCli('Fix login') })).toBe('')

@@ -4,7 +4,8 @@ import type { Env } from './t3.ts'
 
 export type Notice = { summary: string; body: string; link?: string }
 
-const BODY_MAX = 140
+/** Noctalia's history shows two lines of body, about 105 characters. */
+export const BODY_MAX = 100
 
 /** The question a reply asks first: the first bold line after its ❓ heading. */
 export function firstQuestion(reply: string): string | undefined {
@@ -13,27 +14,40 @@ export function firstQuestion(reply: string): string | undefined {
   if (start < 0) return undefined
   for (const line of lines.slice(start + 1)) {
     const bold = /^\s*\*\*(.+?)\*\*/.exec(line)
-    if (bold?.[1]) return clip(bold[1])
+    if (bold?.[1]) return clip(plain(bold[1]))
   }
   return undefined
 }
 
-/** The reply's first line of prose, without Markdown markers. */
+/** The reply's first sentence of prose, without Markdown, cut to fit the notification. */
 export function firstLine(reply: string): string {
   const line = reply
     .split('\n')
     .map((l) =>
-      l
-        .replace(/^[#>*\-\s|`]+/, '')
-        .replace(/[*_`]/g, '')
+      plain(l)
+        .replace(/^(?:#+\s+|[>*\-|]\s*)+/, '')
         .trim(),
     )
     .find((l) => l !== '')
-  return clip(line ?? 'Finished.')
+  if (!line) return 'Finished.'
+  // Not at a colon: "#1264: CodeRabbit left 2 comments." would shrink to "#1264:".
+  return clip(line.split(/(?<=[.;])\s/)[0]!.replace(/;$/, '.'))
 }
 
+/** Links as their text, bare URLs dropped, emphasis and code marks removed. */
+function plain(text: string): string {
+  return text
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/<?https?:\/\/\S+>?/g, '')
+    .replace(/[*_`]/g, '')
+    .replace(/\s{2,}/g, ' ')
+}
+
+/** Cuts at the last whole word that fits. */
 function clip(text: string): string {
-  return text.length > BODY_MAX ? `${text.slice(0, BODY_MAX - 1)}…` : text
+  if (text.length <= BODY_MAX) return text
+  const cut = text.lastIndexOf(' ', BODY_MAX - 1)
+  return `${text.slice(0, cut > 0 ? cut : BODY_MAX - 1).replace(/[\s,;:]+$/, '')}…`
 }
 
 export function noticeFor(title: string, reply: string, questions: boolean, link?: string): Notice {
