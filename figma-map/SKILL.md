@@ -5,7 +5,7 @@ description: Turn a Figma section of flows into a published design map — pages
 
 # Figma map
 
-Reads a Figma section without dumping it into context, and publishes one design-map artifact that reads top to bottom: each page, the components on it, their sub-components, then the components several pages share. It owns the harvest, the merge of near-identical screens, the crops and the page. It does not decide API contracts, tickets or estimates. `/tz-skills:fe-design-map` owns those and can start from this map's fact base.
+Reads a Figma section without dumping it into context, and publishes one design-map artifact that reads top to bottom: each page, one component at a time with its parts nested under it, then the components several pages share, then the Decision and Question lists. Every item has a code (`P1.2`, `S3`, `D1`, `Q4`), a variants table (Interaction, Copy, Notes, Status), and a review mark and comment button that the whole team sees. It owns the harvest, the merge of near-identical screens, the crops and the page. It does not decide API contracts, tickets or estimates. `/tz-skills:fe-design-map` owns those and can start from this map's fact base.
 
 ## Why it is shaped this way
 
@@ -22,7 +22,7 @@ Reads a Figma section without dumping it into context, and publishes one design-
 
 Read `.claude/fe-design-map.md` in the repo root. In a git worktree that has none, read it from the main checkout: the first `worktree` line of `git worktree list --porcelain`.
 
-- `## Sources` → the UI package path and the app-local component paths that reuse verdicts search, in that order.
+- `## Sources` → the UI package path and the app-local component paths that reuse verdicts search, in that order, and the API contract (an RFC path) if it names one.
 - `## figma-map` → `GitHub blob base` (for example `https://github.com/<org>/<repo>/blob`) and, optionally, `Fact base root`.
 
 A missing `## figma-map` section: detect the GitHub remote with `git remote get-url origin`, propose the section, and write it back once the user agrees. A missing file: offer `/tz-skills:setup-tz-skills`, then carry on with what the repo shows.
@@ -38,8 +38,8 @@ All run with Bun from this skill's base directory. Each file's header gives its 
 | `scripts/merge.ts` | Expands each flow's dump into per-screen records and layout groups, and prints the digest a section is written from. |
 | `scripts/shots.ts` | Downloads `get_screenshot` images from the session transcript by node id. Runs outside the sandbox. |
 | `scripts/components.ts` | Prints the component index reuse verdicts are searched in: each component file and what it exports. |
-| `scripts/assemble.ts` | Joins the banner, the sections and the Shared section into `design-map.md`, renumbering every `[n]`. |
-| `scripts/render.ts` | Renders `design-map.md` to the page the Artifact tool publishes. Exits 1 on any warning. |
+| `scripts/assemble.ts` | Joins the banner, the sections, the Shared section and the lists into `design-map.md`, renumbering every `[n]`. |
+| `scripts/render.ts` | Renders `design-map.md` to the page the Artifact tool publishes, numbering every item. Exits 1 on any warning. |
 
 If `save-result.ts` cannot find a result, write that one result to its file by hand and say so in the reply.
 
@@ -61,8 +61,9 @@ merge/<flow>.md       the digest the harvester writes the section from
 locate/<flow>.json    node ids located in screens that share another screen's layout
 img/crops/*.png       crops, prefixed with the flow's slug
 sections/<flow>.md    one flow's pages, in the doc shape
-banner.md             the banner line; changed.md on a refresh
+banner.md             the page header; changed.md on a refresh
 shared.md             the Shared components section
+lists.md              the Decision and Question lists, from the user's grooming notes
 design-map.md         the assembled source
 design-map.html       the rendered page
 ```
@@ -91,7 +92,7 @@ Done when `flows.json` lists every screen in the section, each under one flow.
 
 ### 3. Pick the flows
 
-Close the reply with a questions section: the flows as a numbered list with their screen count and a cost estimate (about 4k tokens per screen, plus about 0.6k per crop; expect about one crop per screen), and the question of which to run. On a refresh, list only the flows that changed, with what changed. Recommend all flows when the total is under about 60 screens, otherwise the flows a named ticket or the user's message points at.
+Close the reply with a questions section: the flows as a numbered list with their screen count and a cost estimate (about 4k tokens per screen, plus about 0.6k per crop; expect about one crop per screen), and the question of which to run. On a refresh, list only the flows that changed, with what changed. Recommend all flows when the total is under about 60 screens, otherwise the flows a named ticket or the user's message points at. If the user has not given them, ask in the same section for grooming notes (decisions, questions and their answers) and the API contract; both are optional, and the map leaves out what it does not get.
 
 The questions section is the one shape for asking: its own section at the end of the reply under a `❓` heading, one block per question. A block is the question in under 15 words, one option per bullet (the choice in bold, then what the reader would see), a `✨` line recommending one, and one `Asked because:` line. Nothing follows it.
 
@@ -111,30 +112,33 @@ Dispatch `tz-skills:figma-map-harvester` subagents in parallel, each with flows 
 
 Each subagent writes only its own flows' `raw/`, `frames/`, `merge/`, `signatures/`, `img/crops/` and `sections/` files, and returns what harvest.md asks for.
 
-On a refresh, a subagent gets only the changed flows, the changed screen ids, and the flow's previous `sections/<flow>.md` to edit in place. It dumps each changed flow whole, so its records and signatures stay complete.
+On a refresh, a subagent gets only the changed flows, the changed screen ids, and the flow's previous `sections/<flow>.md` to edit in place. It dumps each changed flow whole, so its records and signatures stay complete. A section that still has `#### States` or `#### Variants` tables predates the variant-row shape: the subagent rewrites it whole.
 
 Done when every chosen flow has a `sections/<flow>.md` and a `merge/<flow>.md` digest.
 
-### 6. Shared components
+### 6. Shared components, interactions and lists
 
-One writer, you, writes `shared.md` from `shared-names.json` and the subagents' reports: one `##` per shared component under `# Shared components`, its badge, reuse link, crop, behaviour and its variants table. Variants are listed only here; page entries name the variant they use and show its crop.
+You write these alone, in the shape [references/doc-shape.md](references/doc-shape.md) gives.
 
-Where two flows' sections describe a shared component differently, re-read both flows' frame records and settle it. Write one verdict, and edit the losing section to match.
+- **`shared.md`**, from `shared-names.json` and the subagents' reports: one `##` per shared component under `# Shared components`, its badge and reuse link, purpose, and its variant rows. Variants are listed only here; a page's part names the variant it uses. Where two flows' sections describe a shared component differently, re-read both flows' frame records, write one verdict, and edit the losing section to match.
+- **Routes.** If the run has an API contract (the user's, or config `## Sources`), add to each Interaction bullet the route the contract gives for it (`Confirm & Import → POST /statement-uploads/:id/import`). A route the contract does not name is never written; a step with none is a Note when the contract should have one.
+- **`lists.md`**, only from the user's grooming notes: `# Decisions` and `# Questions`, each one table, keeping the user's D/Q numbers. Leave out a list with no rows, and the file when there are no notes.
+- **Status tags** on rows, rules and headings: `{New}` and `{Revised}` against the previous run's sections on a refresh; `{Settled}`, `{Conflict}` and `{Open}` against the lists and the contract; `{Not drawn}` for a state they need that no frame shows.
 
-Done when no component has a variants table in two places, and every page link to `#<anchor>` has a heading.
+Done when no component has variant rows in two places, every `[shared](#<anchor>)` has a heading, and every route written is in the contract.
 
 ### 7. Assemble and render
 
-Write `banner.md` (the banner line from [references/doc-shape.md](references/doc-shape.md)) and, on a refresh, `changed.md`. Then:
+Write `banner.md` (the header from [references/doc-shape.md](references/doc-shape.md)) and, on a refresh, `changed.md`. Then:
 
 ```bash
 bun <base>/scripts/assemble.ts <fb>
-bun <base>/scripts/render.ts <fb> <fb>/design-map.md <fb>/design-map.html --file <file key> --gh <GitHub blob base>/<pinned SHA> --inline --title "<section name> Design Map"
+bun <base>/scripts/render.ts <fb> <fb>/design-map.md <fb>/design-map.html --file <file key> --gh <GitHub blob base>/<pinned SHA> --inline --title "<section name>"
 ```
 
 Append the run to `runs.json`, with each harvest subagent's `subagent_tokens` from the `<usage>` block of its Agent result, per subagent and in total, and the tokens per screen. Never use a subagent's own estimate: it runs about 40% low.
 
-Done when both print no problem or warning. Render warns on an `[n]` with no Sources line, a crop missing from disk, and a link to an anchor no heading has. Its page holds at phone width by construction: tables scroll in their own box and four-column tables fold to two.
+Done when both print no problem or warning. Render warns on an `[n]` with no Sources line, a crop missing from disk, a link to an anchor no heading has, two headings with one anchor, a bullet under a variant outside Interaction, Copy or Notes, an old `#### States` table, and a list row without its D/Q code. Its page holds at phone width by construction: the rail stacks above the content and tables scroll in their own box.
 
 ### 8. Check
 
@@ -152,7 +156,7 @@ Done when the user has the artifact link, or the rendered page.
 
 ## Reply
 
-Close with: the artifact link, screens → pages → states, the crops written, the design issues the harvest found (typos, duplicate frames, inconsistent copy or formats) as one bullet each, and what the run cost against the step 3 estimate. Anything that needs the user goes in a questions section at the very end.
+Close with: the artifact link, screens → pages → components → variant rows, the crops written, the rows tagged Conflict or Not drawn, the design issues the harvest found (typos, duplicate frames, inconsistent copy or formats) as one bullet each, and what the run cost against the step 3 estimate. Anything that needs the user goes in a questions section at the very end.
 
 ## Aborts
 

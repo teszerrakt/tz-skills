@@ -2,9 +2,10 @@
 
 ## With the Artifact tool
 
-1. Publish `<fb>/design-map.html`, rendered with `--inline`, so every crop is built into the page. No asset upload is needed: a map's crops come to about 1MB, and the page limit is 16MB.
-2. Above 12MB, render without `--inline`, upload each crop the page uses as an asset of the artifact (this needs the page's `assets` capability), write `<fb>/images.json` mapping each `img/crops/<file>.png` to the URL the upload returned, and render again with `--images <fb>/images.json`.
-3. On a refresh, or when `meta.json` holds an artifact URL, update that artifact rather than creating a new one. Keep the URL in `meta.json`.
+1. Publish `<fb>/design-map.html`, rendered with `--inline`, so every crop is built into the page. No asset upload is needed: a map's crops come to about 1MB, and the page limit is 16MB. On every publish pass `capabilities: {"db": {}, "user": {"scopes": ["profile"]}, "comments": {"composer_only": true}}`: the review marks are saved in the `reviews` collection (doc id = the item's anchor, `{reviewed, by, at}`), the user scope names who marked each one, and the Comment buttons open the shell's composer. A map published before these existed gains them on its next update. Without them the page still reads; it hides the buttons and says review status can't be saved.
+2. Above 12MB, render without `--inline`, upload each crop the page uses as an asset of the artifact (add `"assets": {}` to the capabilities above), write `<fb>/images.json` mapping each `img/crops/<file>.png` to the URL the upload returned, and render again with `--images <fb>/images.json`.
+3. On a refresh, or when `meta.json` holds an artifact URL, update that artifact rather than creating a new one. Keep the URL in `meta.json`. A review mark is keyed by the item's anchor (its page, component and part names), so it survives a refresh that keeps the names and drops off an item that was renamed.
+4. After the first publish, one `ArtifactData` `list` of `reviews`: it answers, empty, when the db capability took.
 
 ## Without it
 

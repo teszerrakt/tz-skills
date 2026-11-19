@@ -18,7 +18,7 @@ Personal Claude Code skills:
 | Skill | Invocation | What it does |
 | ----- | ---------- | ------------ |
 | `fe-design-map` | you type it | Charts the map, then works its tickets |
-| `figma-map` | model or you | Turns a Figma section into a published design map — pages, components, variant tables, crops, reuse badges — refreshed incrementally as the design changes |
+| `figma-map` | model or you | Turns a Figma section into a published design map — pages, components, variant tables (interaction, copy, notes, status), crops, reuse badges, decision and question lists, review marks and comments — refreshed incrementally as the design changes |
 | `ask-stakeholders` | model or you | Posts a batch of open questions as one public Slack thread, tailored per persona |
 | `fe-design-cleanup` | model or you | Lists the fact bases on this machine and suggests which are safe to delete |
 | `estimate-effort` | model or you | Sizes a ticket in man-days, calibrated on the repo's own estimated-versus-actual history |

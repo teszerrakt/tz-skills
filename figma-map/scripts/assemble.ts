@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 // Joins the fact base's pieces into design-map.md, in reading order: banner.md, changed.md on a refresh, each flow's
-// sections/<slug>.md in inventory order, then shared.md. Every piece numbers its own [n] from 1; this renumbers them
+// sections/<slug>.md in inventory order, shared.md, then lists.md (the Decision and Question lists, when the user gave
+// grooming notes). Every piece numbers its own [n] from 1; this renumbers them
 // in order of first appearance into one closing ## Sources block, merging identical source lines.
 //   bun scripts/assemble.ts <fact-base>
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -44,10 +45,10 @@ export function assemble(pieces: Piece[]): { markdown: string; sourceCount: numb
   return { markdown, sourceCount: globalNumbers.size, problems }
 }
 
-function readPieces(factBase: string): { pieces: Piece[]; missing: string[] } {
+export function readPieces(factBase: string): { pieces: Piece[]; missing: string[] } {
   const inventory = JSON.parse(readFileSync(join(factBase, 'flows.json'), 'utf8')) as FlowInventory
-  const names = ['banner.md', 'changed.md', ...inventory.flows.map((f) => `sections/${f.slug}.md`), 'shared.md']
-  const optional = new Set(['changed.md', 'shared.md'])
+  const names = ['banner.md', 'changed.md', ...inventory.flows.map((f) => `sections/${f.slug}.md`), 'shared.md', 'lists.md']
+  const optional = new Set(['changed.md', 'shared.md', 'lists.md'])
   const pieces: Piece[] = []
   const missing: string[] = []
   for (const name of names) {
