@@ -1,5 +1,8 @@
 import { expect, test } from 'bun:test'
-import { assemble } from './assemble.ts'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { assemble, readPieces } from './assemble.ts'
 
 const A = 'https://www.figma.com/design/K/?node-id=1-1 — frame "A"'
 const B = 'https://www.figma.com/design/K/?node-id=1-2 — frame "B"'
@@ -25,4 +28,14 @@ test('a markdown link is not a citation, and a citation with no source line is r
   const { markdown, problems } = assemble([{ name: 's.md', text: `- see [3](#x) and [9]\n\n## Sources\n[1] ${A}\n` }])
   expect(markdown).toContain('- see [3](#x) and [9]')
   expect(problems).toEqual(['s.md: [9] has no line in its Sources block'])
+})
+
+test('pieces join in reading order: banner, sections, shared, then the Decision and Question lists', () => {
+  const fb = mkdtempSync(join(tmpdir(), 'figma-map-'))
+  mkdirSync(join(fb, 'sections'))
+  writeFileSync(join(fb, 'flows.json'), JSON.stringify({ flows: [{ slug: 'a' }] }))
+  for (const name of ['banner.md', 'sections/a.md', 'shared.md', 'lists.md']) writeFileSync(join(fb, name), name)
+  const { pieces, missing } = readPieces(fb)
+  expect(pieces.map((p) => p.name)).toEqual(['banner.md', 'sections/a.md', 'shared.md', 'lists.md'])
+  expect(missing).toEqual([])
 })
