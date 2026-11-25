@@ -41,7 +41,7 @@ Nothing nests deeper: a part of a part is a bullet. A `####` is always a variant
 - Every row Figma draws has a crop, even when only its text changes (toasts, error copy): the reviewer checks the copy against the picture. Only a `{Not drawn}` row has none.
 - Only three bullets sit at the top of a row: `Interaction`, `Copy`, `Notes`, each with its own child bullets. Leave out a block with nothing in it. `- Copy: "Saved"` is the one-line form.
 - **Interaction**: trigger → result, one bullet each. From prototype links and annotations only. Name an API route (`POST /statement-uploads`) only when the contract the run was given states it; never invent one. Write a route as `METHOD /path`: the renderer turns the method into a coloured badge.
-- **A link, button or email CTA names where it goes**: the page, route or URL. When neither Figma nor the contract says, write `→ target not stated` and add the gap to the Question list.
+- **A link, button or email CTA names where it goes**: the page, route or URL. When neither Figma nor the contract says, write `→ target not stated` and add the gap to the Question list. A proposed target goes in that question's answer, never in Interaction: builders read Interaction as fact.
 - **Copy**: verbatim Figma text, quoted.
 - **Notes**: issues and conflicts: typos, a frame that contradicts another, a state the contract needs that no frame draws.
 - **A Figma slip is a Note, not a Conflict.** A typo, or sample data that contradicts its own label (a negative line under a "Money In" filter, "BCA" on a Mandiri frame), gets one Note: "Figma slip", then what to build. No status tag and no Question: `{Conflict}` is for a disagreement that changes what gets built.
