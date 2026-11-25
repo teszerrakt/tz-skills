@@ -4,13 +4,14 @@
 // list and the Question list. Codes (P1, P1.2, S3) are computed here, never written in the markdown. No doctype or
 // <head>: the Artifact tool adds those.
 //   bun scripts/render.ts <fact-base> <in.md> <out.html> --file <figma file key> --gh <github blob base>/<sha>
-//                         [--inline] [--images <map.json>] [--title <section name>]
-// --inline builds each crop into the page as a data: URI. --images maps an image path (img/crops/x.png) to an
-// uploaded URL instead, for a page whose crops would pass the Artifact size limit.
+//                         [--local] [--title <section name>]
+// Each crop is referenced by its path relative to the page (img/crops/x.png), copied there when the page sits outside
+// the fact base, and listed in <out>.files.json: published path → file on disk, the Artifact tool's `files` map.
+// --local writes absolute file paths instead, for html_render, which inlines them itself.
 // Prints the bytes written and every warning; exits 1 when there is any warning.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { hostname } from 'node:os'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, isAbsolute, join, normalize, resolve } from 'node:path'
 import { slugify } from './lib/names.ts'
 import { CHECK, CROP_VIEWER, PAGE_SCRIPT, pageHead, railShell, reviewStrip } from './lib/page.ts'
 import type { SourceLine } from './lib/types.ts'
@@ -19,9 +20,10 @@ export type RenderOptions = {
   factBase: string
   fileKey: string
   githubBase: string
-  /** Image path in the markdown → URL to use instead. */
-  images?: Record<string, string>
-  inline?: boolean
+  /** The folder the page is written to; crops resolve against it. Defaults to the fact base. */
+  pageDir?: string
+  /** Absolute file paths instead of page-relative ones, for html_render. */
+  local?: boolean
   /** The section's name: the page's heading, and its tab title with " Map" added. */
   title?: string
   /** Who built the page and where its fact base lives, stamped into a meta tag; main() fills it. */
@@ -34,7 +36,8 @@ export function stampMeta(stamp: NonNullable<RenderOptions['stamp']>): string {
   return `<meta name="figma-map" content="${escapeHtml(content)}">\n`
 }
 
-export type Rendered = { html: string; warnings: string[] }
+/** `files` maps each crop's published path (relative to the page) to its file on disk. */
+export type Rendered = { html: string; warnings: string[]; files: Record<string, string> }
 
 /** Status tag → its colour class. Settled shares Revised's green and Open shares Not drawn's grey, as the legend says. */
 export const STATUSES: Record<string, { cls: string; legend: string }> = {
@@ -318,6 +321,9 @@ function number(doc: Doc) {
 
 class Emitter {
   readonly warnings = new Set<string>()
+  /** Published crop path → its file beside the page; and that file → the crop it is copied from. */
+  readonly files = new Map<string, string>()
+  readonly copies = new Map<string, string>()
   private readonly anchors = new Set<string>()
   private readonly anchorLinks = new Set<string>()
   private readonly sharedCodes = new Map<string, string>()
@@ -352,17 +358,23 @@ class Emitter {
     return `https://www.figma.com/design/${this.options.fileKey}/?node-id=${nodeId.replace(/:/g, '-')}`
   }
 
+  /** A local crop → its published path: the markdown's own when it stays inside the fact base, else img/<name>. */
   private imageSource(path: string): string {
-    const mapped = this.options.images?.[path]
-    if (mapped) return mapped
     if (/^(https?:|data:)/.test(path)) return path
-    const file = path.startsWith('/') ? path : join(this.options.factBase, path)
+    const file = isAbsolute(path) ? path : join(this.options.factBase, path)
     if (!existsSync(file)) {
       this.warnings.add(`image ${path} is not on disk`)
       return file
     }
-    if (!this.options.inline) return file
-    return `data:image/png;base64,${readFileSync(file).toString('base64')}`
+    if (this.options.local) return file
+    const own = normalize(path)
+    const published = isAbsolute(own) || own.startsWith('..') ? `img/${basename(own)}` : own
+    const target = resolve(this.options.pageDir ?? this.options.factBase, published)
+    const taken = this.files.get(published)
+    if (taken && taken !== target) this.warnings.add(`two crops publish as ${published}`)
+    this.files.set(published, target)
+    this.copies.set(target, file)
+    return published
   }
 
   private reference(n: string): string {
@@ -610,7 +622,7 @@ class Emitter {
     const shell = railShell(this.options.title ?? 'Design map', rail, this.reviewIds.length)
     const stamp = this.options.stamp ? stampMeta(this.options.stamp) : ''
     const html = `${stamp}${pageHead(title)}<div class="wrap">${shell}<main id="main">${content}</main></div>\n${CROP_VIEWER}${PAGE_SCRIPT}`
-    return { html, warnings: [...this.warnings] }
+    return { html, warnings: [...this.warnings], files: Object.fromEntries(this.files) }
   }
 }
 
@@ -622,8 +634,13 @@ export function render(markdown: string, options: RenderOptions): Rendered {
   const doc = parser.finish()
   number(doc)
   const emitter = new Emitter(options, parseSources(sourcesBlock), doc)
-  const { html, warnings } = emitter.finish()
-  return { html, warnings: [...new Set([...parseWarnings, ...warnings])] }
+  const { html, warnings, files } = emitter.finish()
+  for (const [target, source] of emitter.copies) {
+    if (resolve(source) === target) continue
+    mkdirSync(dirname(target), { recursive: true })
+    copyFileSync(source, target)
+  }
+  return { html, warnings: [...new Set([...parseWarnings, ...warnings])], files }
 }
 
 function flag(argv: string[], name: string): string | undefined {
@@ -637,18 +654,16 @@ function main(argv: string[]) {
   const githubBase = flag(argv, 'gh')
   if (!factBase || !input || !output || !fileKey || !githubBase) {
     console.error(
-      'usage: bun scripts/render.ts <fact-base> <in.md> <out.html> --file <figma file key> --gh <github blob base>/<sha> [--inline] [--images <map.json>] [--title <section name>]',
+      'usage: bun scripts/render.ts <fact-base> <in.md> <out.html> --file <figma file key> --gh <github blob base>/<sha> [--local] [--title <section name>]',
     )
     process.exit(2)
   }
-  const imagesFile = flag(argv, 'images')
-  const images = imagesFile ? (JSON.parse(readFileSync(imagesFile, 'utf8')) as Record<string, string>) : undefined
-  const { html, warnings } = render(readFileSync(input, 'utf8'), {
+  const { html, warnings, files } = render(readFileSync(input, 'utf8'), {
     factBase,
     fileKey,
     githubBase,
-    images,
-    inline: argv.includes('--inline'),
+    pageDir: dirname(resolve(output)),
+    local: argv.includes('--local'),
     title: flag(argv, 'title'),
     stamp: {
       version: (JSON.parse(readFileSync(join(import.meta.dir, '../../package.json'), 'utf8')) as { version: string }).version,
@@ -657,7 +672,9 @@ function main(argv: string[]) {
     },
   })
   writeFileSync(output, html)
-  console.log(`${output}: ${html.length} bytes, ${warnings.length} warnings`)
+  const manifest = output.replace(/\.html?$/, '') + '.files.json'
+  writeFileSync(manifest, `${JSON.stringify(files, null, 2)}\n`)
+  console.log(`${output}: ${html.length} bytes, ${warnings.length} warnings; ${Object.keys(files).length} crops in ${manifest}`)
   for (const warning of warnings) console.log(`  ${warning}`)
   if (warnings.length) process.exit(1)
 }

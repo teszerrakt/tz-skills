@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { anchorFor, render, type RenderOptions } from './render.ts'
@@ -121,22 +121,42 @@ test('[n] links to its Sources line; an [n] with no line is a warning', () => {
   expect(result.warnings).toEqual(['[7] has no Sources line'])
 })
 
-test('an image map swaps local paths for uploaded URLs; GH/ expands to the pinned blob base', () => {
-  const out = html('# Page: P\n## C 🟢 reuse [Button](GH/ui/button.tsx)\n![row](img/crops/row.png)', {
-    images: { 'img/crops/row.png': 'https://cdn.example/row.png' },
-  })
+test('GH/ expands to the pinned blob base; a remote crop keeps its URL', () => {
+  const out = html('# Page: P\n## C 🟢 reuse [Button](GH/ui/button.tsx)\n#### A\n![row](https://cdn.example/row.png)')
   expect(out).toContain('src="https://cdn.example/row.png"')
   expect(out).toContain('🟢 reuse <a href="https://github.com/o/r/blob/abc123/ui/button.tsx">Button</a>')
 })
 
-test('--inline builds a crop into the page; a crop missing from disk is a warning', () => {
+const withCrop = () => {
   const factBase = mkdtempSync(join(tmpdir(), 'figma-map-'))
   mkdirSync(join(factBase, 'img/crops'), { recursive: true })
   writeFileSync(join(factBase, 'img/crops/row.png'), 'png-bytes')
-  const md = '# Page: P\n## C\n#### A\n![row](img/crops/row.png)\n#### B\n![gone](img/crops/gone.png)'
-  const result = render(md, { ...options, factBase, inline: true })
-  expect(result.html).toContain(`src="data:image/png;base64,${Buffer.from('png-bytes').toString('base64')}"`)
+  return factBase
+}
+const CROPS = '# Page: P\n## C\n#### A\n![row](img/crops/row.png)\n#### B\n![gone](img/crops/gone.png)'
+
+test('a crop is referenced by its path beside the page and listed for the files map, never built in', () => {
+  const factBase = withCrop()
+  const result = render(CROPS, { ...options, factBase })
+  expect(result.html).toContain('src="img/crops/row.png"')
+  expect(result.html).not.toContain('data:image')
+  expect(result.files).toEqual({ 'img/crops/row.png': join(factBase, 'img/crops/row.png') })
   expect(result.warnings).toEqual(['image img/crops/gone.png is not on disk'])
+})
+
+test('a page written outside the fact base gets its crops copied beside it', () => {
+  const factBase = withCrop()
+  const pageDir = mkdtempSync(join(tmpdir(), 'figma-map-page-'))
+  const result = render(CROPS, { ...options, factBase, pageDir })
+  expect(result.files).toEqual({ 'img/crops/row.png': join(pageDir, 'img/crops/row.png') })
+  expect(readFileSync(join(pageDir, 'img/crops/row.png'), 'utf8')).toBe('png-bytes')
+})
+
+test('--local keeps absolute file paths for html_render and lists nothing to publish', () => {
+  const factBase = withCrop()
+  const result = render(CROPS, { ...options, factBase, local: true })
+  expect(result.html).toContain(`src="${join(factBase, 'img/crops/row.png')}"`)
+  expect(result.files).toEqual({})
 })
 
 test('nested bullets close back to the right depth', () => {

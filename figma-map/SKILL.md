@@ -66,8 +66,9 @@ banner.md             the page header; changed.md on a refresh
 shared.md             the Shared components section
 lists.md              the Decision and Question lists, from the user's grooming notes
 design-map.md         the assembled source
-design-map.html       the rendered page
 ```
+
+The rendered page, its copied crops and `design-map.files.json` go to `<scratch>/map/`, rebuilt by every render.
 
 It is always under `~/.claude`, even when the session runs under another config directory: the user switches Claude profiles mid-project, and every profile must find the same map. Never put it in a scratchpad, which a reboot clears. It lives on the machine that built the map; render stamps that host and `<repo>/<slug>` into the page, so a session on another machine knows where to look. Never push it, and never put its absolute path in the page. Refer to it by absolute path in briefs, so any worktree can read it.
 
@@ -138,7 +139,7 @@ Write `banner.md` (the header from [references/doc-shape.md](references/doc-shap
 
 ```bash
 bun <base>/scripts/assemble.ts <fb>
-bun <base>/scripts/render.ts <fb> <fb>/design-map.md <fb>/design-map.html --file <file key> --gh <GitHub blob base>/<pinned SHA> --inline --title "<section name>"
+bun <base>/scripts/render.ts <fb> <fb>/design-map.md <scratch>/map/design-map.html --file <file key> --gh <GitHub blob base>/<pinned SHA> --title "<section name>"
 ```
 
 Append the run to `runs.json`, with each harvest subagent's `subagent_tokens` from the `<usage>` block of its Agent result, per subagent and in total, and the tokens per screen. Never use a subagent's own estimate: it runs about 40% low.
