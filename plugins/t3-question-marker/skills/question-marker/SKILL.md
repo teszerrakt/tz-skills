@@ -32,6 +32,19 @@ Asked because: the PR's scope and its release note depend on it.
 
 No questions, no section. Never write a `❓` line for anything else.
 
+## Show what it turns on
+
+When a question turns on something visible (a Figma frame, a screen, a component state, a before/after, a date picker rule), put an image under it:
+
+- The crop of the frame, the part that matters outlined, a short label on the outline.
+- Panels titled A, B, C, one per option or source, with the competing rule written beside them.
+- A dashed outline for a thing Figma does not draw.
+- A diagram of boxes when no frame exists.
+
+Build it from this skill's base directory with `bun scripts/annotate.ts <spec.json> <out.png>`; the script's header gives the spec. Render a draft with `"grid": true` on each image and read every box off the labelled grid, then render without it. Read the PNG yourself before you show it: each label legible, each outline on its part. Show it with Markdown image syntax and its absolute path.
+
+When nothing visual is at stake, text alone is right.
+
 ## In T3 Code
 
 T3 Code shows a thread as waiting only when it holds a question, and shows only a turn's last message. So the thread's title carries a `❓ ` prefix while your last reply has open questions, and the reply itself must stay the turn's last message:

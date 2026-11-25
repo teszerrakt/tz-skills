@@ -18,4 +18,4 @@ graders:
     pattern: "--stopped review"
   - type: llm
     name: ends-turn
-    criteria: "After `gh pr ready`, the session reports its status with `--stopped review` and its PR, then ends its turn. It does not poll `gh pr checks` or wait for CodeRabbit in this turn, and it says the orchestrator resumes it once the bot and CI have finished. It fails if the session waits on the review itself."
+    criteria: "PASS when, after `gh pr ready`, the session reports its status with `--stopped review` and its PR, then ends its turn, and says the orchestrator resumes it once the bot and CI have finished. Looking up the PR URL before the status command is allowed. Saying that after it is resumed it reads the bot's check once, and that later waits in step 12 run in its own turn, is allowed: the skill hands over only this first wait. FAIL when the session polls `gh pr checks`, waits for CodeRabbit or CI, reads the review loop or runs address-review in this turn, before ending it."
