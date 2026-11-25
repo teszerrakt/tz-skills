@@ -1,6 +1,6 @@
 ---
 name: figma-map
-description: Turn a Figma section of flows into a published design map — pages, the components on each, their sub-components, behaviour, states and variants, cropped images, reuse badges with GitHub links, and a link back to every Figma node. Re-runs are incremental, so a design still being edited only costs what changed. Use when the user gives a figma.com section or page URL and wants it summarised, mapped, documented or turned into a design doc, or wants a map refreshed after the designer changed the file.
+description: Turn a Figma section of flows into a published design map — pages, the components on each, their sub-components, behaviour, states and variants, cropped images, reuse badges with GitHub links, and a link back to every Figma node. Re-runs are incremental, so a design still being edited only costs what changed. Use when the user gives a figma.com section or page URL and wants it summarised, mapped, documented or turned into a design doc, or wants a map refreshed after the designer changed the file, or wants review comments on a published map addressed.
 ---
 
 # Figma map
@@ -33,7 +33,7 @@ All run with Bun from this skill's base directory. Each file's header gives its 
 
 | Script | Does |
 |---|---|
-| `scripts/figma.ts` | Prints a Figma-side script (`inventory`, `dump`, `locate`, `candidates`) ready to paste: arguments checked, compiled and minified. Paste its output verbatim as `use_figma`'s `code`. `--tag <tag>` marks the call for `save-result.ts`; `dump --fb <fb> --flows <slugs> --part <n>` plans whole flows into calls and tags them itself. |
+| `scripts/figma.ts` | Prints a Figma-side script (`inventory`, `dump`, `locate`, `candidates`, `outline`) ready to paste: arguments checked, compiled and minified. Paste its output verbatim as `use_figma`'s `code`. `--tag <tag>` marks the call for `save-result.ts`; `dump --fb <fb> --flows <slugs> --part <n>` plans whole flows into calls and tags them itself. |
 | `scripts/save-result.ts` | Copies the newest result tagged `<tag>` from the session transcript to a file. `--dump <fb>` splits a dump call into `raw/<flow>.json` per flow. |
 | `scripts/merge.ts` | Expands each flow's dump into per-screen records and layout groups, and prints the digest a section is written from. |
 | `scripts/shots.ts` | Downloads `get_screenshot` images from the session transcript by node id. Runs outside the sandbox. |
@@ -69,9 +69,11 @@ design-map.md         the assembled source
 design-map.html       the rendered page
 ```
 
-Never push it, and never name its path in the published page. Refer to it by absolute path in briefs, so any worktree can read it.
+It is always under `~/.claude`, even when the session runs under another config directory: the user switches Claude profiles mid-project, and every profile must find the same map. Never put it in a scratchpad, which a reboot clears. It lives on the machine that built the map; render stamps that host and `<repo>/<slug>` into the page, so a session on another machine knows where to look. Never push it, and never put its absolute path in the page. Refer to it by absolute path in briefs, so any worktree can read it.
 
 ## Steps
+
+To address review comments on a published map, follow [references/comments.md](references/comments.md) instead of the steps below.
 
 ### 1. Open the file
 
@@ -124,9 +126,11 @@ You write these alone, in the shape [references/doc-shape.md](references/doc-sha
 - **`shared.md`**, from `shared-names.json` and the subagents' reports: one `##` per shared component under `# Shared components`, its badge and reuse link, purpose, and its variant rows. Variants are listed only here; a page's part names the variant it uses. Where two flows' sections describe a shared component differently, re-read both flows' frame records, write one verdict, and edit the losing section to match.
 - **Routes.** If the run has an API contract (the user's, or config `## Sources`), add to each Interaction bullet the route the contract gives for it (`Confirm & Import → POST /statement-uploads/:id/import`). A route the contract does not name is never written; a step with none is a Note when the contract should have one.
 - **`lists.md`**, only from the user's grooming notes: `# Decisions` and `# Questions`, each one table, keeping the user's D/Q numbers. Leave out a list with no rows, and the file when there are no notes.
-- **Status tags** on rows, rules and headings: `{New}` and `{Revised}` against the previous run's sections on a refresh; `{Settled}`, `{Conflict}` and `{Open}` against the lists and the contract; `{Not drawn}` for a state they need that no frame shows.
+- **Status tags** on rows, rules and headings: `{New}` and `{Revised}` against the previous run's sections on a refresh; `{Settled}`, `{Conflict}` and `{Open}` against the lists and the contract; `{Not drawn}` for a state they need that no frame shows. A drawing slip is a Note, never `{Conflict}` and never a Question ([doc-shape.md](references/doc-shape.md)).
+- **Every cited code has a row.** A section that cites `T2` or `Q16` needs that row in `lists.md`; rows from a list the notes keep under another letter go in the Questions table with their own codes. When the notes do not hold a code's text, ask for it in the reply; if the user no longer has it, drop the citation and keep the statement.
+- **CTA targets.** A link or email button whose target neither Figma nor the contract states becomes an `{Open}` Question.
 
-Done when no component has variant rows in two places, every `[shared](#<anchor>)` has a heading, and every route written is in the contract.
+Done when no component has variant rows in two places, every `[shared](#<anchor>)` has a heading, every route written is in the contract, and every cited list code has a row.
 
 ### 7. Assemble and render
 
@@ -139,15 +143,16 @@ bun <base>/scripts/render.ts <fb> <fb>/design-map.md <fb>/design-map.html --file
 
 Append the run to `runs.json`, with each harvest subagent's `subagent_tokens` from the `<usage>` block of its Agent result, per subagent and in total, and the tokens per screen. Never use a subagent's own estimate: it runs about 40% low.
 
-Done when both print no problem or warning. Render warns on an `[n]` with no Sources line, a crop missing from disk, a link to an anchor no heading has, two headings with one anchor, a bullet under a variant outside Interaction, Copy or Notes, an old `#### States` table, and a list row without its D/Q code. Its page holds at phone width by construction: the rail stacks above the content and tables scroll in their own box.
+Done when both print no problem or warning. Render warns on an `[n]` with no Sources line, a crop missing from disk, a drawn heading or variant row with no crop, a cited list code with no row, a link to an anchor no heading has, two headings with one anchor, a bullet under a variant outside Interaction, Copy or Notes, an old `#### States` table, and a list row without its code. Its page holds at phone width by construction: the rail stacks above the content and tables scroll in their own box. Each item's heading and Reviewed / Comment buttons ride in a sticky bar until the item ends, and a `METHOD /path` route gets a coloured method badge.
 
 ### 8. Check
 
 - Every GitHub link resolves: `git cat-file -e <SHA>:<path>` for each linked path.
 - Every crop is a non-empty PNG (`file img/crops/*.png`).
 - Every `{node}` heading marker points at a node id in a frame record, `candidates.json`, or a `locate` result the subagent reported.
+- Open `design-map.html` in a browser at 1440px and 390px wide: every heading shows its crop, and a part's bar stays pinned while you scroll through it.
 
-Done when all three pass, or the reply names the one that could not run and why.
+Done when all four pass, or the reply names the one that could not run and why.
 
 ### 9. Publish
 

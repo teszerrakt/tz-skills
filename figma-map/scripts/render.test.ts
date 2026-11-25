@@ -19,7 +19,7 @@ const ONE_PAGE = `# Page: Bank reconciliation
 
 test('a single-page map drops the page level: components P1, P2, their parts P1.1, shared S1', () => {
   const out = html(ONE_PAGE)
-  expect(out).toContain('<div class="kick">P1</div><h2 class="h2">Page header</h2>')
+  expect(out).toContain('<div class="kick">P1</div><div class="stick"><h2 class="h2">Page header</h2>')
   expect(out).toContain('<h3 class="h3"><span class="code">P1.1</span>Upload button</h3>')
   expect(out).toContain('<h3 class="h3"><span class="code">P2.1</span>Bank card</h3>')
   expect(out).toContain('<h3 class="h3"><span class="code">S1</span>Bank card</h3>')
@@ -28,7 +28,7 @@ test('a single-page map drops the page level: components P1, P2, their parts P1.
 
 test('a map of several pages numbers pages P1, components P1.2, sub-components P1.2.3', () => {
   const out = html('# Page: List\n## Table\n# Page: Detail\n## Header\n## Panel\n### Tabs\n')
-  expect(out).toContain('<div class="kick">P2</div><h2 class="h2">Detail</h2>')
+  expect(out).toContain('<div class="kick">P2</div><div class="stick"><h2 class="h2">Detail</h2>')
   expect(out).toContain('<span class="code">P2.2</span>Panel</h3>')
   expect(out).toContain('<h4 class="h4"><span class="code">P2.2.1</span>Tabs</h4>')
   expect(out).toContain('class="rs rs2" data-nav="page-detail--panel--tabs"')
@@ -56,7 +56,7 @@ test('a variant card has name, status tag and Figma link on top, then the three 
     '<div class="v-head"><span class="vname">Wrong password</span><span class="tg tg-con">Conflict</span><a class="fig" href="https://www.figma.com/design/KEY/?node-id=9089-488307">Figma ↗</a></div>',
   )
   expect(out).toContain(
-    '<div class="v-body no-shot"><div><div class="blk ix"><div class="lab">Interaction</div><ul><li>Submit → <code>POST /unlock</code></li></ul></div>',
+    '<div class="v-body no-shot"><div><div class="blk ix"><div class="lab">Interaction</div><ul><li>Submit → <span class="m m-post">POST</span> <code>/unlock</code></li></ul></div>',
   )
   expect(out).toContain('<div class="lab">Copy</div><ul><li>&quot;Wrong password. Try again.&quot;</li></ul>')
   expect(out).toContain('<div class="blk notes"><div class="lab">Notes</div>')
@@ -89,7 +89,7 @@ test('every component, part, shared item and list carries a review strip and is 
     expect(out).toContain(`<div class="rv" data-rv="${id}">`)
   }
   expect(out).toContain('<div class="rows" style="--narrow:48px minmax(0, 1fr);--wide:48px minmax(0, 1fr) minmax(0, 1fr) 100px">')
-  expect(out).toContain('<div class="row"><div class="n">D1</div><div class="c">Zero is &quot;0,00&quot;</div>')
+  expect(out).toContain('<div class="row" id="d1"><div class="n">D1</div><div class="c">Zero is &quot;0,00&quot;</div>')
   expect(out).toContain('<div class="st"><span class="tg tg-con">Conflict</span></div>')
   expect(out).toContain('<span>D Decision list</span>')
   expect(out).not.toContain('Question list')
@@ -97,7 +97,7 @@ test('every component, part, shared item and list carries a review strip and is 
 
 test('a list row without its D/Q code is a warning', () => {
   expect(warnings('# Questions\n| # | Question | Answer | Status |\n|---|---|---|---|\n| 1 | Who? | Ana | Settled |\n')).toEqual([
-    'Question list row "1 | Who? | Ana | Settled" does not start with a Q<n> code',
+    'Question list row "1 | Who? | Ana | Settled" does not start with a Q<n> code, or its own list letter such as T2',
   ])
 })
 
@@ -181,4 +181,36 @@ test('the page loads ui-sdk from browser/ beside it, and its rail pins the revie
   expect(out).toContain('<div class="rail-scroll"><div class="kick">Page</div>')
   expect(out).toContain('<ui-checkbox data-id="page-bank-reconciliation--page-header" aria-label="Mark P1 reviewed" disabled>')
   expect(out).toContain('<ui-dialog id="zoom">')
+})
+
+test('an item heading and its review strip sit in one sticky bar', () => {
+  const out = html(ONE_PAGE)
+  expect(out).toContain('<div class="stick"><h3 class="h3"><span class="code">P1.1</span>Upload button</h3><div class="rv" data-rv=')
+})
+
+test('a REST method before a path becomes a badge, in prose and in code', () => {
+  const out = html('# Page: P\n## C\n- Save → PATCH …/drafts/:id, then `POST /submit`; GETS stays text\n')
+  expect(out).toContain('Save → <span class="m m-patch">PATCH</span> …/drafts/:id, then <span class="m m-post">POST</span> <code>/submit</code>; GETS stays text')
+})
+
+test('a cited list code links to its row; a cited code with no row is a warning', () => {
+  const md = `# Page: P\n## C\n- Both boxes needed (Q16), audit per T2\n# Questions\n| # | Question | Answer | Status |\n|---|---|---|---|\n| Q16 | When? | Reconciled only | Settled |\n`
+  const result = render(md, options)
+  expect(result.html).toContain('Both boxes needed (<a class="xref" href="#q16">Q16</a>), audit per T2')
+  expect(result.html).toContain('<div class="row" id="q16"><div class="n">Q16</div>')
+  expect(result.warnings).toEqual(['T2 is cited but no Decision or Question row has that code'])
+})
+
+test('a drawn variant or heading without a crop is a warning; a Not drawn one is not', () => {
+  const md = '# Page: P\n## Header {1:2}\n#### Toast {1:3}\n- Copy: "Saved"\n#### Retry limit {1:4} {Not drawn}\n- Notes: none\n'
+  expect(warnings(md)).toEqual([
+    '"Header" is drawn at 1:2 but has no crop under its heading',
+    'variant "Toast" is drawn at 1:3 but has no crop; only a {Not drawn} row goes without one',
+  ])
+})
+
+test('the page carries a generator stamp naming the host and the fact base by repo and slug', () => {
+  const out = html('# Page: P\n## C\n', { stamp: { version: '0.6.0', host: 'tz-pc', factBase: 'klay/bank-reconciliation' } })
+  expect(out).toStartWith('<meta name="figma-map" content="render.ts 0.6.0; host=tz-pc; fact-base=klay/bank-reconciliation">\n<title>')
+  expect(html('# Page: P\n## C\n')).toStartWith('<title>')
 })
