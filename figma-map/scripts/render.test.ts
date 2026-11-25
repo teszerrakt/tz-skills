@@ -41,7 +41,7 @@ test('a part on a shared component links "variants in S<n>"; an inline [shared] 
   expect(out).toContain('id="bank-card"')
 })
 
-test('a variant row has name + Figma link, preview or —, the three labelled blocks, and its status tag', () => {
+test('a variant card has name, status tag and Figma link on top, then the three labelled blocks', () => {
   const md = `# Page: P
 ## Modal
 #### Wrong password {9089:488307} {Conflict}
@@ -52,15 +52,21 @@ test('a variant row has name + Figma link, preview or —, the three labelled bl
   - Frame shows the password in clear text
 `
   const out = html(md)
-  expect(out).toContain('<th>Interaction, copy and notes</th>')
   expect(out).toContain(
-    '<div class="vname">Wrong password</div><a class="fig" href="https://www.figma.com/design/KEY/?node-id=9089-488307">Figma ↗</a>',
+    '<div class="v-head"><span class="vname">Wrong password</span><span class="tg tg-con">Conflict</span><a class="fig" href="https://www.figma.com/design/KEY/?node-id=9089-488307">Figma ↗</a></div>',
   )
-  expect(out).toContain('<span style="color:var(--faint)">—</span>')
-  expect(out).toContain('<div class="blk ix"><div class="lab">Interaction</div><ul><li>Submit → <code>POST /unlock</code></li></ul></div>')
+  expect(out).toContain(
+    '<div class="v-body no-shot"><div><div class="blk ix"><div class="lab">Interaction</div><ul><li>Submit → <code>POST /unlock</code></li></ul></div>',
+  )
   expect(out).toContain('<div class="lab">Copy</div><ul><li>&quot;Wrong password. Try again.&quot;</li></ul>')
   expect(out).toContain('<div class="blk notes"><div class="lab">Notes</div>')
-  expect(out).toContain('<td><span class="tg tg-con">Conflict</span></td>')
+})
+
+test('a variant with a crop puts the crop beside its blocks', () => {
+  const out = html('# Page: P\n## Modal\n#### Empty\n![Empty](https://cdn.example/e.png)\n- Copy: "Nothing yet"\n')
+  expect(out).toContain(
+    '<div class="v-body"><div><img class="shot" loading="lazy" src="https://cdn.example/e.png" alt="Empty"></div><div><div class="blk copy">',
+  )
 })
 
 test("a rules table puts each rule's status in its own column", () => {
@@ -82,7 +88,9 @@ test('every component, part, shared item and list carries a review strip and is 
     expect(out).toContain(`id="${id}" data-comment-target`)
     expect(out).toContain(`<div class="rv" data-rv="${id}">`)
   }
-  expect(out).toContain('<td class="n">D1</td>')
+  expect(out).toContain('<div class="rows" style="--narrow:48px minmax(0, 1fr);--wide:48px minmax(0, 1fr) minmax(0, 1fr) 100px">')
+  expect(out).toContain('<div class="row"><div class="n">D1</div><div class="c">Zero is &quot;0,00&quot;</div>')
+  expect(out).toContain('<div class="st"><span class="tg tg-con">Conflict</span></div>')
   expect(out).toContain('<span>D Decision list</span>')
   expect(out).not.toContain('Question list')
 })
@@ -157,10 +165,20 @@ test('the banner becomes the lede and meta row; the page carries its title, them
   expect(out).toContain(
     '<h1 class="title">Bank Reconciliation</h1><p class="lede">What the flows cover.</p><div class="meta"><span>12 screens → 1 page</span></div>',
   )
-  expect(out).toContain('id="theme-btn" role="switch"')
+  expect(out).toContain('<ui-segmented-control id="theme" class="theme" aria-label="Theme" default-value="system">')
   expect(out).toContain('@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])')
   expect(out).toContain(':root[data-theme="dark"]')
   expect(out).toContain('padding-left: max(16px, env(safe-area-inset-left, 0px))')
   expect(out).toContain('db.collection("reviews")')
   expect(out).toContain('comments.openComposer({ element: el })')
+})
+
+test('the page loads ui-sdk from browser/ beside it, and its rail pins the review head above a list that scrolls', () => {
+  const out = html(ONE_PAGE, { title: 'Bank Reconciliation' })
+  expect(out).toContain('<script type="module" src="browser/web.js"></script>\n<link rel="stylesheet" href="browser/web.css">')
+  expect(out).toContain('<ui-collapsible id="toc" default-open>')
+  expect(out).toContain('<div class="rail-pin"><div class="rail-head"><div class="kick">Review</div>')
+  expect(out).toContain('<div class="rail-scroll"><div class="kick">Page</div>')
+  expect(out).toContain('<ui-checkbox data-id="page-bank-reconciliation--page-header" aria-label="Mark P1 reviewed" disabled>')
+  expect(out).toContain('<ui-dialog id="zoom">')
 })

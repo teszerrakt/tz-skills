@@ -9,7 +9,7 @@ The page reads top to bottom: each page, one component at a time with the parts 
 | `# Page: <name> [n]` | a page | `P1`; dropped when the map has one page |
 | `## <name> <badge> {node}` | a component on that page | `P1.2`, or `P2` on a one-page map |
 | `### <name> <badge> {node}` | a part of that component | `P1.2.3`, or `P2.3` |
-| `#### <variant> {node} {Status}` | one row of the variants table of the heading above | none |
+| `#### <variant> {node} {Status}` | one variant card under the heading above | none |
 | `# Shared components`, then `##` and `###` | shared components and their parts | `S1`, `S1.2` |
 | `# Decisions`, `# Questions` | the two lists, each one table | `D1`, `Q1`, written in the table |
 | `# Changed since <date>` | a refresh's changes, in `changed.md` | none |
@@ -53,7 +53,7 @@ Nothing nests deeper: a part of a part is a bullet. A `####` is always a variant
 - `[n]` cites a Figma frame or annotation, numbered in order of first appearance. Every number has one line in the piece's closing `## Sources` block: `[n] https://www.figma.com/design/<key>/?node-id=<a>-<b> — frame "<name>"` or `— annotation "<verbatim text>"`.
 - `GH/<repo path>` in a link → the GitHub blob URL pinned to the run's SHA.
 - Badge after the name: `🟢 reuse [<Component>](GH/<path>)`, `🟡 extend …`, `🔴 new`. Shared components get theirs from the orchestrator.
-- **A part that uses a shared component**: `### Bank account card → [shared](#bank-account-card) — variant "In Progress" {<node>}`. It renders "Shared component, variant "In Progress" · variants in S1 →". Its variants table lives only in Shared. The anchor is the shared component's name in kebab case. In a bullet, `[shared](#bank-account-card)` renders as the code, `S1`.
+- **A part that uses a shared component**: `### Bank account card → [shared](#bank-account-card) — variant "In Progress" {<node>}`. It renders "Shared component, variant "In Progress" · variants in S1 →". Its variants live only in Shared. The anchor is the shared component's name in kebab case. In a bullet, `[shared](#bank-account-card)` renders as the code, `S1`.
 
 ## Content rules
 
