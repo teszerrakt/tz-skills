@@ -5,7 +5,7 @@ description: Turn a Figma section of flows into a published design map — pages
 
 # Figma map
 
-Reads a Figma section without dumping it into context, and publishes one design-map artifact that reads top to bottom: each page, one component at a time with its parts nested under it, then the components several pages share, then the Decision and Question lists. Every item has a code (`P1.2`, `S3`, `D1`, `Q4`), a variants table (Interaction, Copy, Notes, Status), and a review mark and comment button that the whole team sees. It owns the harvest, the merge of near-identical screens, the crops and the page. It does not decide API contracts, tickets or estimates. `/tz-skills:fe-design-map` owns those and can start from this map's fact base.
+Reads a Figma section without dumping it into context, and publishes one design-map artifact that reads top to bottom: each page, one component at a time with its parts nested under it, then the components several pages share, then the Decision and Question lists. Every item has a code (`P1.2`, `S3`, `D1`, `Q4`), a card per variant (crop beside Interaction, Copy and Notes), and a Reviewed checkbox and comment button that the whole team sees. The contents rail stays pinned on wide screens and folds into a sticky bar on phones. It owns the harvest, the merge of near-identical screens, the crops and the page. It does not decide API contracts, tickets or estimates. `/tz-skills:fe-design-map` owns those and can start from this map's fact base.
 
 ## Why it is shaped this way
 
@@ -48,7 +48,8 @@ If `save-result.ts` cannot find a result, write that one result to its file by h
 `~/.claude/figma-map/<repo>/<slug>/`, where `<slug>` is the section's name in kebab case:
 
 ```
-meta.json             file key, section id, page id, pinned SHA, artifact URL, run dates
+meta.json             file key, section id, page id, pinned SHA, artifact URL, ui-sdk version, run dates
+ui-sdk/package/       the extracted @ui-sdk/web package; its browser/ ships beside the page
 flows.json            inventory: flows → screens (scripts/figma/inventory.ts)
 candidates.json       containers that repeat across flows (scripts/figma/candidates.ts)
 shared-names.json     the orchestrator's name for each shared candidate, or for one shape of it

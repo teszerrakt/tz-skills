@@ -11,7 +11,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { slugify } from './lib/names.ts'
-import { CHECK, PAGE_SCRIPT, pageHead, reviewStrip } from './lib/page.ts'
+import { CHECK, CROP_VIEWER, PAGE_SCRIPT, pageHead, railShell, reviewStrip } from './lib/page.ts'
 import type { SourceLine } from './lib/types.ts'
 
 export type RenderOptions = {
@@ -388,18 +388,20 @@ class Emitter {
     return `<table class="k">${rows.join('')}</table>`
   }
 
+  /** Rows on a grid: a `#` column keeps its own track, every other cell stacks beside it on a narrow column. */
   private table(rows: string[][]): string {
     const [head, ...body] = rows
     const col = (i: number) => (head[i] ?? '').toLowerCase()
-    const width = (i: number) => (col(i) === '#' ? ' style="width:56px"' : col(i) === 'status' ? ' style="width:100px"' : '')
+    const cls = (i: number) => (col(i) === '#' ? 'n' : col(i) === 'status' ? 'st' : 'c')
+    const tracks = head.map((_, i) => (cls(i) === 'n' ? '48px' : cls(i) === 'st' ? '100px' : 'minmax(0, 1fr)'))
+    const narrow = cls(0) === 'n' ? '48px minmax(0, 1fr)' : 'minmax(0, 1fr)'
     const cell = (c: string, i: number) => {
-      if (col(i) === '#') return `<td class="n">${this.inline(c)}</td>`
-      if (col(i) === 'status' && STATUSES[c]) return `<td>${this.tag(c)}</td>`
-      return `<td>${this.inline(c)}</td>`
+      if (cls(i) === 'st' && STATUSES[c]) return `<div class="st">${this.tag(c)}</div>`
+      return `<div class="${cls(i)}">${this.inline(c)}</div>`
     }
-    const headHtml = `<tr>${head.map((c, i) => `<th${width(i)}>${this.inline(c)}</th>`).join('')}</tr>`
-    const bodyHtml = body.map((r) => `<tr>${r.map(cell).join('')}</tr>`).join('')
-    return `<div class="tbox"><table class="q"><thead>${headHtml}</thead><tbody>${bodyHtml}</tbody></table></div>`
+    const headHtml = `<div class="row head" aria-hidden="true">${head.map((c, i) => `<div class="${cls(i)}">${this.inline(c)}</div>`).join('')}</div>`
+    const bodyHtml = body.map((r) => `<div class="row">${r.map(cell).join('')}</div>`).join('')
+    return `<div class="rows" style="--narrow:${narrow};--wide:${tracks.join(' ')}">${headHtml}${bodyHtml}</div>`
   }
 
   private blocks(item: Item, pClass: 'p' | 'pp'): string {
@@ -433,19 +435,24 @@ class Emitter {
     return parts.length ? `<p class="shared-link">${parts.join(' · ')}</p>` : ''
   }
 
+  /** One card per variant: name, status and Figma link on top; the crop beside Interaction, Copy and Notes. */
   private variants(variants: Variant[]): string {
     if (!variants.length) return ''
-    const rows = variants.map((v) => {
+    const cards = variants.map((v) => {
       const link = v.node ? `<a class="fig" href="${this.figmaUrl(v.node)}">Figma ↗</a>` : ''
-      const preview = v.images.length ? v.images.map((i) => this.inline(i)).join('') : '<span style="color:var(--faint)">—</span>'
+      const crops = v.images.map((i) => this.inline(i)).join('')
       const details = BLOCK_LABELS.map((label) =>
         v.blocks[label].length
           ? `<div class="blk ${label === 'Interaction' ? 'ix' : label.toLowerCase()}"><div class="lab">${label}</div>${this.list(v.blocks[label])}</div>`
           : '',
       ).join('')
-      return `<tr><td><div class="vname">${this.inline(v.name)}</div>${link}</td><td>${preview}</td><td>${details}</td><td>${v.status ? this.tag(v.status) : ''}</td></tr>`
+      const head = `<div class="v-head"><span class="vname">${this.inline(v.name)}</span>${v.status ? this.tag(v.status) : ''}${link}</div>`
+      const body = crops
+        ? `<div class="v-body"><div>${crops}</div><div>${details}</div></div>`
+        : `<div class="v-body no-shot"><div>${details}</div></div>`
+      return `<article class="variant">${head}${body}</article>`
     })
-    return `<div class="tbox"><table class="v"><thead><tr><th style="width:160px">Variant</th><th style="width:300px">Preview</th><th>Interaction, copy and notes</th><th style="width:90px">Status</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`
+    return `<div class="variants">${cards.join('')}</div>`
   }
 
   private anchor(id: string) {
@@ -530,9 +537,7 @@ class Emitter {
     const dot = `<span class="dot">${CHECK}</span>`
     const link = (item: Item, cls: string) =>
       `<a class="${cls}" data-nav="${item.id}" href="#${item.id}">${dot}<span>${item.code ? `${item.code} ` : ''}${escapeHtml(item.name)}</span></a>`
-    let html = `<div class="rail-head"><div class="kick">Review</div><button type="button" class="theme-btn" id="theme-btn" role="switch" aria-checked="false" aria-label="Dark mode" title="Dark mode"></button></div>`
-    html += `<div class="progress"><span id="prog-text">${this.reviewIds.length} parts to review</span><div class="bar"><i id="prog-bar"></i></div></div>`
-    html += `<div class="kick">${multi ? 'Pages' : 'Page'}</div>`
+    let html = `<div class="kick">${multi ? 'Pages' : 'Page'}</div>`
     for (const page of doc.pages) {
       if (multi) html += link(page, 'rl')
       for (const c of page.children) {
@@ -563,7 +568,8 @@ class Emitter {
     const rail = this.rail()
     for (const link of this.anchorLinks) if (!this.anchors.has(link)) this.warnings.add(`a link points at #${link}, which no heading has`)
     const title = this.options.title ? `${this.options.title} Map` : 'Design map'
-    const html = `${pageHead(title)}<div class="wrap"><nav class="rail" aria-label="Contents" id="rail">${rail}</nav><main id="main">${content}</main></div>\n${PAGE_SCRIPT}`
+    const shell = railShell(this.options.title ?? 'Design map', rail, this.reviewIds.length)
+    const html = `${pageHead(title)}<div class="wrap">${shell}<main id="main">${content}</main></div>\n${CROP_VIEWER}${PAGE_SCRIPT}`
     return { html, warnings: [...this.warnings] }
   }
 }
