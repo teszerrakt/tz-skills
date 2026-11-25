@@ -69,7 +69,7 @@ design-map.md         the assembled source
 design-map.html       the rendered page
 ```
 
-Never push it, and never name its path in the published page. Refer to it by absolute path in briefs, so any worktree can read it.
+It is always under `~/.claude`, even when the session runs under another config directory: the user switches Claude profiles mid-project, and every profile must find the same map. Never put it in a scratchpad, which a reboot clears. Never push it, and never name its path in the published page. Refer to it by absolute path in briefs, so any worktree can read it.
 
 ## Steps
 

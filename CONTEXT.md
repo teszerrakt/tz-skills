@@ -126,6 +126,20 @@ _Avoid_: partial, WIP, follow-up
 The single outcome of a review: `BLOCK`, `PASS_WITH_NOTES`, `PASS`, or `NO_CONTRACT` — and, in driven mode only, `NEEDS_ROWS`.
 _Avoid_: score, grade, status
 
+### Design map
+
+**Crop**:
+A picture of one Figma node, built into a design map. Every component, part and variant row Figma draws has one, including a page's use of a shared component; only a state Figma never drew goes without.
+_Avoid_: screenshot, image, preview
+
+**Figma slip**:
+A drawing mistake that does not change what gets built: a typo, or sample data that contradicts its own label. Reported as a note with what to build, never as a conflict or a question.
+_Avoid_: conflict, design bug, inconsistency
+
+**Conflict**:
+A place where Figma disagrees with grooming, the contract or another frame, so what gets built depends on the answer.
+_Avoid_: mismatch, discrepancy
+
 ### Authoring
 
 **Reference**:

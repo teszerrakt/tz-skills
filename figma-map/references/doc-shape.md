@@ -21,7 +21,7 @@ Nothing nests deeper: a part of a part is a bullet. A `####` is always a variant
 1. **Purpose**: one plain sentence saying what it is and where it sits.
 2. **Rules** (optional, components mostly): a `- Rules` bullet with one child bullet per rule. A rule may open with a status: `  - {Conflict} Counts don't change after Undo [4]`.
 3. **Bullets**: copy and behaviour that belong to the whole element, not to one variant.
-4. **A crop**: `![<alt>](img/crops/<flow>-<slug>.png)` on its own line, cut from the heading's `{node}`. Every component and part Figma draws gets one, so a reviewer sees what a heading covers before reading its variants. A part on a shared component shows the variant it uses.
+4. **A crop**: `![<alt>](img/crops/<flow>-<slug>.png)` on its own line, cut from the heading's `{node}`. Every component and part Figma draws gets one, so a reviewer sees what a heading covers before reading its variants. A part on a shared component shows the variant it uses, even though Shared holds the same picture.
 5. **Variant rows**: one `####` block each, in the order the user meets them.
 
 ## A variant row
@@ -44,7 +44,7 @@ Nothing nests deeper: a part of a part is a bullet. A `####` is always a variant
 - **A link, button or email CTA names where it goes**: the page, route or URL. When neither Figma nor the contract says, write `→ target not stated` and add the gap to the Question list.
 - **Copy**: verbatim Figma text, quoted.
 - **Notes**: issues and conflicts: typos, a frame that contradicts another, a state the contract needs that no frame draws.
-- **A drawing slip is a Note, not a Conflict.** Sample data that contradicts its own label (a negative line under a "Money In" filter, "BCA" on a Mandiri frame) gets one Note: "Figma slip", then what to build. No status tag and no Question: `{Conflict}` is for a disagreement that changes what gets built.
+- **A Figma slip is a Note, not a Conflict.** A typo, or sample data that contradicts its own label (a negative line under a "Money In" filter, "BCA" on a Mandiri frame), gets one Note: "Figma slip", then what to build. No status tag and no Question: `{Conflict}` is for a disagreement that changes what gets built.
 
 ## Status tags
 

@@ -25,7 +25,7 @@ All your flows go through each step together.
 8. **Write `sections/<flow>.md`** in the shape [doc-shape.md](doc-shape.md) gives, with its own `## Sources` block numbered from 1. Write pages only: no banner, no `# Shared components` block and no codes; the assembler renumbers and the renderer numbers. A new part drawn inside a shared component (a form, a row, a chip) keeps its own `###` heading with its badge, so a 🔴 new is never hidden in a bullet.
    - Each variant row's **Interaction** comes from the digest's prototype links and annotations: trigger → result. Write no API route; the orchestrator adds routes from the contract.
    - Every link, button or email CTA names where it leads. When the digest does not say, write `→ target not stated` and report it as a gap.
-   - A drawing slip (sample data that contradicts its label) is one Note, "Figma slip" and what to build; report it with the design issues, never as a conflict.
+   - A Figma slip (a typo, or sample data that contradicts its label) is one Note, "Figma slip" and what to build; report it with the design issues, never as a conflict.
    - Leave status tags off; the orchestrator sets them against the grooming notes and the previous run.
 
 ## What to report back
