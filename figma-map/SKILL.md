@@ -1,6 +1,6 @@
 ---
 name: figma-map
-description: Turn a Figma section of flows into a published design map — pages, the components on each, their sub-components, behaviour, states and variants, cropped images, reuse badges with GitHub links, and a link back to every Figma node. Re-runs are incremental, so a design still being edited only costs what changed. Use when the user gives a figma.com section or page URL and wants it summarised, mapped, documented or turned into a design doc, or wants a map refreshed after the designer changed the file.
+description: Turn a Figma section of flows into a published design map — pages, the components on each, their sub-components, behaviour, states and variants, cropped images, reuse badges with GitHub links, and a link back to every Figma node. Re-runs are incremental, so a design still being edited only costs what changed. Use when the user gives a figma.com section or page URL and wants it summarised, mapped, documented or turned into a design doc, or wants a map refreshed after the designer changed the file, or wants review comments on a published map addressed.
 ---
 
 # Figma map
@@ -33,7 +33,7 @@ All run with Bun from this skill's base directory. Each file's header gives its 
 
 | Script | Does |
 |---|---|
-| `scripts/figma.ts` | Prints a Figma-side script (`inventory`, `dump`, `locate`, `candidates`) ready to paste: arguments checked, compiled and minified. Paste its output verbatim as `use_figma`'s `code`. `--tag <tag>` marks the call for `save-result.ts`; `dump --fb <fb> --flows <slugs> --part <n>` plans whole flows into calls and tags them itself. |
+| `scripts/figma.ts` | Prints a Figma-side script (`inventory`, `dump`, `locate`, `candidates`, `outline`) ready to paste: arguments checked, compiled and minified. Paste its output verbatim as `use_figma`'s `code`. `--tag <tag>` marks the call for `save-result.ts`; `dump --fb <fb> --flows <slugs> --part <n>` plans whole flows into calls and tags them itself. |
 | `scripts/save-result.ts` | Copies the newest result tagged `<tag>` from the session transcript to a file. `--dump <fb>` splits a dump call into `raw/<flow>.json` per flow. |
 | `scripts/merge.ts` | Expands each flow's dump into per-screen records and layout groups, and prints the digest a section is written from. |
 | `scripts/shots.ts` | Downloads `get_screenshot` images from the session transcript by node id. Runs outside the sandbox. |
@@ -69,9 +69,11 @@ design-map.md         the assembled source
 design-map.html       the rendered page
 ```
 
-It is always under `~/.claude`, even when the session runs under another config directory: the user switches Claude profiles mid-project, and every profile must find the same map. Never put it in a scratchpad, which a reboot clears. Never push it, and never name its path in the published page. Refer to it by absolute path in briefs, so any worktree can read it.
+It is always under `~/.claude`, even when the session runs under another config directory: the user switches Claude profiles mid-project, and every profile must find the same map. Never put it in a scratchpad, which a reboot clears. It lives on the machine that built the map; render stamps that host and `<repo>/<slug>` into the page, so a session on another machine knows where to look. Never push it, and never put its absolute path in the page. Refer to it by absolute path in briefs, so any worktree can read it.
 
 ## Steps
+
+To address review comments on a published map, follow [references/comments.md](references/comments.md) instead of the steps below.
 
 ### 1. Open the file
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // Prints a Figma-side script ready to paste into use_figma: its arguments checked, bundled with its imports, minified
 // and wrapped so the result comes back as JSON. The compiled text is never saved.
-//   bun scripts/figma.ts <inventory|dump|locate|candidates> --args '<json>' [--tag <tag>]
+//   bun scripts/figma.ts <inventory|dump|locate|candidates|outline> --args '<json>' [--tag <tag>]
 //   bun scripts/figma.ts dump --fb <fact-base> --flows <slug,slug> --part <n> [--sig-only]
 // --tag puts a "// figma-map-tag: <tag>" first line in the script, so save-result.ts can find this call's result.
 // The second form plans the dump of whole flows from flows.json, several flows to a call, and prints call <n>: its
@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { DumpFlow, FlowInventory } from './lib/types.ts'
 
-export const SCRIPTS = ['inventory', 'dump', 'locate', 'candidates'] as const
+export const SCRIPTS = ['inventory', 'dump', 'locate', 'candidates', 'outline'] as const
 export type ScriptName = (typeof SCRIPTS)[number]
 
 export const TAG_PREFIX = '// figma-map-tag: '
@@ -59,6 +59,11 @@ const CHECKS: Record<ScriptName, Check> = {
     const screens = a.screens
     const valid = Array.isArray(screens) && screens.length > 0 && screens.every((s) => isString(s?.id) && isString(s?.flow))
     return valid ? [] : ['screens: a non-empty list of { "id", "flow" } is required']
+  },
+  outline: (a) => {
+    if (a.depth !== undefined && !(Number.isInteger(a.depth) && (a.depth as number) >= 1 && (a.depth as number) <= 6))
+      return ['depth: a whole number from 1 to 6']
+    return isString(a.node) ? nodeIdProblems('node', [a.node]) : ['node: a node id is required']
   },
 }
 

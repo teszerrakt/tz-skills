@@ -22,6 +22,8 @@ test('arguments are checked before anything is compiled', () => {
   expect(checkArgs('locate', { groups: [] })).toEqual(['groups: a non-empty list of { "base", "nodes", "targets" } is required'])
   expect(checkArgs('candidates', { screens: [{ id: '1:1' }] })).toEqual(['screens: a non-empty list of { "id", "flow" } is required'])
   expect(checkArgs('dump', [])).toEqual(['--args must be a JSON object'])
+  expect(checkArgs('outline', { node: '9089:408514', depth: 3 })).toEqual([])
+  expect(checkArgs('outline', { node: '9089:408514', depth: 9 })).toEqual(['depth: a whole number from 1 to 6'])
 })
 
 test('the export line becomes a call whose result returns as JSON, under the tag line and ARGS', () => {
@@ -42,6 +44,7 @@ test('every Figma-side script compiles to plain JS with no import or export left
     nodes: ['1:3'],
     targets: ['1:4'],
     screens: [{ id: '1:2', flow: 'a' }],
+    node: '1:2',
   }
   for (const name of SCRIPTS) {
     const script = await buildScript(name, args)

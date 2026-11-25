@@ -9,7 +9,8 @@
 // uploaded URL instead, for a page whose crops would pass the Artifact size limit.
 // Prints the bytes written and every warning; exits 1 when there is any warning.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { hostname } from 'node:os'
+import { basename, dirname, join } from 'node:path'
 import { slugify } from './lib/names.ts'
 import { CHECK, CROP_VIEWER, PAGE_SCRIPT, pageHead, railShell, reviewStrip } from './lib/page.ts'
 import type { SourceLine } from './lib/types.ts'
@@ -23,6 +24,14 @@ export type RenderOptions = {
   inline?: boolean
   /** The section's name: the page's heading, and its tab title with " Map" added. */
   title?: string
+  /** Who built the page and where its fact base lives, stamped into a meta tag; main() fills it. */
+  stamp?: { version: string; host: string; factBase: string }
+}
+
+/** `<repo>/<slug>` under ~/.claude/figma-map, and the machine that holds it. Never the absolute path. */
+export function stampMeta(stamp: NonNullable<RenderOptions['stamp']>): string {
+  const content = `render.ts ${stamp.version}; host=${stamp.host}; fact-base=${stamp.factBase}`
+  return `<meta name="figma-map" content="${escapeHtml(content)}">\n`
 }
 
 export type Rendered = { html: string; warnings: string[] }
@@ -599,7 +608,8 @@ class Emitter {
     for (const link of this.anchorLinks) if (!this.anchors.has(link)) this.warnings.add(`a link points at #${link}, which no heading has`)
     const title = this.options.title ? `${this.options.title} Map` : 'Design map'
     const shell = railShell(this.options.title ?? 'Design map', rail, this.reviewIds.length)
-    const html = `${pageHead(title)}<div class="wrap">${shell}<main id="main">${content}</main></div>\n${CROP_VIEWER}${PAGE_SCRIPT}`
+    const stamp = this.options.stamp ? stampMeta(this.options.stamp) : ''
+    const html = `${stamp}${pageHead(title)}<div class="wrap">${shell}<main id="main">${content}</main></div>\n${CROP_VIEWER}${PAGE_SCRIPT}`
     return { html, warnings: [...this.warnings] }
   }
 }
@@ -640,6 +650,11 @@ function main(argv: string[]) {
     images,
     inline: argv.includes('--inline'),
     title: flag(argv, 'title'),
+    stamp: {
+      version: (JSON.parse(readFileSync(join(import.meta.dir, '../../package.json'), 'utf8')) as { version: string }).version,
+      host: hostname().split('.')[0],
+      factBase: `${basename(dirname(factBase))}/${basename(factBase)}`,
+    },
   })
   writeFileSync(output, html)
   console.log(`${output}: ${html.length} bytes, ${warnings.length} warnings`)

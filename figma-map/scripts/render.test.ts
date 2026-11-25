@@ -208,3 +208,9 @@ test('a drawn variant or heading without a crop is a warning; a Not drawn one is
     'variant "Toast" is drawn at 1:3 but has no crop; only a {Not drawn} row goes without one',
   ])
 })
+
+test('the page carries a generator stamp naming the host and the fact base by repo and slug', () => {
+  const out = html('# Page: P\n## C\n', { stamp: { version: '0.6.0', host: 'tz-pc', factBase: 'klay/bank-reconciliation' } })
+  expect(out).toStartWith('<meta name="figma-map" content="render.ts 0.6.0; host=tz-pc; fact-base=klay/bank-reconciliation">\n<title>')
+  expect(html('# Page: P\n## C\n')).toStartWith('<title>')
+})
