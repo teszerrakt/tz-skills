@@ -44,6 +44,11 @@ const NODE = /\{((?:I?\d+[:-]\d+)(?:;\d+[:-]\d+)*)\}/g
 /** Only the six names are tags; any other {word} is copy, such as a "{bank description}" placeholder. */
 const STATUS = /\{(New|Revised|Settled|Conflict|Not drawn|Open)\}/g
 const CITATION = /\[(\d+)\](?!\()/g
+/** A REST method before a path becomes a coloured badge; in backticks the path stays code. */
+const METHOD_CODE = /`(GET|POST|PUT|PATCH|DELETE) ([^`]+)`/g
+const METHOD = /(`[^`]*`)|\b(GET|POST|PUT|PATCH|DELETE)(?= [/…:])/g
+/** A one-letter list code (D1, Q16, T2) outside code spans and tags. */
+const LIST_CODE = /(`[^`]*`)|(<[^>]*>)|\b([A-Z]\d{1,3})\b/g
 const MAX_ID = 180
 
 type Bullet = { text: string; children: Bullet[] }
@@ -310,6 +315,8 @@ class Emitter {
   private readonly usedStatuses = new Set<string>()
   private usedBadges = false
   private readonly reviewIds: string[] = []
+  /** Every list row's code: a cited code links to its row, and a code with no row is a warning. */
+  private readonly listCodes = new Set<string>()
 
   constructor(
     private readonly options: RenderOptions,
@@ -317,6 +324,19 @@ class Emitter {
     private readonly doc: Doc,
   ) {
     for (const shared of doc.shared?.children ?? []) this.sharedCodes.set(shared.id, shared.code)
+    for (const list of [doc.decisions, doc.questions])
+      for (const block of list?.blocks ?? []) if (block.kind === 'table') for (const row of block.rows.slice(1)) this.listCodes.add(row[0] ?? '')
+  }
+
+  private method(m: string): string {
+    return `<span class="m m-${m.toLowerCase()}">${m}</span>`
+  }
+
+  /** Q16, D1, T2 → a link to that list row. Only codes the grooming notes use are checked, so "P1" or "S3" never warn. */
+  private listCode(code: string): string {
+    if (this.listCodes.has(code)) return `<a class="xref" href="#${code.toLowerCase()}">${code}</a>`
+    if (/^[DQT]\d/.test(code)) this.warnings.add(`${code} is cited but no Decision or Question row has that code`)
+    return code
   }
 
   private figmaUrl(nodeId: string) {
@@ -367,6 +387,9 @@ class Emitter {
     html = html.replace(NODE, (_, id) => `<a class="fig" href="${this.figmaUrl(id)}">Figma ↗</a>`)
     html = html.replace(STATUS, (_, status: string) => this.tag(status))
     html = html.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    html = html.replace(METHOD_CODE, (_, m: string, path: string) => `${this.method(m)} <code>${path}</code>`)
+    html = html.replace(METHOD, (all, code: string | undefined, m: string) => (code ? all : this.method(m)))
+    html = html.replace(LIST_CODE, (all, code, tag, c: string) => (code || tag ? all : this.listCode(c)))
     return html.replace(/`([^`]+)`/g, '<code>$1</code>')
   }
 
@@ -397,10 +420,12 @@ class Emitter {
     const narrow = cls(0) === 'n' ? '48px minmax(0, 1fr)' : 'minmax(0, 1fr)'
     const cell = (c: string, i: number) => {
       if (cls(i) === 'st' && STATUSES[c]) return `<div class="st">${this.tag(c)}</div>`
+      if (i === 0 && cls(i) === 'n') return `<div class="n">${escapeHtml(c)}</div>`
       return `<div class="${cls(i)}">${this.inline(c)}</div>`
     }
     const headHtml = `<div class="row head" aria-hidden="true">${head.map((c, i) => `<div class="${cls(i)}">${this.inline(c)}</div>`).join('')}</div>`
-    const bodyHtml = body.map((r) => `<div class="row">${r.map(cell).join('')}</div>`).join('')
+    const rowId = (r: string[]) => (cls(0) === 'n' && this.listCodes.has(r[0]) ? ` id="${r[0].toLowerCase()}"` : '')
+    const bodyHtml = body.map((r) => `<div class="row"${rowId(r)}>${r.map(cell).join('')}</div>`).join('')
     return `<div class="rows" style="--narrow:${narrow};--wide:${tracks.join(' ')}">${headHtml}${bodyHtml}</div>`
   }
 
@@ -439,6 +464,8 @@ class Emitter {
   private variants(variants: Variant[]): string {
     if (!variants.length) return ''
     const cards = variants.map((v) => {
+      if (v.node && !v.images.length && v.status !== 'Not drawn')
+        this.warnings.add(`variant "${v.name}" is drawn at ${v.node} but has no crop; only a {Not drawn} row goes without one`)
       const link = v.node ? `<a class="fig" href="${this.figmaUrl(v.node)}">Figma ↗</a>` : ''
       const crops = v.images.map((i) => this.inline(i)).join('')
       const details = BLOCK_LABELS.map((label) =>
@@ -468,20 +495,23 @@ class Emitter {
 
   /** depth 0: a section with a kicker and h2; 1: a part with an h3; 2: a sub-part with an h4. */
   private item(item: Item, depth: number): string {
+    if (item.node && item.status !== 'Not drawn' && !item.blocks.some((b) => b.kind === 'img'))
+      this.warnings.add(`"${item.name}" is drawn at ${item.node} but has no crop under its heading`)
     const strip = this.reviewable(item.id, item.code)
     const name = this.inline(item.name)
     const body = `${this.blocks(item, depth === 0 ? 'p' : 'pp')}${this.metaLine(item)}${this.variants(item.variants)}`
     const children = item.children.map((c) => this.item(c, depth + 1)).join('')
     if (depth === 0)
-      return `<section class="sec" id="${item.id}" data-comment-target><div class="kick">${item.code}</div><h2 class="h2">${name}</h2>${strip}${body}${children}</section>`
+      return `<section class="sec" id="${item.id}" data-comment-target><div class="kick">${item.code}</div><div class="stick"><h2 class="h2">${name}</h2>${strip}</div>${body}${children}</section>`
     const h = depth === 1 ? 'h3' : 'h4'
-    return `<div class="part${depth > 1 ? ' sub' : ''}" id="${item.id}" data-comment-target><${h} class="${h}"><span class="code">${item.code}</span>${name}</${h}>${strip}${body}${children}</div>`
+    return `<div class="part${depth > 1 ? ' sub' : ''}" id="${item.id}" data-comment-target><div class="stick"><${h} class="${h}"><span class="code">${item.code}</span>${name}</${h}>${strip}</div>${body}${children}</div>`
   }
 
   private refSection(item: Item, kick: string, intro: string, inner: string, review: boolean): string {
     const strip = review ? this.reviewable(item.id, item.name) : (this.anchor(item.id), '')
     const target = review ? ' data-comment-target' : ''
-    return `<section class="ref" id="${item.id}"${target}><div class="kick">${kick}</div><h2 class="h2">${this.inline(item.name)}</h2>${strip}${intro}${inner}</section>`
+    const head = review ? `<div class="stick"><h2 class="h2">${this.inline(item.name)}</h2>${strip}</div>` : `<h2 class="h2">${this.inline(item.name)}</h2>`
+    return `<section class="ref" id="${item.id}"${target}><div class="kick">${kick}</div>${head}${intro}${inner}</section>`
   }
 
   private header(): string {
@@ -514,12 +544,12 @@ class Emitter {
     }
     for (const list of [doc.decisions, doc.questions]) {
       if (!list) continue
-      const prefix = list.kind === 'decisions' ? 'D' : 'Q'
+      // The Questions table also holds the grooming notes' other lists under their own letter (T2).
+      const [code, want] = list.kind === 'decisions' ? [/^D\d+$/, 'a D<n> code'] : [/^[A-CE-Z]\d+$/, 'a Q<n> code, or its own list letter such as T2']
       for (const block of list.blocks) {
         if (block.kind !== 'table') continue
         for (const row of block.rows.slice(1)) {
-          if (!new RegExp(`^${prefix}\\d+$`).test(row[0] ?? ''))
-            this.warnings.add(`${list.name} row "${row.join(' | ')}" does not start with a ${prefix}<n> code`)
+          if (!code.test(row[0] ?? '')) this.warnings.add(`${list.name} row "${row.join(' | ')}" does not start with ${want}`)
         }
       }
       html += this.refSection(list, 'Reference', '', this.blocks(list, 'p'), true)

@@ -124,9 +124,11 @@ You write these alone, in the shape [references/doc-shape.md](references/doc-sha
 - **`shared.md`**, from `shared-names.json` and the subagents' reports: one `##` per shared component under `# Shared components`, its badge and reuse link, purpose, and its variant rows. Variants are listed only here; a page's part names the variant it uses. Where two flows' sections describe a shared component differently, re-read both flows' frame records, write one verdict, and edit the losing section to match.
 - **Routes.** If the run has an API contract (the user's, or config `## Sources`), add to each Interaction bullet the route the contract gives for it (`Confirm & Import → POST /statement-uploads/:id/import`). A route the contract does not name is never written; a step with none is a Note when the contract should have one.
 - **`lists.md`**, only from the user's grooming notes: `# Decisions` and `# Questions`, each one table, keeping the user's D/Q numbers. Leave out a list with no rows, and the file when there are no notes.
-- **Status tags** on rows, rules and headings: `{New}` and `{Revised}` against the previous run's sections on a refresh; `{Settled}`, `{Conflict}` and `{Open}` against the lists and the contract; `{Not drawn}` for a state they need that no frame shows.
+- **Status tags** on rows, rules and headings: `{New}` and `{Revised}` against the previous run's sections on a refresh; `{Settled}`, `{Conflict}` and `{Open}` against the lists and the contract; `{Not drawn}` for a state they need that no frame shows. A drawing slip is a Note, never `{Conflict}` and never a Question ([doc-shape.md](references/doc-shape.md)).
+- **Every cited code has a row.** A section that cites `T2` or `Q16` needs that row in `lists.md`; rows from a list the notes keep under another letter go in the Questions table with their own codes. When the notes do not hold a code's text, ask for it in the reply rather than drop the link.
+- **CTA targets.** A link or email button whose target neither Figma nor the contract states becomes an `{Open}` Question.
 
-Done when no component has variant rows in two places, every `[shared](#<anchor>)` has a heading, and every route written is in the contract.
+Done when no component has variant rows in two places, every `[shared](#<anchor>)` has a heading, every route written is in the contract, and every cited list code has a row.
 
 ### 7. Assemble and render
 
@@ -139,15 +141,16 @@ bun <base>/scripts/render.ts <fb> <fb>/design-map.md <fb>/design-map.html --file
 
 Append the run to `runs.json`, with each harvest subagent's `subagent_tokens` from the `<usage>` block of its Agent result, per subagent and in total, and the tokens per screen. Never use a subagent's own estimate: it runs about 40% low.
 
-Done when both print no problem or warning. Render warns on an `[n]` with no Sources line, a crop missing from disk, a link to an anchor no heading has, two headings with one anchor, a bullet under a variant outside Interaction, Copy or Notes, an old `#### States` table, and a list row without its D/Q code. Its page holds at phone width by construction: the rail stacks above the content and tables scroll in their own box.
+Done when both print no problem or warning. Render warns on an `[n]` with no Sources line, a crop missing from disk, a drawn heading or variant row with no crop, a cited list code with no row, a link to an anchor no heading has, two headings with one anchor, a bullet under a variant outside Interaction, Copy or Notes, an old `#### States` table, and a list row without its code. Its page holds at phone width by construction: the rail stacks above the content and tables scroll in their own box. Each item's heading and Reviewed / Comment buttons ride in a sticky bar until the item ends, and a `METHOD /path` route gets a coloured method badge.
 
 ### 8. Check
 
 - Every GitHub link resolves: `git cat-file -e <SHA>:<path>` for each linked path.
 - Every crop is a non-empty PNG (`file img/crops/*.png`).
 - Every `{node}` heading marker points at a node id in a frame record, `candidates.json`, or a `locate` result the subagent reported.
+- Open `design-map.html` in a browser at 1440px and 390px wide: every heading shows its crop, and a part's bar stays pinned while you scroll through it.
 
-Done when all three pass, or the reply names the one that could not run and why.
+Done when all four pass, or the reply names the one that could not run and why.
 
 ### 9. Publish
 

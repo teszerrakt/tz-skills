@@ -22,6 +22,8 @@ export function pageHead(title: string): string {
   --ok: #1a7f37; --ok-soft: #e6f4ea; --accent: #1d3f9e; --accent-soft: #e8eefc; --shade: rgba(0,0,0,.14);
   --rev-bg: #e6f4ea; --rev-fg: #14632b; --new-bg: #e8eefc; --new-fg: #1d3f9e;
   --con-bg: #fff1dc; --con-fg: #7a4a00; --nd-bg: #efefef; --nd-fg: #4d4d4d;
+  --get-bg: #e3f5e9; --get-fg: #116329; --post-bg: #e5edff; --post-fg: #1d3f9e; --put-bg: #fff0d9; --put-fg: #8a4b00;
+  --patch-bg: #f1e8ff; --patch-fg: #5b2a9e; --del-bg: #fde7e7; --del-fg: #a11d1d;
   --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
   --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: ui-monospace, Menlo, Consolas, monospace;
@@ -36,20 +38,19 @@ export function pageHead(title: string): string {
   --line: #262626; --line-strong: #333333; --shot: #2e2e2e; --chip: #1d1d1d; --card: #171717;
   --ok: #4ac26b; --ok-soft: #12301c; --accent: #a9c1ff; --accent-soft: #172447; --shade: rgba(0,0,0,.6);
   --rev-bg: #12301c; --rev-fg: #8fe0a8; --new-bg: #172447; --new-fg: #a9c1ff;
-  --con-bg: #3a2a0c; --con-fg: #f3c27a; --nd-bg: #2a2a2a; --nd-fg: #c4c4c4; --ui-primary-foreground: #0d1f12; --ui-overlay: rgba(0,0,0,.7); color-scheme: dark } }
+  --con-bg: #3a2a0c; --con-fg: #f3c27a; --nd-bg: #2a2a2a; --nd-fg: #c4c4c4; --get-bg: #12301c; --get-fg: #8fe0a8; --post-bg: #172447; --post-fg: #a9c1ff; --put-bg: #3a2a0c; --put-fg: #f3c27a; --patch-bg: #2a1d45; --patch-fg: #cdb2ff; --del-bg: #3d1616; --del-fg: #ff9e9e; --ui-primary-foreground: #0d1f12; --ui-overlay: rgba(0,0,0,.7); color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #121212; --fg: #e8e8e8; --body: #d0d0d0; --muted: #a3a3a3; --faint: #8f8f8f;
   --line: #262626; --line-strong: #333333; --shot: #2e2e2e; --chip: #1d1d1d; --card: #171717;
   --ok: #4ac26b; --ok-soft: #12301c; --accent: #a9c1ff; --accent-soft: #172447; --shade: rgba(0,0,0,.6);
   --rev-bg: #12301c; --rev-fg: #8fe0a8; --new-bg: #172447; --new-fg: #a9c1ff;
-  --con-bg: #3a2a0c; --con-fg: #f3c27a; --nd-bg: #2a2a2a; --nd-fg: #c4c4c4; --ui-primary-foreground: #0d1f12; --ui-overlay: rgba(0,0,0,.7); color-scheme: dark }
+  --con-bg: #3a2a0c; --con-fg: #f3c27a; --nd-bg: #2a2a2a; --nd-fg: #c4c4c4; --get-bg: #12301c; --get-fg: #8fe0a8; --post-bg: #172447; --post-fg: #a9c1ff; --put-bg: #3a2a0c; --put-fg: #f3c27a; --patch-bg: #2a1d45; --patch-fg: #cdb2ff; --del-bg: #3d1616; --del-fg: #ff9e9e; --ui-primary-foreground: #0d1f12; --ui-overlay: rgba(0,0,0,.7); color-scheme: dark }
 body { background: var(--bg); color: var(--fg); font-family: var(--serif); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
 a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 3px; }
 a:hover { text-decoration-color: var(--fg); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 h1, h2, h3, h4 { font-family: var(--sans); text-wrap: balance; color: var(--fg); }
-[id] { scroll-margin-top: calc(var(--bar-h) + 20px); }
 code { font: .88em var(--mono); }
 .wrap { box-sizing: border-box; max-width: 1200px; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -164,6 +165,27 @@ ol.src a { color: var(--muted); }
 .rv-who { font-variant-numeric: tabular-nums; }
 .cm-btn { font: 500 13px/18px var(--sans); color: var(--fg); background: none; border: 1px solid var(--line-strong); border-radius: 999px; padding: 6px 12px; min-height: 32px; cursor: pointer; }
 .cm-btn:hover { border-color: var(--muted); background: var(--chip); }
+
+/* Item bar: an item's heading and review strip stay pinned until the item ends. A part's bar covers its section's. */
+.stick { position: sticky; top: var(--bar-h); z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
+  min-height: 56px; box-sizing: border-box; padding: 8px 0; margin: 0 0 12px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.part > .stick { z-index: 5; box-shadow: 0 -48px 0 var(--bg); }
+.part.sub > .stick { z-index: 6; }
+.stick .h2, .stick .h3, .stick .h4 { margin: 0; flex: 1 1 auto; min-width: 0; }
+.stick .h2 { font-size: 26px; line-height: 34px; }
+.stick .rv { margin: 0; }
+[id] { scroll-margin-top: calc(var(--bar-h) + 72px); }
+
+/* Cross-references and REST methods */
+a.xref { font-family: var(--sans); font-weight: 600; font-size: .9em; color: var(--accent); text-decoration: none; }
+a.xref:hover { text-decoration: underline; }
+.row:target { background: var(--accent-soft); }
+.m { display: inline-block; font: 700 10.5px/16px var(--sans); letter-spacing: .04em; padding: 0 6px; border-radius: 4px; vertical-align: 1px; }
+.m-get { background: var(--get-bg); color: var(--get-fg); }
+.m-post { background: var(--post-bg); color: var(--post-fg); }
+.m-put { background: var(--put-bg); color: var(--put-fg); }
+.m-patch { background: var(--patch-bg); color: var(--patch-fg); }
+.m-delete { background: var(--del-bg); color: var(--del-fg); }
 
 /* Variants: one card per variant; the crop sits beside its notes once the column is wide enough. */
 .variants { display: grid; gap: 12px; margin: 8px 0 18px; font-family: var(--sans); }

@@ -21,7 +21,7 @@ Nothing nests deeper: a part of a part is a bullet. A `####` is always a variant
 1. **Purpose**: one plain sentence saying what it is and where it sits.
 2. **Rules** (optional, components mostly): a `- Rules` bullet with one child bullet per rule. A rule may open with a status: `  - {Conflict} Counts don't change after Undo [4]`.
 3. **Bullets**: copy and behaviour that belong to the whole element, not to one variant.
-4. **A crop** (optional): `![<alt>](img/crops/<flow>-<slug>.png)` on its own line.
+4. **A crop**: `![<alt>](img/crops/<flow>-<slug>.png)` on its own line, cut from the heading's `{node}`. Every component and part Figma draws gets one, so a reviewer sees what a heading covers before reading its variants. A part on a shared component shows the variant it uses.
 5. **Variant rows**: one `####` block each, in the order the user meets them.
 
 ## A variant row
@@ -37,11 +37,14 @@ Nothing nests deeper: a part of a part is a bullet. A `####` is always a variant
   - The frame shows the password in clear text; keep it masked
 ```
 
-- The heading's `{node}` becomes the row's **Figma ↗** link: the variant's own node, located in the screen the row describes. No crop line → the Preview cell shows "—" (use it when only the text changes).
+- The heading's `{node}` becomes the row's **Figma ↗** link: the variant's own node, located in the screen the row describes.
+- Every row Figma draws has a crop, even when only its text changes (toasts, error copy): the reviewer checks the copy against the picture. Only a `{Not drawn}` row has none.
 - Only three bullets sit at the top of a row: `Interaction`, `Copy`, `Notes`, each with its own child bullets. Leave out a block with nothing in it. `- Copy: "Saved"` is the one-line form.
-- **Interaction**: trigger → result, one bullet each. From prototype links and annotations only. Name an API route (`POST /statement-uploads`) only when the contract the run was given states it; never invent one.
+- **Interaction**: trigger → result, one bullet each. From prototype links and annotations only. Name an API route (`POST /statement-uploads`) only when the contract the run was given states it; never invent one. Write a route as `METHOD /path`: the renderer turns the method into a coloured badge.
+- **A link, button or email CTA names where it goes**: the page, route or URL. When neither Figma nor the contract says, write `→ target not stated` and add the gap to the Question list.
 - **Copy**: verbatim Figma text, quoted.
 - **Notes**: issues and conflicts: typos, a frame that contradicts another, a state the contract needs that no frame draws.
+- **A drawing slip is a Note, not a Conflict.** Sample data that contradicts its own label (a negative line under a "Money In" filter, "BCA" on a Mandiri frame) gets one Note: "Figma slip", then what to build. No status tag and no Question: `{Conflict}` is for a disagreement that changes what gets built.
 
 ## Status tags
 
@@ -52,6 +55,7 @@ Nothing nests deeper: a part of a part is a bullet. A `####` is always a variant
 - `{<node id>}` → a **Figma ↗** link to that node. On a component or part heading it links the component's own node.
 - `[n]` cites a Figma frame or annotation, numbered in order of first appearance. Every number has one line in the piece's closing `## Sources` block: `[n] https://www.figma.com/design/<key>/?node-id=<a>-<b> — frame "<name>"` or `— annotation "<verbatim text>"`.
 - `GH/<repo path>` in a link → the GitHub blob URL pinned to the run's SHA.
+- A list code in text (`D1`, `Q16`, `T2`) → a link to that row of the Decision or Question list. Every code a section cites must be a row: render warns on one with no row. A list the grooming notes keep under another letter goes in the Questions table with its own codes.
 - Badge after the name: `🟢 reuse [<Component>](GH/<path>)`, `🟡 extend …`, `🔴 new`. Shared components get theirs from the orchestrator.
 - **A part that uses a shared component**: `### Bank account card → [shared](#bank-account-card) — variant "In Progress" {<node>}`. It renders "Shared component, variant "In Progress" · variants in S1 →". Its variants live only in Shared. The anchor is the shared component's name in kebab case. In a bullet, `[shared](#bank-account-card)` renders as the code, `S1`.
 
@@ -94,7 +98,7 @@ Agreed in grooming. The middle column says whether the Figma follows it yet.
 | Q1 | How are bank cards sorted? | Active first, then In Progress, Not Started, Reconciled. | Settled |
 ```
 
-Keep the user's own D/Q numbers, so a rule that says "(Q15)" still points at the right row.
+Keep the user's own D/Q numbers, so a rule that says "(Q15)" still points at the right row. Rows from another of the notes' lists (`T1`…) keep their letter in the Questions table.
 
 ## Example
 
