@@ -129,7 +129,7 @@ _Avoid_: score, grade, status
 ### Design map
 
 **Crop**:
-A picture of one Figma node, built into a design map. Every component, part and variant row Figma draws has one, including a page's use of a shared component; only a state Figma never drew goes without.
+A picture of one Figma node, published as a file beside a design map. Every component, part and variant row Figma draws has one, including a page's use of a shared component; only a state Figma never drew goes without.
 _Avoid_: screenshot, image, preview
 
 **Figma slip**:

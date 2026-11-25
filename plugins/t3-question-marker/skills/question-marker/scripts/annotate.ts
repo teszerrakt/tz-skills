@@ -8,7 +8,7 @@
 //   {"text": ["line", "line"], "title": "RFC-024 RBR-3", "color": "blue", "width": 560}
 //   {"stack": [<node>…], "dir": "row", "gap": 24}
 // A mark: {"box": [x0,y0,x1,y1], "label": "Undo per row", "color": "red", "dashed": true, "text": "Sep 2026 ▾"}.
-//   Boxes are in the crop's own pixels, before scale; "extend" adds white room for a box drawn outside the frame.
+//   Boxes and "extend" are in the crop's own pixels, before scale; "extend" adds white room for a box outside the frame.
 //   "dashed" outlines a thing Figma does not draw, and "text" writes its placeholder inside the box.
 // Colours: red, blue, green, amber, grey, ink, or a #hex. Transparent PNGs are flattened onto white.
 import { existsSync, readFileSync } from 'node:fs'
@@ -26,10 +26,12 @@ function ensureSharp() {
     if (existsSync(join(dir, 'node_modules/sharp/package.json'))) return
     if (dirname(dir) === dir) break
   }
+  if (process.env.ANNOTATE_INSTALLED) throw new Error(`bun install in ${HERE} did not leave node_modules/sharp there`)
   const install = Bun.spawnSync(['bun', 'install', '--frozen-lockfile'], { cwd: HERE, stdout: 'ignore', stderr: 'inherit' })
   if (install.exitCode !== 0) throw new Error(`bun install failed in ${HERE}`)
   if (!import.meta.main) throw new Error('sharp was just installed; start the process again')
-  process.exit(Bun.spawnSync([process.execPath, ...process.argv.slice(1)], { stdio: ['inherit', 'inherit', 'inherit'] }).exitCode ?? 1)
+  const env = { ...process.env, ANNOTATE_INSTALLED: '1' }
+  process.exit(Bun.spawnSync([process.execPath, ...process.argv.slice(1)], { env, stdio: ['inherit', 'inherit', 'inherit'] }).exitCode ?? 1)
 }
 ensureSharp()
 const { default: sharp } = await import('sharp')
@@ -88,7 +90,7 @@ export async function load(path: string, o: { crop?: Box; scale?: number } = {})
   return pic(sharp(out.png).resize(Math.round(out.width * scale), Math.round(out.height * scale), { kernel: 'lanczos3' }), scale)
 }
 
-type Placed = { x: number; y: number; side: 'top' | 'bottom' }
+type Placed = { x: number; y: number; side: 'top' | 'bottom'; row: number }
 const band = (rows: number) => (rows ? rows * (BADGE_H + GAP) + GAP : 0)
 
 /**
@@ -115,9 +117,38 @@ export function placeBadges(
     const x = Math.max(want, rows[side][row] + GAP)
     rows[side][row] = x + item.w
     const offset = (row + 1) * (BADGE_H + GAP)
-    at[i] = { x, y: side === 'top' ? -offset : height + offset - BADGE_H, side }
+    at[i] = { x, y: side === 'top' ? -offset : height + offset - BADGE_H, side, row }
   }
   return { at, top: band(rows.top.length), bottom: band(rows.bottom.length), width: canvas }
+}
+
+/**
+ * The line from a badge to its box. It drops to the gap between the badges and the image, runs along it, then drops to
+ * the box, so a line from an outer row never crosses a badge in an inner row and never reads as that badge's.
+ */
+export function leader(badge: Box, box: Box, side: Placed['side'], height: number, width: number, inner: Box[]): [number, number][] {
+  const [bx0, by0, bx1, by1] = badge
+  const [x0, y0, x1, y1] = box
+  const target = x1 - x0 > 16 ? Math.min(Math.max((bx0 + bx1) / 2, x0 + 8), x1 - 8) : (x0 + x1) / 2
+  const free = (x: number) => inner.every(([a, , b]) => x < a - 4 || x > b + 4)
+  const near = (lo: number, hi: number) =>
+    Array.from({ length: Math.max(1, Math.floor(hi - lo)) }, (_, k) => lo + k)
+      .filter(free)
+      .toSorted((a, b) => Math.abs(a - target) - Math.abs(b - target))[0]
+  const gap = side === 'top' ? -GAP / 2 : height + GAP / 2
+  const edge = side === 'top' ? by1 : by0
+  const tx = x1 - x0 > 16 ? Math.min(Math.max(target, x0 + 8), x1 - 8) : target
+  const to: [number, number][] = [
+    [tx, gap],
+    [tx, side === 'top' ? y0 : y1],
+  ]
+  const under = near(bx0 + 6, bx1 - 6)
+  if (under !== undefined) return [[under, edge], [under, gap], ...to]
+  // Every point under the badge is covered: leave from its side, at mid-height, to the nearest open column.
+  const out = near(4, width - 4) ?? bx1 + 6
+  const side0 = out < bx0 ? bx0 : bx1
+  const mid = (by0 + by1) / 2
+  return [[side0, mid], [out, mid], [out, gap], ...to]
 }
 
 /** Outlines (solid, or dashed for "not drawn"), placeholder text and badges on one image. */
@@ -148,20 +179,21 @@ export async function annotate(base: Pic, marks: Mark[], extend: Extend = {}): P
       texts.push({ input: t.png, left: x0 + 10, top: y0 + top + 10 })
     }
   }
+  const widths = labelled.map((i) => (labels[i] as Pic).width + 18)
+  const badges: string[] = []
   for (const [n, i] of labelled.entries()) {
     const label = labels[i] as Pic
-    const { x, y, side } = layout.at[n]
-    const [x0, y0, x1, y1] = boxes[i]
-    const bw = label.width + 18
-    const cx = x + bw / 2
-    const tx = x1 - x0 > 16 ? Math.min(Math.max(cx, x0 + 8), x1 - 8) : (x0 + x1) / 2
-    const from = side === 'top' ? y + BADGE_H : y
-    const to = side === 'top' ? y0 : y1
+    const { x, y, side, row } = layout.at[n]
+    const bw = widths[n]
+    const inner = layout.at.flatMap((p, m): Box[] => (p.side === side && p.row < row ? [[p.x, p.y, p.x + widths[m], p.y + BADGE_H]] : []))
+    const points = leader([x, y, x + bw, y + BADGE_H], boxes[i], side, h, layout.width, inner)
     const c = color(marks[i].color)
-    svg.push(`<line x1="${cx}" y1="${from + top}" x2="${tx}" y2="${to + top}" stroke="${c}" stroke-width="2"/>`)
-    svg.push(`<rect x="${x}" y="${y + top}" width="${bw}" height="${BADGE_H}" rx="6" fill="${c}"/>`)
+    const path = points.map(([px, py]) => `${px},${py + top}`).join(' ')
+    svg.push(`<polyline points="${path}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>`)
+    badges.push(`<rect x="${x}" y="${y + top}" width="${bw}" height="${BADGE_H}" rx="6" fill="${c}"/>`)
     texts.push({ input: label.png, left: Math.round(x + 9), top: Math.round(y + top + (BADGE_H - label.height) / 2) })
   }
+  svg.push(...badges)
   const W = Math.max(w, layout.width)
   const H = h + top + layout.bottom
   const overlay = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${svg.join('')}</svg>`)

@@ -370,8 +370,8 @@ class Emitter {
     const own = normalize(path)
     const published = isAbsolute(own) || own.startsWith('..') ? `img/${basename(own)}` : own
     const target = resolve(this.options.pageDir ?? this.options.factBase, published)
-    const taken = this.files.get(published)
-    if (taken && taken !== target) this.warnings.add(`two crops publish as ${published}`)
+    const source = this.copies.get(target)
+    if (source && resolve(source) !== resolve(file)) this.warnings.add(`two crops publish as ${published}`)
     this.files.set(published, target)
     this.copies.set(target, file)
     return published

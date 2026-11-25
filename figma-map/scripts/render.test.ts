@@ -152,6 +152,14 @@ test('a page written outside the fact base gets its crops copied beside it', () 
   expect(readFileSync(join(pageDir, 'img/crops/row.png'), 'utf8')).toBe('png-bytes')
 })
 
+test('two different crops that would publish under one path are a warning', () => {
+  const factBase = withCrop()
+  const other = mkdtempSync(join(tmpdir(), 'figma-map-other-'))
+  writeFileSync(join(other, 'row.png'), 'other-bytes')
+  const md = `# Page: P\n## C\n#### A\n![a](${join(factBase, 'img/crops/row.png')})\n#### B\n![b](${join(other, 'row.png')})`
+  expect(render(md, { ...options, factBase }).warnings).toEqual(['two crops publish as img/row.png'])
+})
+
 test('--local keeps absolute file paths for html_render and lists nothing to publish', () => {
   const factBase = withCrop()
   const result = render(CROPS, { ...options, factBase, local: true })

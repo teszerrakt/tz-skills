@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import sharp from 'sharp'
-import { annotate, build, load, panel, placeBadges, stack, text, textBox, type Box } from './annotate.ts'
+import { annotate, build, leader, load, panel, placeBadges, stack, text, textBox, type Box } from './annotate.ts'
 
 const dir = mkdtempSync(join(tmpdir(), 'annotate-'))
 
@@ -100,5 +100,29 @@ test('a row stack is as wide as its parts and gaps, as tall as its tallest part'
 })
 
 test('a spec node that is none of the four shapes is named in the error', async () => {
-  expect(build({ imgae: 'x.png' }, dir)).rejects.toThrow('not a node (image, panel, text or stack): {"imgae":"x.png"}')
+  await expect(build({ imgae: 'x.png' }, dir)).rejects.toThrow('not a node (image, panel, text or stack): {"imgae":"x.png"}')
+})
+
+/** Does the segment from a to b pass through the rect? Lines here are axis-aligned, so a bounds test is exact. */
+const crosses = ([ax, ay]: number[], [bx, by]: number[], [x0, y0, x1, y1]: Box) =>
+  Math.max(ax, bx) >= x0 && Math.min(ax, bx) <= x1 && Math.max(ay, by) >= y0 && Math.min(ay, by) <= y1
+
+test('a line from an outer badge row goes around the inner row, never through it', () => {
+  const inner: Box = [10, -36, 600, -8]
+  const covered = leader([100, -72, 500, -44], [200, 40, 400, 90], 'top', 300, 1000, [inner])
+  const open = leader([100, -72, 700, -44], [200, 40, 400, 90], 'top', 300, 1000, [inner])
+  for (const points of [covered, open]) {
+    for (const [k, p] of points.slice(1).entries()) expect(crosses(points[k], p, inner)).toBe(false)
+    expect(points.at(-1)).toEqual([points.at(-1)?.[0] ?? 0, 40])
+  }
+  expect(open[0]).toEqual([605, -44])
+})
+
+test('a row-0 badge above its box drops straight down', () => {
+  expect(leader([150, -36, 350, -8], [200, 40, 400, 90], 'top', 300, 1000, [])).toEqual([
+    [250, -8],
+    [250, -4],
+    [250, -4],
+    [250, 40],
+  ])
 })

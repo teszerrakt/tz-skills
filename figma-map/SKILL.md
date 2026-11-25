@@ -15,7 +15,7 @@ Reads a Figma section without dumping it into context, and publishes one design-
 - **Harvesters start small.** The harvest runs in `tz-skills:figma-map-harvester`, which carries only Bash, Read, Write and the two Figma tools. A general-purpose subagent carries every tool's definition, about 30k tokens more, before it reads a screen.
 - **Each fact enters a harvester once.** One dump call reads up to 15 screens across flows and returns each flow's shell once; `merge.ts` prints the digest a section is written from; `components.ts` prints the component index once, instead of folder listings.
 - **Never `get_design_context` on a whole screen.** On a full-size screen it returns only the node tree. Use it on one component's node, and only when a sub-component stays unclear.
-- **Images never enter context.** A crop is `get_screenshot` on the component's own node, downloaded to disk and built into the page.
+- **Images never enter context.** A crop is `get_screenshot` on the component's own node, downloaded to disk and published as a file beside the page.
 - **Shared components are named once, before the harvest.** Subagents that name them independently give one panel three names. The orchestrator names them up front and writes the Shared section alone.
 
 ## Config
@@ -68,7 +68,7 @@ lists.md              the Decision and Question lists, from the user's grooming 
 design-map.md         the assembled source
 ```
 
-The rendered page, its copied crops and `design-map.files.json` go to `<scratch>/map/`, rebuilt by every render.
+The rendered page, its copied crops and `design-map.files.json` go to `<scratch>/map/`, where `<scratch>` is this session's scratchpad directory (the Artifact tool publishes files only from there or the working directory). Every render rebuilds it.
 
 It is always under `~/.claude`, even when the session runs under another config directory: the user switches Claude profiles mid-project, and every profile must find the same map. Never put it in a scratchpad, which a reboot clears. It lives on the machine that built the map; render stamps that host and `<repo>/<slug>` into the page, so a session on another machine knows where to look. Never push it, and never put its absolute path in the page. Refer to it by absolute path in briefs, so any worktree can read it.
 
