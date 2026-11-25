@@ -10,6 +10,8 @@
 // A mark: {"box": [x0,y0,x1,y1], "label": "Undo per row", "color": "red", "dashed": true, "text": "Sep 2026 ▾"}.
 //   Boxes and "extend" are in the crop's own pixels, before scale; "extend" adds white room for a box outside the frame.
 //   "dashed" outlines a thing Figma does not draw, and "text" writes its placeholder inside the box.
+// Draft: "grid": true (or a step in px) on an image draws lines labelled in those same pixels, under the marks. Render
+//   once with it, read each box off the grid, then remove it before the image is shown.
 // Colours: red, blue, green, amber, grey, ink, or a #hex. Transparent PNGs are flattened onto white.
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -51,6 +53,7 @@ export const COLORS: Record<string, string> = {
 }
 const FONT = 'DejaVu Sans,Inter,Helvetica,Arial'
 const PAPER = '#f8f9fc'
+const GRID = '#c026d3'
 const BADGE_H = 28
 const GAP = 8
 
@@ -151,8 +154,44 @@ export function leader(badge: Box, box: Box, side: Placed['side'], height: numbe
   return [[side0, mid], [out, mid], [out, gap], ...to]
 }
 
-/** Outlines (solid, or dashed for "not drawn"), placeholder text and badges on one image. */
-export async function annotate(base: Pic, marks: Mark[], extend: Extend = {}): Promise<Pic> {
+/**
+ * Grid lines every `step` crop pixels over the image area that starts at (left, top) on the canvas, each labelled with
+ * its crop coordinate; every second line is stronger. `scale` maps crop pixels to canvas pixels.
+ */
+export function gridSvg(
+  step: number,
+  scale: number,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  origin: [number, number],
+): string[] {
+  const out: string[] = []
+  const tagWidth = (value: number) => String(value).length * 7 + 6
+  const tag = (x: number, y: number, value: number) =>
+    `<rect x="${x}" y="${y}" width="${tagWidth(value)}" height="14" fill="#ffffff" opacity=".85"/><text x="${x + 3}" y="${y + 11}" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" fill="${GRID}">${value}</text>`
+  // Labels thin out when lines sit closer than a label is wide, so no two overlap.
+  const every = (room: number) => Math.max(1, Math.ceil(room / (step * scale)))
+  const [ox, oy] = origin
+  const line = (v: number) => (v % (2 * step) ? 0.3 : 0.6)
+  const xEvery = every(42)
+  for (let v = Math.ceil(-ox / scale / step) * step; ox + v * scale <= width; v += step) {
+    const x = left + ox + v * scale
+    out.push(`<line x1="${x}" y1="${top}" x2="${x}" y2="${top + height}" stroke="${GRID}" stroke-width="1" opacity="${line(v)}"/>`)
+    if ((v / step) % xEvery === 0 && x + 2 + tagWidth(v) <= left + width) out.push(tag(x + 2, top + 2, v))
+  }
+  const yEvery = every(20)
+  for (let v = Math.ceil(-oy / scale / step) * step; oy + v * scale <= height; v += step) {
+    const y = top + oy + v * scale
+    out.push(`<line x1="${left}" y1="${y}" x2="${left + width}" y2="${y}" stroke="${GRID}" stroke-width="1" opacity="${line(v)}"/>`)
+    if (v && (v / step) % yEvery === 0 && y + 16 <= top + height) out.push(tag(left + 2, y + 2, v))
+  }
+  return out
+}
+
+/** Outlines (solid, or dashed for "not drawn"), placeholder text and badges on one image; `grid` adds the draft grid. */
+export async function annotate(base: Pic, marks: Mark[], extend: Extend = {}, grid = 0): Promise<Pic> {
   const s = base.scale ?? 1
   const [et, er, eb, el] = [extend.top ?? 0, extend.right ?? 0, extend.bottom ?? 0, extend.left ?? 0].map((n) => Math.round(n * s))
   const w = base.width + el + er
@@ -166,7 +205,7 @@ export async function annotate(base: Pic, marks: Mark[], extend: Extend = {}): P
     labelled.map((i) => ({ box: boxes[i], w: (labels[i] as Pic).width + 18 })),
   )
   const top = layout.top
-  const svg: string[] = []
+  const svg: string[] = grid ? gridSvg(grid, s, 0, top, w, h, [el, et]) : []
   const texts: OverlayOptions[] = []
   for (const [i, m] of marks.entries()) {
     const [x0, y0, x1, y1] = boxes[i]
@@ -260,7 +299,8 @@ export async function build(node: Node, base: string): Promise<Pic> {
   if (typeof node.image === 'string') {
     const loaded = await load(resolve(base, node.image), { crop: node.crop as Box | undefined, scale: node.scale as number | undefined })
     const marks = (node.marks as Mark[] | undefined) ?? []
-    return marks.length || node.extend ? annotate(loaded, marks, node.extend as Extend | undefined) : loaded
+    const grid = node.grid === true ? 50 : typeof node.grid === 'number' ? node.grid : 0
+    return marks.length || node.extend || grid ? annotate(loaded, marks, node.extend as Extend | undefined, grid) : loaded
   }
   if (typeof node.panel === 'string') {
     if (!node.of) throw new Error(`panel "${node.panel}" has no "of" node`)
@@ -286,7 +326,10 @@ if (import.meta.main) {
     console.error('usage: bun annotate.ts <spec.json> <out.png>   (spec format: this file’s header)')
     process.exit(2)
   }
-  const result = await build(JSON.parse(readFileSync(spec, 'utf8')) as Node, dirname(resolve(spec)))
+  const source = readFileSync(spec, 'utf8')
+  const result = await build(JSON.parse(source) as Node, dirname(resolve(spec)))
   await save(result, out)
   console.log(`${out}: ${result.width + 48}×${result.height + 48}`)
+  if (/"grid"\s*:\s*(true|\d)/.test(source))
+    console.log('draft: the grid is on; read the boxes off it, then remove "grid" before showing the image')
 }

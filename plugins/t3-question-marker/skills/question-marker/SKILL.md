@@ -41,7 +41,7 @@ When a question turns on something visible (a Figma frame, a screen, a component
 - A dashed outline for a thing Figma does not draw.
 - A diagram of boxes when no frame exists.
 
-Build it from this skill's base directory with `bun scripts/annotate.ts <spec.json> <out.png>`; the script's header gives the spec. Read the PNG yourself before you show it: each label legible, each outline on its part. Show it with Markdown image syntax and its absolute path.
+Build it from this skill's base directory with `bun scripts/annotate.ts <spec.json> <out.png>`; the script's header gives the spec. Render a draft with `"grid": true` on each image and read every box off the labelled grid, then render without it. Read the PNG yourself before you show it: each label legible, each outline on its part. Show it with Markdown image syntax and its absolute path.
 
 When nothing visual is at stake, text alone is right.
 

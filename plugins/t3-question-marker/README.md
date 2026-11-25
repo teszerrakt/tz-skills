@@ -20,7 +20,7 @@ Outside T3 Code the hook does nothing.
 
 ## How it works
 
-- **The `question-marker` skill** tells the agent to put every open question in a closing `❓` section rather than calling AskUserQuestion, with an annotated image under a question that turns on something visible. `skills/question-marker/scripts/annotate.ts` builds that image from a JSON spec (crops, outlines, dashed "not drawn" boxes, badges, titled panels, text boxes, stacks); it installs `sharp` beside itself on its first run.
+- **The `question-marker` skill** tells the agent to put every open question in a closing `❓` section rather than calling AskUserQuestion, with an annotated image under a question that turns on something visible. `skills/question-marker/scripts/annotate.ts` builds that image from a JSON spec (crops, outlines, dashed "not drawn" boxes, badges, titled panels, text boxes, stacks, and a coordinate grid for drafts); it installs `sharp` beside itself on its first run.
 - **The UserPromptSubmit hook** (`hooks/prompt.ts`) reads the thread's title (`t3 thread show`) and tells the agent: remove the mark first if it is there (the user has answered), and add it before writing a reply that ends with a `❓` section. Renaming before the reply keeps the reply as the turn's last message, the only one T3 shows.
 - **The Stop hook** (`hooks/stop.ts`) is the fallback. It reads the agent's last reply and the title; when they disagree (questions but no mark, or a mark but no questions), it blocks the stop once, asks for the rename, and asks the agent to repeat its `❓` section (or its reply) so the user still sees it. The agent renames with the `mcp__t3-code__t3_thread_update` tool.
 

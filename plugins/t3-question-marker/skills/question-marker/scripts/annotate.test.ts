@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import sharp from 'sharp'
-import { annotate, build, leader, load, panel, placeBadges, stack, text, textBox, type Box } from './annotate.ts'
+import { annotate, build, gridSvg, leader, load, panel, placeBadges, stack, text, textBox, type Box } from './annotate.ts'
 
 const dir = mkdtempSync(join(tmpdir(), 'annotate-'))
 
@@ -125,4 +125,22 @@ test('a row-0 badge above its box drops straight down', () => {
     [250, -4],
     [250, 40],
   ])
+})
+
+test('grid lines sit at crop coordinates through scale and extend, and their labels never overlap', () => {
+  const svg = gridSvg(50, 0.5, 0, 0, 300, 100, [40, 0]).join('')
+  const xs = [...svg.matchAll(/<line x1="([\d.]+)" y1="0"/g)].map((m) => Number(m[1]))
+  expect(xs.slice(0, 4)).toEqual([15, 40, 65, 90])
+  const tags = [...svg.matchAll(/<rect x="([\d.]+)" y="2" width="(\d+)"/g)].map((m) => [Number(m[1]), Number(m[1]) + Number(m[2])])
+  for (const [k, [, end]] of tags.slice(0, -1).entries()) expect(end).toBeLessThanOrEqual(tags[k + 1][0])
+  for (const [, end] of tags) expect(end).toBeLessThanOrEqual(300)
+  expect(svg).toContain('>100</text>')
+})
+
+test('a draft grid is drawn on the image; with no marks the image keeps its size', async () => {
+  const base = await load(await png('plain.png', 200, 100, { r: 255, g: 255, b: 255, alpha: 1 }))
+  const out = await annotate(base, [], {}, 50)
+  expect([out.width, out.height]).toEqual([200, 100])
+  expect(await pixel(out.png, 100, 75)).not.toEqual([255, 255, 255])
+  expect(await pixel(out.png, 75, 75)).toEqual([255, 255, 255])
 })
