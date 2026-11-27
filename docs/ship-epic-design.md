@@ -164,6 +164,31 @@ Lint moves local. CI runs `lint test typecheck build`, and `/ship` ran neither
 lint nor the full gate, so a lint slip surfaced 9–10 minutes after the PR
 opened. With auto-fix on, that is a full CI round trip per slip.
 
+## The ready gate
+
+**Added 2026-11-27, opt-in through `Ready gate: hold`.** Measured on klay's
+TRA-698 run 4: six PRs, all marked ready by step 12, then every fix round, every
+CodeRabbit thread fix, every bring-over after a sibling merged and one empty
+re-trigger commit pushed to a ready PR. Each push started about 12 CI jobs; the
+run's PRs took 6 to 30 starts each, and the team's daily allowance of 200 ran out
+by midday. klay's CI and CodeRabbit already skip drafts, so the fix was to keep
+the PR a draft until it is about to merge, not to change CI.
+
+- Every PR stays a draft after step 11 (`--stopped held-draft`). The
+  orchestrator's three reviewers run on the draft, so the bot's late review is a
+  final pass, not the first one.
+- A PR nothing depends on is marked ready once that review is clean, so it keeps
+  the bot's early read. A dependent PR waits until the ticket it merges after has
+  merged (`watch` prints `next …`), is brought over as a draft, gets one more
+  fresh adversarial pass on the merged result, and only then goes ready. It
+  gets one CI run and one bot review, on the diff that merges.
+- After ready: one push per review round, and a flaky job is re-run with
+  `gh run rerun --failed`, never with an empty commit.
+
+Rejected: a job-start budget the orchestrator tracks and enforces. The limit was
+raised to 840 a day the same morning; a count per PR in the report shows whether
+the gate works, without a counter and a pause rule in the run.
+
 ## The adversarial review
 
 **Replaced 2026-09-14.** Step 8 now spawns a fresh read-only Opus subagent with

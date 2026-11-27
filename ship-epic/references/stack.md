@@ -11,4 +11,4 @@ On a squash-only repo, the child then conflicts with the base: git sees the pare
 1. Merge the parent's final head (`pull/<n>/head`) into the child, so the child holds everything the squash holds.
 2. Merge the base. In a file that only the parent's squash touched since the merge base, the child's side is a superset, so take it (`git log <merge-base>..origin/<base> -- <file>` proves which commits touched it). Resolve any other conflict by hand.
 3. Check that the PR still shows only the child's own work: the added and removed lines of `git diff origin/<base> HEAD` must equal those of `git diff <parent head> HEAD` taken before step 2.
-4. Typecheck on the merged result, because the base now holds the other merged PRs too, then push.
+4. Typecheck on the merged result, because the base now holds the other merged PRs too, then push. Under a `Ready gate` of `hold`, the child is still a draft here: review the merged result and mark it ready as `ready-gate.md` says.

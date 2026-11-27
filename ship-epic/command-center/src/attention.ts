@@ -24,6 +24,7 @@ export function attention(at = Date.now()): AttentionItem[] {
   for (const [ticket, worker] of Object.entries(state.workers)) {
     items.push(...finishedButNeeded(ticket, worker, state.prs[ticket]))
     items.push(...reviewSettled(ticket, worker, state.prs[ticket], at))
+    items.push(...nextInLine(ticket, worker, state.prs[ticket]))
     items.push(...fixesAsked(ticket))
     items.push(...stoppedOrQuiet(ticket, worker, state.prs[ticket], at))
   }
@@ -44,7 +45,8 @@ function finishedButNeeded(ticket: string, worker: Worker, pr: PullRequest | und
     const names = checks.failing.join(', ')
     items.push({ key: `ci:${ticket}:${checks.failing.join(',')}`, line: `resume ${ticket}: CI failing on #${pr.number} (${names})` })
   }
-  if (checks.conflict) {
+  // A PR whose predecessor is still open re-conflicts at that merge, so syncing it now is paid for twice.
+  if (checks.conflict && !aheadStillOpen(ticket)) {
     const base = state.run?.target || 'its base branch'
     items.push({ key: `conflict:${ticket}:${checks.head}`, line: `resume ${ticket}: #${pr.number} conflicts with ${base}` })
   }
@@ -67,6 +69,28 @@ function reviewSettled(ticket: string, worker: Worker, pr: PullRequest | undefin
   ]
 }
 
+/** A draft held for the orchestrator: a `held` line on each stop, and one `next` line once the ticket it merges after has merged. */
+function nextInLine(ticket: string, worker: Worker, pr: PullRequest | undefined): AttentionItem[] {
+  if (worker.stopped !== 'held-draft' || pr?.state !== 'OPEN' || !pr.draft) return []
+  const held = { key: `held:${ticket}:${worker.at}`, line: `held ${ticket}: #${pr.number} is a draft; review it, or mark it ready when its turn comes` }
+  const after = state.run?.tickets.find((t) => t.ticket === ticket)?.after
+  const ahead = after ? state.prs[after] : undefined
+  if (!after || ahead?.state !== 'MERGED') return [held]
+  // Keyed on the merge, so a session stopping again after its bring-over does not ask for a second one.
+  return [
+    held,
+    {
+      key: `next:${ticket}:${after}:${ahead.mergedAt}`,
+      line: `next ${ticket}: ${after} merged; bring #${pr.number} over, review it, then mark it ready`,
+    },
+  ]
+}
+
+function aheadStillOpen(ticket: string): boolean {
+  const after = state.run?.tickets.find((t) => t.ticket === ticket)?.after
+  return !!after && state.prs[after]?.state === 'OPEN'
+}
+
 function fixesAsked(ticket: string): AttentionItem[] {
   const asked = state.findings.filter((f: Finding) => f.ticket === ticket && f.fixAsked && !SETTLED_OUTCOMES.includes(f.outcome))
   return asked.map((finding) => ({
@@ -78,7 +102,7 @@ function fixesAsked(ticket: string): AttentionItem[] {
 function stoppedOrQuiet(ticket: string, worker: Worker, pr: PullRequest | undefined, at: number): AttentionItem[] {
   const doing = worker.doing || 'no detail'
 
-  if (worker.stopped && !['done', 'question', 'review'].includes(worker.stopped)) {
+  if (worker.stopped && !['done', 'question', 'review', 'held-draft'].includes(worker.stopped)) {
     return [{ key: `stopped:${ticket}:${worker.stopped}:${worker.at}`, line: `${ticket} stopped: ${worker.stopped} (${doing})` }]
   }
 

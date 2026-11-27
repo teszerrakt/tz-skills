@@ -8,6 +8,7 @@ What each key in `.claude/delivery.md`'s `## Delivery` section holds for `/tz-sk
 | Worktree root | where step 0 puts the tree |
 | Per-worktree opt-outs | the hooks or plugins step 0 disables in the worktree |
 | Typecheck / Lint / Tests | the two commands, and the skill that decides what a test may assert |
+| Local CI gate | the exact commands CI runs on a PR, plus any check CI skips; it replaces Typecheck and Lint in step 4, and blocks `gh pr ready` and every push to a ready PR |
 | Backend URL override | the env var that points the frontend dev server at another backend |
 | Backend keys, marked `(BE)` | the backend track's half of steps 4–10b — [`references/backend-track.md`](backend-track.md) |
 | Visual verification | the skill that diffs the running app against the design, and edits code |
