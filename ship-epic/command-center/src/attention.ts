@@ -24,6 +24,7 @@ export function attention(at = Date.now()): AttentionItem[] {
   for (const [ticket, worker] of Object.entries(state.workers)) {
     items.push(...finishedButNeeded(ticket, worker, state.prs[ticket]))
     items.push(...reviewSettled(ticket, worker, state.prs[ticket], at))
+    items.push(...nextInLine(ticket, worker, state.prs[ticket]))
     items.push(...fixesAsked(ticket))
     items.push(...stoppedOrQuiet(ticket, worker, state.prs[ticket], at))
   }
@@ -67,6 +68,19 @@ function reviewSettled(ticket: string, worker: Worker, pr: PullRequest | undefin
   ]
 }
 
+/** A draft held for its turn, once the ticket it merges after has merged. A held draft with no `after` waits on the orchestrator alone. */
+function nextInLine(ticket: string, worker: Worker, pr: PullRequest | undefined): AttentionItem[] {
+  if (worker.stopped !== 'held-draft' || pr?.state !== 'OPEN') return []
+  const after = state.run?.tickets.find((t) => t.ticket === ticket)?.after
+  if (!after || state.prs[after]?.state !== 'MERGED') return []
+  return [
+    {
+      key: `next:${ticket}:${worker.at}`,
+      line: `next ${ticket}: ${after} merged; bring #${pr.number} over, review it, then mark it ready`,
+    },
+  ]
+}
+
 function fixesAsked(ticket: string): AttentionItem[] {
   const asked = state.findings.filter((f: Finding) => f.ticket === ticket && f.fixAsked && !SETTLED_OUTCOMES.includes(f.outcome))
   return asked.map((finding) => ({
@@ -78,7 +92,7 @@ function fixesAsked(ticket: string): AttentionItem[] {
 function stoppedOrQuiet(ticket: string, worker: Worker, pr: PullRequest | undefined, at: number): AttentionItem[] {
   const doing = worker.doing || 'no detail'
 
-  if (worker.stopped && !['done', 'question', 'review'].includes(worker.stopped)) {
+  if (worker.stopped && !['done', 'question', 'review', 'held-draft'].includes(worker.stopped)) {
     return [{ key: `stopped:${ticket}:${worker.stopped}:${worker.at}`, line: `${ticket} stopped: ${worker.stopped} (${doing})` }]
   }
 

@@ -12,7 +12,7 @@
 //   watch    [--every 30]  Runs until killed. One line per new thing the orchestrator must act on:
 //            a question, a review hand-off the bot and CI have finished,
 //            a finished ticket whose PR has threads open, CI failing or a conflict,
-//            a stopped worker, a worker with no update for 30 minutes.
+//            a held draft whose `after` ticket merged, a stopped worker, a worker with no update for 30 minutes.
 //   questions  Prints each open question: id, ticket, options (* marks the recommended one).
 //   answer   --id Q --choice LABEL [--note "..."] --as orchestrator
 //            The orchestrator's answer under --afk, labelled as its own.

@@ -345,6 +345,17 @@ And the hard-won rule: **on a FAIL, check the expectation before believing the
 defect.** In the measured session the assertion's reference frame was wrong twice
 while the code was right.
 
+### Step 12 — CI is not free
+
+**Added 2026-11-27.** A push to a ready PR re-runs all of CI and the bot's
+review, so step 12 pushes once per review round, never to re-run CI (a flaky
+job takes `gh run rerun --failed`), and a `Local CI gate` key, where set, runs
+CI's own commands before `gh pr ready` and before every push. On klay the old
+Typecheck and Lint keys skipped the packages' typecheck and every test, and a
+local test run without CI's diff range exited 1 on nothing. Under `/ship-epic`'s
+ready gate the brief can also hold the PR as a draft (`--stopped held-draft`);
+`docs/ship-epic-design.md`, The ready gate, has the measured run.
+
 ## Agents
 
 Two agents ship from tz-skills, `tz-`-prefixed so an install never clobbers a

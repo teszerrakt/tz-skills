@@ -1,0 +1,21 @@
+schema_version: "1.0"
+name: ship-holds-draft-for-ready-gate
+description: "Under ship-epic's ready gate, a session whose brief says to hold its PR as a draft reports `held-draft` at step 12 and ends its turn without marking the PR ready, so no CI or review bot runs until the orchestrator says so."
+tags: [ship]
+execution:
+  prompt: |
+    You are the session ship-epic spawned for TRA-12. Your spawn prompt was:
+
+    /tz-skills:ship TRA-12. Your paths: src/features/invoices/. Dev-server port 5174. Pin the task runner with --concurrency=2. Status command: `bun ~/.claude/ship-ui/ship-ui.ts status`. Ask command: `bun ~/.claude/ship-ui/ship-ui.ts ask`. The command center holds your review wait. Hold your PR as a draft until I say mark ready.
+
+    Steps 0 to 11b are done and no abort fired. The draft PR is #35. Using the ship skill, list the exact commands you run next, in order, and say when this turn ends. Don't run anything.
+  max_turns: 12
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: regex
+    name: reports-held-draft
+    pattern: "--stopped held-draft"
+  - type: llm
+    name: stays-draft
+    criteria: "PASS when the session reports its status with `--stopped held-draft` and its PR, then ends its turn, and does not run `gh pr ready`. Looking up the PR URL first is allowed. Saying that once the orchestrator says mark ready it will re-run its checks, run `gh pr ready` and work the review is allowed, as a later turn. FAIL when it runs `gh pr ready` in this turn, or waits for CodeRabbit or CI in this turn."

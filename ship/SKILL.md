@@ -142,7 +142,7 @@ Typecheck as you go, using each track's command from `## Delivery`.
 
 Run this step once per track. Invoke the skill `## Delivery` names for tests. It decides which seam a test belongs to and what it may assert; take its judgment over your own. The backend track's rule and commands: `backend-track.md`.
 
-Then run the repo's typecheck **and lint** commands. CI runs the full gate, so a lint slip caught here costs seconds while the same slip caught by CI costs a nine-to-ten-minute round trip — one per slip, and with auto-fix on the fixer spends that round trip guessing.
+Then run the repo's typecheck **and lint** commands. CI runs the full gate, so a lint slip caught here costs seconds while the same slip caught by CI costs a nine-to-ten-minute round trip — one per slip, and with auto-fix on the fixer spends that round trip guessing. **Where `## Delivery` names a `Local CI gate`, run it instead**: it is CI's own commands, so CI can only confirm it. Run it again right before `gh pr ready` and before every push to a ready PR; a failure there blocks the push.
 
 Two self-fix attempts, then abort.
 
@@ -246,7 +246,9 @@ Done when every proposed follow-up passes the admission bar above and names its 
 
 ### 12. Mark ready, then work the review
 
-Runs only when no abort fired. `gh pr ready <n>`.
+Runs only when no abort fired. **When your brief says to hold the PR as a draft**, do not mark it ready: run the config's `Status` command with `--step 12/12`, `--stopped held-draft` and `--pr <url>`, and end your turn. CI and the review bot skip a draft, so every push until the orchestrator says "mark ready" costs no CI. It resumes you with its reviewers' findings or a bring-over to push while the PR stays a draft, and stop the same way after each; once it says "mark ready", go on below.
+
+Otherwise, and once told: re-run step 4's commands, then `gh pr ready <n>`.
 
 **When your brief says the command center holds your review wait**, run the config's `Status` command right after, with `--step 12/12`, `--stopped review` and `--pr <url>`, and end your turn. A session that waits in its turn still counts against the run's `Max sessions`, so the next ticket cannot start. The orchestrator resumes you with a `resume <ticket>: …` line once the bot and CI have finished: read the bot's check once then, and go on from `review-loop.md`. Only this first wait is handed over; every later one runs in your turn.
 

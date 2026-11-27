@@ -59,6 +59,7 @@ export const STOP_REASONS = [
   'blocked-by-ticket',
   'gate-failed',
   'review',
+  'held-draft',
   'done',
   'merged',
 ] as const

@@ -28,6 +28,8 @@ const lines = (at: number) =>
 beforeEach(() => {
   delete state.workers[T]
   delete state.prs[T]
+  delete state.prs['TEST-0']
+  state.run = null
 })
 
 test('a handed-off review wakes the worker once the bot has finished and CI has stopped', () => {
@@ -55,5 +57,22 @@ test('a rate-limited review wakes the worker too, since it has to run the fallba
 
 test('a review hand-off is neither a stop nor a quiet worker', () => {
   setup({ rabbit: 'waiting' })
+  expect(lines(minutesLater(90))).toEqual([])
+})
+
+function hold(after: string, afterState: PullRequest['state']) {
+  setup({}, 'held-draft')
+  state.prs[T]!.draft = true
+  state.run = { id: 'r', title: '', summary: '', repo: '', afk: false, target: 'main', where: '', github: '', startedAt: '', tickets: [{ ticket: T, title: '', group: 1, after, url: '' }] }
+  state.prs[after] = { number: 33, title: '', url: '', state: afterState, draft: false, mergedAt: '', branch: 'a' }
+}
+
+test('a held draft is next in line once the ticket it merges after has merged', () => {
+  hold('TEST-0', 'MERGED')
+  expect(lines(minutesLater(1))).toEqual(['next TEST-1: TEST-0 merged; bring #34 over, review it, then mark it ready'])
+})
+
+test('a held draft stays quiet while the ticket ahead of it is open, and is never a stop or a quiet worker', () => {
+  hold('TEST-0', 'OPEN')
   expect(lines(minutesLater(90))).toEqual([])
 })

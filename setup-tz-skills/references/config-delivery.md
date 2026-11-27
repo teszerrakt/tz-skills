@@ -50,6 +50,8 @@ whose key is absent reports `SKIPPED`.
   costs a full CI round trip.
 - **Tests:** {{skill}}. It owns which seam a test belongs to and what it may
   assert; take its judgment over the driver's.
+- **Local CI gate:** {{the commands CI runs on a PR, with the same diff range}},
+  plus any check CI skips. Blocks `gh pr ready` and every push to a ready PR.
 - **Visual verification:** {{skill}}. Diffs the running app against the design
   and exercises its interactions. It edits code, so it runs before any review.
 - **Smoke:** {{skill}}. Boots the app, loads the changed route, reads the
@@ -124,4 +126,9 @@ guessing.
 - **Finding:** {{command}} — `bun ~/.claude/ship-ui/ship-ui.ts finding …`. Run
   after every judge, once per finding and again when its outcome changes.
   `/tz-skills:ship-epic --afk` requires it.
+- **Ready gate:** hold — every PR stays a draft until the orchestrator marks it
+  ready. Only for a repo whose CI and review bot skip drafts.
+- **Shared files:** {{file}} → {{index plus one file per ticket}}.
+- **Push stagger:** {{starts per minute}}, about {{n}} jobs per push.
+- **CI starts:** {{command that counts CI job starts per PR}}.
 ```
