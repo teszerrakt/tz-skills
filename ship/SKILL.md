@@ -248,7 +248,7 @@ Done when every proposed follow-up passes the admission bar above and names its 
 
 Runs only when no abort fired. **When your brief says to hold the PR as a draft**, do not mark it ready: run the config's `Status` command with `--step 12/12`, `--stopped held-draft` and `--pr <url>`, and end your turn. CI and the review bot skip a draft, so every push until the orchestrator says "mark ready" costs no CI. It resumes you with its reviewers' findings or a bring-over to push while the PR stays a draft, and stop the same way after each; once it says "mark ready", go on below.
 
-Otherwise, and once told: re-run step 4's commands, then `gh pr ready <n>`.
+Otherwise, and once told: run the `Local CI gate` where `## Delivery` names one (step 4), then `gh pr ready <n>`.
 
 **When your brief says the command center holds your review wait**, run the config's `Status` command right after, with `--step 12/12`, `--stopped review` and `--pr <url>`, and end your turn. A session that waits in its turn still counts against the run's `Max sessions`, so the next ticket cannot start. The orchestrator resumes you with a `resume <ticket>: …` line once the bot and CI have finished: read the bot's check once then, and go on from `review-loop.md`. Only this first wait is handed over; every later one runs in your turn.
 

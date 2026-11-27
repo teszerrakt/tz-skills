@@ -82,7 +82,7 @@ Done when every child of the epic is takeable, skipped with a stated reason, or 
 
 **The backbone wave runs serial. Consumer waves run up to `Max sessions` at a time.** Almost all collision risk lives in the backbone, because that is the wave whose job is inventing shared files; consumers mostly add inside their own route folder. Two parallel sessions that each need the same helper will each invent one, both PRs will pass CI, and both will pass `/tz-skills:spec-review` — neither duplicate is a stray against its own ticket. It stays invisible until a human reads both PRs.
 
-**A ticket whose session stopped at `review` or `held-draft` holds no place.** Its PR is ready, and the bot and CI are all it waits on, so for `Max sessions` and for serial order it counts as finished until a `resume` line brings it back. Start the next ticket meanwhile. A resumed session takes the next free place, ahead of any ticket not yet started.
+**A ticket whose session stopped at `review` or `held-draft` holds no place.** At `review` its PR is ready, and the bot and CI are all it waits on; at `held-draft` its PR is a draft the orchestrator reviews and marks ready (`references/ready-gate.md`). Either way, for `Max sessions` and for serial order it counts as finished until a `resume` or `next` line, or the orchestrator's own review, brings it back. Start the next ticket meanwhile. A resumed session takes the next free place, ahead of any ticket not yet started.
 
 Pin each session's task runner with the config's concurrency flag. The runner's default already stacks test workers until timing-sensitive tests fail on load alone, and under a self-fix loop a load-induced failure is worse than noise: the fixer tries to fix it.
 
@@ -97,7 +97,7 @@ Assert before the first spawn, not at the phase that trips over it:
 
 A report file inside a worktree becomes a stray in the diff `/tz-skills:spec-review` audits.
 
-**Where the config sets `Ready gate`, read [`references/ready-gate.md`](references/ready-gate.md) before the first spawn.**
+**Where the config sets `Ready gate`, `Shared files` or `Push stagger`, read [`references/ready-gate.md`](references/ready-gate.md) before the first spawn.**
 
 ## The spawn prompt
 
@@ -113,7 +113,7 @@ Everything a session cannot negotiate later goes in its prompt, after the `/tz-s
 - under `--stack`, its base: the parent ticket's branch and PR number,
 - the config's `Ask` and `Status` commands, word for word, with the rules under *The command center*, and the line `The command center holds your review wait.`,
 - under `--afk`, the rule quoted in `references/afk.md`,
-- where the config sets `Ready gate`, the line `Hold your PR as a draft until I say mark ready.`, and where it names `Shared files`, the session's own file for each,
+- where the config sets `Ready gate`, the line `Hold your PR as a draft until I say mark ready.`; where it names `Shared files`, the session's own file for each, and for the first ticket to touch one, that it splits the file into the key's layout,
 - that a reviewer's design finding is refused only with the frame that settles it. "No frame draws it" needs a search of the ticket's frames and their siblings first; when the search finds nothing, the session asks through `Ask` and does not refuse.
 
 Migration numbers are reserved here because siblings are on no branch the others can see: each would take the same next number, and the collision surfaces only when the second one merges.
@@ -124,7 +124,7 @@ Done when every prompt names its own paths, its own port and its own lock rule. 
 
 Poll `claude agents --json` and read only the sessions you named. It lists your own profile alone: where `ship-ui.ts profiles` prints more than one folder, a session the user moved to another profile is listed by `CLAUDE_CONFIG_DIR=<folder> claude agents --json`, and attached to or resumed under that same folder, as the command center prints it.
 
-**Where the config names `Status`, run the command center's `watch` too, in the background, and never write a watcher of your own.** `bun ~/.claude/ship-ui/ship-ui.ts watch` prints one line for each new thing to act on: `question <id> from <ticket>`, `resume <ticket>: review bot finished on #<pr>, CI green` for a session that handed over its review wait, `resume <ticket>: <n> review threads open on #<pr>`, `resume <ticket>: CI failing on #<pr>`, `resume <ticket>: #<pr> conflicts with <branch>` or `resume <ticket>: the user asked to fix <id>: <claim>`, `next <ticket>: <after> merged; …` for a held draft whose turn has come (`references/ready-gate.md`), `<ticket> stopped: <reason>`, and `quiet <ticket>: no update for <n> min at step <step>`. A `resume` line means a finished session's PR needs it again: resume that session to run `/tz-skills:ship` step 12. For a conflict, tell it to merge the base branch in first; for a fix the user asked for, give it the finding's id, claim and note. A `quiet` line is not a stop: read the end of that session's transcript, and resume it only when its last turn ended with the `/tz-skills:ship` steps unfinished. A session still inside a turn is working, and resuming it starts a second copy in the same worktree. **One writer per worktree.** `claude --bg --resume <id>` with flags starts a copy under the same name, so names repeat. Before resuming a ticket, list its sessions with `ListAgents`. If any is busy, message that one by `name [ref]`. A bare name can reach an idle older copy, which wakes up and edits the same files. When looping over spawns in a script, give each `claude` call `</dev/null`, or it reads the rest of the loop's input as its own. Findings a reviewer left open on a finished ticket wait under "Needs you" for the user to accept for now or send back; never rule on one yourself. The command center reads the review bot and CI correctly, from the PR's status contexts as well as its check runs; a hand-written watcher on the pilot read check runs only, never saw CodeRabbit's review, and left a ticket idle for forty minutes.
+**Where the config names `Status`, run the command center's `watch` too, in the background, and never write a watcher of your own.** `bun ~/.claude/ship-ui/ship-ui.ts watch` prints one line for each new thing to act on: `question <id> from <ticket>`, `resume <ticket>: review bot finished on #<pr>, CI green` for a session that handed over its review wait, `resume <ticket>: <n> review threads open on #<pr>`, `resume <ticket>: CI failing on #<pr>`, `resume <ticket>: #<pr> conflicts with <branch>` or `resume <ticket>: the user asked to fix <id>: <claim>`, `held <ticket>: #<pr> is a draft; …` each time a session stops `held-draft`, `next <ticket>: <after> merged; …` once a held draft's turn has come (`references/ready-gate.md`), `<ticket> stopped: <reason>`, and `quiet <ticket>: no update for <n> min at step <step>`. A `resume` line means a finished session's PR needs it again: resume that session to run `/tz-skills:ship` step 12. For a conflict, tell it to merge the base branch in first; for a fix the user asked for, give it the finding's id, claim and note. A `quiet` line is not a stop: read the end of that session's transcript, and resume it only when its last turn ended with the `/tz-skills:ship` steps unfinished. A session still inside a turn is working, and resuming it starts a second copy in the same worktree. **One writer per worktree.** `claude --bg --resume <id>` with flags starts a copy under the same name, so names repeat. Before resuming a ticket, list its sessions with `ListAgents`. If any is busy, message that one by `name [ref]`. A bare name can reach an idle older copy, which wakes up and edits the same files. When looping over spawns in a script, give each `claude` call `</dev/null`, or it reads the rest of the loop's input as its own. Findings a reviewer left open on a finished ticket wait under "Needs you" for the user to accept for now or send back; never rule on one yourself. The command center reads the review bot and CI correctly, from the PR's status contexts as well as its check runs; a hand-written watcher on the pilot read check runs only, never saw CodeRabbit's review, and left a ticket idle for forty minutes.
 
 | `status` / `waitingFor` | Means | Disposition |
 |---|---|---|
@@ -183,7 +183,7 @@ Optional, and on when the config names `Status`. It is a local page that holds w
 
 **A `RATE_LIMITED` or `NO_BOT` PR already had its fallback reviewer**: `/tz-skills:ship` step 12 runs it. A clean fallback review makes the PR ready for review, backup-reviewed; carry that into the report with CodeRabbit named as rate limited or the repo as running no bot, and list what is still open for any PR that is not clean.
 
-**Three more reviewers read each ready PR. Read [`references/pr-reviewers.md`](references/pr-reviewers.md) once the first PR is ready**: an adversarial reviewer for a PR the bot skipped for its base, a visual reviewer for every PR with screenshots, and a completeness checker for every PR. Their findings are yours, as `O<n>`.
+**Three more reviewers read each ready PR. Read [`references/pr-reviewers.md`](references/pr-reviewers.md) once the first PR is ready**, or under a `Ready gate`, once the first session stops `held-draft`: an adversarial reviewer for a PR the bot skipped for its base, a visual reviewer for every PR with screenshots, and a completeness checker for every PR. Their findings are yours, as `O<n>`.
 
 Waiting for CI and the review is nearly free: each session hands that wait to the command center, and the next ticket runs meanwhile.
 
@@ -193,7 +193,7 @@ Done when every finished ticket's PR is ready with its review threads answered o
 
 Each abort parks one ticket and leaves a **draft PR carrying the reason**. `/tz-skills:ship` opens drafts anyway, so this costs nothing, and the PR is the only artifact that appears where the user already looks: a branch with no PR is invisible among two dozen live worktrees.
 
-A ready PR passed every phase. A draft one did not, and its body says which.
+A ready PR passed every phase. A draft one did not, and its body says which. A draft whose session stopped `held-draft` is not an abort: it passed every phase and waits for its turn to merge.
 
 | # | Condition |
 |---|---|
@@ -211,7 +211,7 @@ A ready PR passed every phase. A draft one did not, and its body says which.
 
 Write it to `~/.claude/orchestrate/<repo>/<epic>/<timestamp>.md`. Never inside the repo.
 
-One row per child of the epic: the ticket, its verdict, its PR, and for anything short of ready, the abort number and a one-line reason. Skipped tickets carry the reason they were skipped.
+One row per child of the epic: the ticket, its verdict, its PR, and for anything short of ready, the abort number and a one-line reason. A PR still held as a draft when the run ends reads `held`, with the ticket it merges after and what its bring-over needs; whoever merges that ticket brings it over and marks it ready, as `references/ready-gate.md` says. Skipped tickets carry the reason they were skipped.
 
 Then the **merge order**: every `Merge after #N` pair, backend first. A frontend PR merged ahead of its backend ships calls to an endpoint that does not exist yet. Under `--stack`, the chain merges bottom-up, and each PR is retargeted to the base once its parent merges. GitHub does that by itself only when the repo deletes merged branches, so name the setting (`delete_branch_on_merge`) when it is off.
 

@@ -68,14 +68,18 @@ function reviewSettled(ticket: string, worker: Worker, pr: PullRequest | undefin
   ]
 }
 
-/** A draft held for its turn, once the ticket it merges after has merged. A held draft with no `after` waits on the orchestrator alone. */
+/** A draft held for the orchestrator: a `held` line on each stop, and one `next` line once the ticket it merges after has merged. */
 function nextInLine(ticket: string, worker: Worker, pr: PullRequest | undefined): AttentionItem[] {
-  if (worker.stopped !== 'held-draft' || pr?.state !== 'OPEN') return []
+  if (worker.stopped !== 'held-draft' || pr?.state !== 'OPEN' || !pr.draft) return []
+  const held = { key: `held:${ticket}:${worker.at}`, line: `held ${ticket}: #${pr.number} is a draft; review it, or mark it ready when its turn comes` }
   const after = state.run?.tickets.find((t) => t.ticket === ticket)?.after
-  if (!after || state.prs[after]?.state !== 'MERGED') return []
+  const ahead = after ? state.prs[after] : undefined
+  if (!after || ahead?.state !== 'MERGED') return [held]
+  // Keyed on the merge, so a session stopping again after its bring-over does not ask for a second one.
   return [
+    held,
     {
-      key: `next:${ticket}:${worker.at}`,
+      key: `next:${ticket}:${after}:${ahead.mergedAt}`,
       line: `next ${ticket}: ${after} merged; bring #${pr.number} over, review it, then mark it ready`,
     },
   ]
