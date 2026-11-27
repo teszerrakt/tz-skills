@@ -45,7 +45,8 @@ function finishedButNeeded(ticket: string, worker: Worker, pr: PullRequest | und
     const names = checks.failing.join(', ')
     items.push({ key: `ci:${ticket}:${checks.failing.join(',')}`, line: `resume ${ticket}: CI failing on #${pr.number} (${names})` })
   }
-  if (checks.conflict) {
+  // A PR whose predecessor is still open re-conflicts at that merge, so syncing it now is paid for twice.
+  if (checks.conflict && !aheadStillOpen(ticket)) {
     const base = state.run?.target || 'its base branch'
     items.push({ key: `conflict:${ticket}:${checks.head}`, line: `resume ${ticket}: #${pr.number} conflicts with ${base}` })
   }
@@ -83,6 +84,11 @@ function nextInLine(ticket: string, worker: Worker, pr: PullRequest | undefined)
       line: `next ${ticket}: ${after} merged; bring #${pr.number} over, review it, then mark it ready`,
     },
   ]
+}
+
+function aheadStillOpen(ticket: string): boolean {
+  const after = state.run?.tickets.find((t) => t.ticket === ticket)?.after
+  return !!after && state.prs[after]?.state === 'OPEN'
 }
 
 function fixesAsked(ticket: string): AttentionItem[] {

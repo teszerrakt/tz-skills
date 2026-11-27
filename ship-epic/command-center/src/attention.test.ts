@@ -98,3 +98,13 @@ test('a PR already ready or merged is no held draft', () => {
   state.prs[T]!.state = 'MERGED'
   expect(lines(minutesLater(1))).toEqual([])
 })
+
+test('a conflict waits while the PR ahead of it in merge order is still open', () => {
+  hold('TEST-0', 'OPEN')
+  state.workers[T]!.stopped = 'done'
+  state.prs[T]!.draft = false
+  state.prs[T]!.checks!.conflict = true
+  expect(lines(minutesLater(1))).toEqual([])
+  state.prs['TEST-0']!.state = 'MERGED'
+  expect(lines(minutesLater(1))).toEqual(['resume TEST-1: #34 conflicts with main'])
+})

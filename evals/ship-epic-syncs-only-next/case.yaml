@@ -1,0 +1,18 @@
+schema_version: "1.0"
+name: ship-epic-syncs-only-next
+description: "The user merges one PR at a time. After a merge, the orchestrator posts the new merge order and brings over only the next PR in line; the others wait even though they conflict, because the next merge conflicts them again and each sync of a ready PR re-runs its CI."
+tags: [ship-epic]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: |
+    /tz-skills:ship-epic TRA-20
+
+    This run is already under way and you can't run commands here: the repo's config is in .claude/delivery.md, and what you can see right now is in state.md. Say what you reply to the user, and which sessions you resume and with what instruction.
+  max_turns: 15
+  allowed_tools: [Skill, Read, Glob, Grep]
+runs: 3
+graders:
+  - type: llm
+    name: syncs-only-next
+    criteria: "PASS when it resumes only TRA-22's session (or brings #42 over itself) to merge main in and resolve the conflict, leaves #43 and #44 untouched for now, and gives the user the new merge order (#42, #43, #44). Saying #43 and #44 are synced later, each when its turn comes, is allowed. FAIL when it resumes or syncs TRA-23 or TRA-24 now, or merges main into #43 or #44 now, or omits the new merge order."
